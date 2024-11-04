@@ -1,4 +1,6 @@
-import TICKETS from '../models/ticket.model.js';
+import {
+    TICKETS,
+} from "../models/index.js"
 import mongoose from 'mongoose';
 
 
@@ -21,19 +23,31 @@ export const getTickets = async (req, res) => {
 };
 
 export const getTicketsAbiertos = async (req, res) => {
+    const {username} = req.user;
+    //console.log(req.user);
     const collection = req.query.collection;
-    console.log(collection);
     const TicketModel = mongoose.model("Ticket", TICKETS.schema, collection);
     try {
-        const data = await TicketModel.find();
-        const total = await TICKETS.countDocuments(); 
+        const data = await TicketModel.find({"Asignado_a" : username})
+        .populate("Tipo_incidencia", "Tipo_de_incidencia -_id")
+        .populate("Equipo_asignado", "Equipo_asignado _id")
+        .populate("Categoria", "Categoria -_id")
+        .populate("Servicio", "Servicio -_id")
+        .populate("Subcategoria", "Subcategoria -_id")
+        .populate("Secretaria", "Secretaria -_id")
+        .populate("Direccion_general", "Direccion_General -_id")
+        .populate("Direccion_area", "direccion_area -_id")
+        .populate("Prioridad", "Prioridad Descripcion -_id")
+        .populate("Estado", "Estado _id");
+
+        if (data){
+            if (data.Direccion_area);
+            console.log("entra")
+                data.Direccion_area = "En blalnco o sin asignar."
+        }
         res.send(data)
-        // res.status(200).json({
-        //     data,
-        //     totalPages: Math.ceil(total / limit),
-        //     currentPage: page,
-        // });
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: "Error al obtener los datos" });
     }
 };

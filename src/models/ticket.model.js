@@ -1,92 +1,95 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const ticketModel = mongoose.Schema(
     {
-      id: {
+      Id: {
         type: Number,
         trim: true,
       },
-      fecha_inicio: {
+      "Tipo_incidencia": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "TIPO_TICKET"
+      },
+      "Fecha_hora_creacion": {
         type: Date,
         trim: true,
       },
-      mesa_ayuda_abre: {
-        type: String,
-        trim: true,
-      },
-      estado_asignado: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      estado_final: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      categoria: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      descripcion: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      correo_asignado: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      prioridad: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      fecha_cierre_ticket: {
+      "Fecha_hora_limite_resolucion_SLA": {
         type: Date,
-        required: true,
         trim: true,
       },
-      mesa_ayuda_cierre: {
-        type: String,
-        required: true,
+      "Fecha_hora_ultima_modificacion": {
+        type: Date,
         trim: true,
       },
-      equipo_asignado: {
+      "Estado": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "ESTADOS"
+      },
+      "Equipo_asignado": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "EQUIPOS_ASIGNADOS"
+      },
+      "Asignado_a": {
         type: String,
-        required: true,
         trim: true,
       },
-      tipo_ticket: {
+      "Creado_por": {
         type: String,
-        required: true,
         trim: true,
       },
-      medio_solicitud_recibido: {
+      "Categoria": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "CATEGORIAS"
+      },
+      "Servicio": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "SERVICIOS"
+      },
+      "Subcategoria": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "SUBCATEGORIA"
+      },
+      "Nombre_cliente": {
         type: String,
-        required: true,
         trim: true,
       },
-      cliente: {
+      Secretaria: {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "SECRETARIA"
+      },
+      "Direccion_general": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "DIRECCION_GENERAL"
+      },
+      "Direccion_area": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "DIRECCION_AREA"
+      },
+      "Descripcion": {
         type: String,
-        required: true,
         trim: true,
       },
-      dependencia_cliente: {
+      "Prioridad": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "PRIORIDADES"
+      },
+      "Incidencia_grave": {
         type: String,
-        required: true,
         trim: true,
       },
-      area_reasinado_a: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      respuesta_cierre_reasignado: {
-        type: String,
-        required: true,
+      "Fecha_limite_respuesta_SLA": {
+        type: Date,
         trim: true,
       },
     },
