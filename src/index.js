@@ -1,10 +1,13 @@
 import connectDB from "./config/db_connection.js";
 import express from "express";
 import morgan from "morgan";
-import ticketsRoute from "./routes/ticket.route.js";
+import ticketsRoute from "./routes/ticket.routes.js";
 import ticketsFilterRoute from "./routes/ticket.filters.route.js"
+import usuariosRoutes from "./routes/users.routes.js"
+import authRoutes from "./routes/auth.routes.js"
 import cors from "cors";
 import "dotenv/config";
+import cookieParser from "cookie-parser";
 
 morgan.token('date', function () {
   return new Date().toISOString(); // Obtiene la fecha y hora en formato ISO
@@ -21,8 +24,11 @@ app.use(
 );
 app.use(morgan(format));
 app.use(express.json());
+app.use(cookieParser())
 app.use("/api", ticketsRoute);
 app.use("/api", ticketsFilterRoute);
+app.use("/api", usuariosRoutes);
+app.use("/api", authRoutes);
 
 
 connectDB() 
