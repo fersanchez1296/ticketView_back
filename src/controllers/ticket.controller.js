@@ -526,7 +526,7 @@ export const resolverTicket = async (req, res) => {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
 
-//TODO falta modificar los campos de Asignado_final, historia ticket, con base en los middleware
+    //TODO falta modificar los campos de Asignado_final, historia ticket, con base en los middleware
     const ticketActualizado = await TICKETS.updateOne(
       { _id: Id_ticket },
       {
@@ -570,4 +570,30 @@ export const areasReasignacion = async (req, res) => {
     console.error("Error al obtener áreas y usuarios:", error);
     res.status(500).json({ message: "Error al obtener áreas y usuarios" });
   }
+};
+
+export const reasignarTicket = async (req, res) => {
+  const { id_usuario_reasignar, id_ticket } = req.body;
+  const { _id, Nombre } = req.session.user;
+
+  try {
+    const result = TICKETS.updateOne(
+      { _id: id_ticket },
+      {
+        $set: {
+          Reasignado_a: id_usuario_reasignar,
+          Asignado_final: id_usuario_reasignar,
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: _id,
+            Mensaje: `El ticket ha sido reasignado a ... por ${Nombre}`,
+            Fecha: new Date,
+          },
+        },
+      }
+    );
+
+    res.status(200).json({desc: "El ticket se actualizo"})
+  } catch (error) {}
 };
