@@ -17,9 +17,9 @@ const format = '[:date] :method :url :status :response-time ms - :res[content-le
 const app = express();
 app.use(
   cors({
-    //origin: ["http://localhost:3000"],
-    origin: "*",
-    //credentials: true,
+    origin: "http://localhost:3000",
+    //origin: "*",
+    credentials: true,
   })
 );
 app.use(morgan(format));

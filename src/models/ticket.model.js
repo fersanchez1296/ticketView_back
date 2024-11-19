@@ -15,7 +15,7 @@ const ticketModel = mongoose.Schema(
         type: Date,
         trim: true,
       },
-      "Fecha_hora_limite_resolucion_SLA": {
+      "Fecha_limite_resolucion_SLA": {
         type: Date,
         trim: true,
       },
@@ -28,18 +28,20 @@ const ticketModel = mongoose.Schema(
         trim: true,
         ref: "ESTADOS"
       },
-      "Equipo_asignado": {
+      "Area_asignado": {
         type: Schema.Types.ObjectId,
         trim: true,
-        ref: "EQUIPOS_ASIGNADOS"
+        ref: "AREA"
       },
       "Asignado_a": {
-        type: String,
+        type: Schema.Types.ObjectId,
         trim: true,
+        ref: "USUARIOS"
       },
       "Creado_por": {
-        type: String,
+        type: Schema.Types.ObjectId,
         trim: true,
+        ref: "USUARIOS"
       },
       "Categoria": {
         type: Schema.Types.ObjectId,
@@ -92,10 +94,51 @@ const ticketModel = mongoose.Schema(
         type: Date,
         trim: true,
       },
+      "Fecha_hora_cierre": {
+        type: Date,
+        trim: true,
+      },
+      "Reasignado_a": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "USUARIOS"
+      },
+      "Area_reasignado_a": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "AREA"
+      },
+      "Respuesta_cierre_reasignado": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+      },
+      "Respuesta_resolucion": {
+        type: String,
+        trim: true,
+      },
+      "Fecha_hora_resolucion": {
+        type: Date,
+        trim: true,
+      },
+      "Resuelto_por": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "USUARIOS"
+      },
+      "Asignado_final": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "USUARIOS"
+      },
+      "Cerrado_por": {
+        type: Schema.Types.ObjectId,
+        trim: true,
+        ref: "USUARIOS"
+      },
     },
     {
       timesStampes: true,
     }
   );
   
-  export default mongoose.model("TICKETS", ticketModel);
+  export default mongoose.model("TICKETS", ticketModel, "Tickets");

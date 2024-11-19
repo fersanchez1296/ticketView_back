@@ -5,10 +5,13 @@ export const verifyToken = (req, res, next) => {
     if(!token) {
         return res.status(403).send("No autorizado. Token inválido o expirado")
     }
-    req.session = {user: null}
+    if (!req.session) {
+        req.session = {};
+    }
+    req.session.user = null;
     try {
         const data = jwt.verify(token, process.env.JWT_TOKEN);
-        req.user = data;
+        req.session.user = data;
         next()
     } catch (error) {
         console.log(error);
