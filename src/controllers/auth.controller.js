@@ -4,6 +4,7 @@ import "dotenv/config";
 import { generateToken } from "../functions/generateToken.function.js";
 export const login = async (req, res) => {
   const { Username, Password } = req.body;
+  console.log(req.body)
   try {
     const result = await USUARIO.findOne({
       Username,
