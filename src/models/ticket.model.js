@@ -1,5 +1,11 @@
 import mongoose, { Schema } from "mongoose";
 
+const HistoriaTicketSchema = new Schema({
+  Nombre: { type: Schema.Types.ObjectId, ref: 'USUARIOS', required: true },
+  Mensaje: { type: String, required: true, trim: true },
+  Fecha: { type: Date, required: true, default: Date.now },
+});
+
 const ticketModel = mongoose.Schema(
     {
       Id: {
@@ -134,6 +140,10 @@ const ticketModel = mongoose.Schema(
         type: Schema.Types.ObjectId,
         trim: true,
         ref: "USUARIOS"
+      },
+      Historia_ticket: {
+        type: [HistoriaTicketSchema], 
+        default: [],
       },
     },
     {
