@@ -526,27 +526,27 @@ export const resolverTicket = async (req, res) => {
 
     const user = await USUARIO.findOne({ _id: Resuelto_por_id });
     const Nombre_resolutor = user.Nombre;
-    const ticketActualizado = await TICKETS.updateOne(
-      { _id: Id_ticket },
-      {
-        $set: {
-          Estado: estadoDoc._id,
-          Asignado_a:
-            req.moderador && req.moderador !== false
-              ? req.moderador._id
-              : Asignado_a,
-          Asignado_final : Asignado_a,
-          Resuelto_por: Resuelto_por_id,
-          Fecha_hora_resolucion: new Date(),
-          Respuesta_cierre_reasignado: Descripcion_resolucion,
-        },
-        $push: {
-          Nombre,
-          Mensaje,
-          Fecha,
-        },
-      }
-    );
+    // const ticketActualizado = await TICKETS.updateOne(
+    //   { _id: Id_ticket },
+    //   {
+    //     $set: {
+    //       Estado: estadoDoc._id,
+    //       Asignado_a:
+    //         req.moderador && req.moderador !== false
+    //           ? req.moderador._id
+    //           : Asignado_a,
+    //       Asignado_final : Asignado_a,
+    //       Resuelto_por: Resuelto_por_id,
+    //       Fecha_hora_resolucion: new Date(),
+    //       Respuesta_cierre_reasignado: Descripcion_resolucion,
+    //     },
+    //     $push: {
+    //       Nombre,
+    //       Mensaje,
+    //       Fecha,
+    //     },
+    //   }
+    // );
     res.json(ticketActualizado);
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
