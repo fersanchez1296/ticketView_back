@@ -17,12 +17,12 @@ export const checkIfUserActive = async (req, res, next) => {
 
     if (!userIsActive) {
       const usuario = await obtenerSuperUsuario();
-      next();
-      return usuario;
+      req.superUsuario = usuario;
     }
-
+    else{
+      req.superUsuario = false;
+    }
     next();
-    return false;
   } catch (error) {
     console.log(error);
   }
