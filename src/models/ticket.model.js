@@ -118,7 +118,7 @@ const ticketModel = mongoose.Schema(
         type: Schema.Types.ObjectId,
         trim: true,
       },
-      "Respuesta_resolucion": {
+      "Respuesta_cierre_reasignado": {
         type: String,
         trim: true,
       },

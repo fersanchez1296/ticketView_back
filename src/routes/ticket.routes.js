@@ -28,7 +28,7 @@ router.get("/tickets/pendientes", verifyToken, getTicketsPendientes);
 router.get("/tickets/cerrados", verifyToken, getTicketsCerrados);
 router.get("/tickets/resueltos", verifyToken, getTicketsResueltos);
 router.get("/tickets/revision", verifyToken, getTicketsRevision);
-router.get(
+router.put(
   "/reasignar",
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),
