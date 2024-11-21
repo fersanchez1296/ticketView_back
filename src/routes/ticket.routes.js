@@ -11,7 +11,7 @@ import {
   getTicketsRevision,
   getTicketsNuevos,
   areasReasignacion,
-  reasignarTicket
+  reasignarTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
