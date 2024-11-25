@@ -12,6 +12,7 @@ import {
   getTicketsNuevos,
   areasReasignacion,
   reasignarTicket,
+  getInfoSelects
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -36,5 +37,6 @@ router.put(
 );
 router.get("/reasignar/areas", verifyToken, areasReasignacion);
 router.put("/resolver", verifyToken, checkResolutor, checkIfUserActive);
+router.get("/crear/getInfoSelects", getInfoSelects);
 
 export default router;

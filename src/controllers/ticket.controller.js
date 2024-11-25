@@ -1,4 +1,17 @@
-import { TICKETS, ESTADOS, AREA, USUARIO } from "../models/index.js";
+import {
+  TICKETS,
+  ESTADOS,
+  AREA,
+  USUARIO,
+  TIPO_TICKET,
+  CATEGORIAS,
+  SERVICIOS,
+  SUBCATEGORIA,
+  PRIORIDADES,
+  SECRETARIA,
+  DIRECCION_AREA,
+  DIRECCION_GENERAL,
+} from "../models/index.js";
 import formateDate from "../functions/dateFormat.functions.js";
 
 export const getTickets = async (req, res) => {
@@ -601,5 +614,57 @@ export const reasignarTicket = async (req, res) => {
     res.status(200).json({ desc: "El ticket se actualizó" });
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const getInfoSelects = async (req, res) => {
+  try {
+    // Ejecutar ambas consultas en paralelo
+    const [
+      estados,
+      tiposTickets,
+      categorias,
+      servicios,
+      subcategoria,
+      prioridades,
+      areas,
+      secretarias,
+      direccion_areas,
+      usuarios,
+      direccion_generales,
+    ] = await Promise.all([
+      ESTADOS.find({
+        $or: [{ Estado: "NUEVO" }, { Estado: "PENDIENTE" }],
+      }),
+      TIPO_TICKET.find(),
+      CATEGORIAS.find(),
+      SERVICIOS.find(),
+      SUBCATEGORIA.find(),
+      PRIORIDADES.find(),
+      AREA.find(),
+      SECRETARIA.find(),
+      DIRECCION_AREA.find(),
+      USUARIO.find({ isActive : {$ne : false}, Rol : "Moderador" }, {Nombre : 1, Correo : 1, Area : 1}),
+      DIRECCION_GENERAL.find(),
+    ]);
+
+    // Preparar la respuesta
+    res.status(200).json({
+      estados,
+      tiposTickets,
+      categorias,
+      servicios,
+      subcategoria,
+      prioridades,
+      areas,
+      secretarias,
+      direccion_areas,
+      direccion_generales,
+      usuarios
+    });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    // Manejo de errores: responder con un mensaje de error
+    res.status(500).json({ error: "Error fetching data" });
   }
 };
