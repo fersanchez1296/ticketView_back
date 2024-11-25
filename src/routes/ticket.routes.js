@@ -11,7 +11,7 @@ import {
   getTicketsRevision,
   getTicketsNuevos,
   areasReasignacion,
-  reasignarTicket
+  reasignarTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -28,7 +28,7 @@ router.get("/tickets/pendientes", verifyToken, getTicketsPendientes);
 router.get("/tickets/cerrados", verifyToken, getTicketsCerrados);
 router.get("/tickets/resueltos", verifyToken, getTicketsResueltos);
 router.get("/tickets/revision", verifyToken, getTicketsRevision);
-router.get(
+router.put(
   "/reasignar",
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),

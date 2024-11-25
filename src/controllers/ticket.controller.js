@@ -515,26 +515,35 @@ export const getTicketsResueltos = async (req, res) => {
 
 export const resolverTicket = async (req, res) => {
   const { Id_ticket, Resuelto_por_id, Descripcion_resolucion } = req.body;
-  const Fecha_hora_actual = new Date();
   const { Rol } = req.session.user;
   try {
     const estadoDoc = await ESTADOS.findOne({
       Estado: Rol != "Usuario" ? "RESUELTO" : "REVISIÓN",
     });
-    console.log(estadoDoc);
     if (!estadoDoc) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
 
-    //TODO falta modificar los campos de Asignado_final, historia ticket, con base en los middleware
+    const user = await USUARIO.findOne({ _id: Resuelto_por_id });
+    const Nombre_resolutor = user.Nombre;
     const ticketActualizado = await TICKETS.updateOne(
       { _id: Id_ticket },
       {
         $set: {
           Estado: estadoDoc._id,
+          Asignado_a:
+            req.moderador && req.moderador !== false
+              ? req.moderador._id
+              : Asignado_a,
+          Asignado_final : Asignado_a,
           Resuelto_por: Resuelto_por_id,
-          Fecha_hora_resolucion: Fecha_hora_actual,
-          Respuesta_resolucion: Descripcion_resolucion,
+          Fecha_hora_resolucion: new Date(),
+          Respuesta_cierre_reasignado: Descripcion_resolucion,
+        },
+        $push: {
+          Nombre,
+          Mensaje,
+          Fecha,
         },
       }
     );
@@ -546,25 +555,22 @@ export const resolverTicket = async (req, res) => {
 };
 
 export const areasReasignacion = async (req, res) => {
-  const { Rol, Area } = req.session.user;
+  const { Area } = req.session.user;
 
   try {
     const areas = await AREA.find({ _id: { $in: Area } });
-    // 2. Para cada área, obtener los usuarios asociados
     const areasResolutores = await Promise.all(
       areas.map(async (area) => {
         const resolutor = await USUARIO.find({ Area: area._id }).select(
           "Nombre Correo"
         );
-        console.log(resolutor);
         return {
-          area: area.Area, // Nombre del área
-          resolutores: resolutor, // Lista de usuarios en esta área
+          area: area.Area,
+          resolutores: resolutor,
         };
       })
     );
 
-    // Enviar respuesta con las áreas y sus usuarios
     res.json({ areasResolutores });
   } catch (error) {
     console.error("Error al obtener áreas y usuarios:", error);
@@ -574,26 +580,26 @@ export const areasReasignacion = async (req, res) => {
 
 export const reasignarTicket = async (req, res) => {
   const { id_usuario_reasignar, id_ticket } = req.body;
-  const { _id, Nombre } = req.session.user;
-
+  const { Id, Nombre } = req.session.user;
   try {
-    const result = TICKETS.updateOne(
+    const user = await USUARIO.findOne({ _id: id_usuario_reasignar });
+    const Nombre_resolutor = user.Nombre;
+    const result = await TICKETS.updateOne(
       { _id: id_ticket },
       {
-        $set: {
-          Reasignado_a: id_usuario_reasignar,
-          Asignado_final: id_usuario_reasignar,
-        },
+        Reasignado_a: id_usuario_reasignar,
+        Asignado_final: id_usuario_reasignar,
         $push: {
           Historia_ticket: {
-            Nombre: _id,
-            Mensaje: `El ticket ha sido reasignado a ... por ${Nombre}`,
-            Fecha: new Date,
+            Nombre: Id,
+            Mensaje: `El ticket ha sido reasignado a ${Nombre_resolutor} por ${Nombre}`,
+            Fecha: new Date(),
           },
         },
       }
     );
-
-    res.status(200).json({desc: "El ticket se actualizo"})
-  } catch (error) {}
+    res.status(200).json({ desc: "El ticket se actualizó" });
+  } catch (error) {
+    console.log(error);
+  }
 };

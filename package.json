@@ -25,7 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.3.1",
     "morgan": "^1.10.0",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.1.7"
   },
   "bugs": {
     "url": "https://github.com/fergob/trackIt_backend/issues"
