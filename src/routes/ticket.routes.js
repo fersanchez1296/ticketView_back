@@ -36,7 +36,7 @@ router.put(
   reasignarTicket
 );
 router.get("/reasignar/areas", verifyToken, areasReasignacion);
-router.put("/resolver", verifyToken, checkResolutor, checkIfUserActive);
-router.get("/crear/getInfoSelects", getInfoSelects);
+router.put("/resolver", verifyToken, resolverTicket);
+router.get("/crear/getInfoSelects",verifyToken, verifyRole(["Root", "Administrador"]), getInfoSelects);
 
 export default router;
