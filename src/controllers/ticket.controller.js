@@ -428,8 +428,10 @@ export const getTicketsCerrados = async (req, res) => {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
     const tickets = await TICKETS.find({
-      Estado: estadoDoc._id,
-      Resuelto_por: Id,
+      $and: [
+        { $or: [{ Asignado_a: Id }, { Reasignado_a: Id }] },
+        { Estado: estadoDoc._id },
+      ],
     })
       .populate("Tipo_incidencia", "Tipo_de_incidencia -_id")
       .populate("Area_asignado", "Area _id")
@@ -527,44 +529,31 @@ export const getTicketsResueltos = async (req, res) => {
 };
 
 export const resolverTicket = async (req, res) => {
-  const { Id_ticket, Resuelto_por_id, Descripcion_resolucion } = req.body;
-  const { Rol } = req.session.user;
+  const { _id, descripcion_resolucion } = req.body;
+  const { Id, Rol, Nombre } = req.session.user;
+  let estado;
   try {
-    const estadoDoc = await ESTADOS.findOne({
-      Estado: Rol != "Usuario" ? "RESUELTO" : "REVISIÓN",
-    });
-    if (!estadoDoc) {
-      return res.status(404).json({ message: "Estado no encontrado" });
+    if (Rol != "Usuario") {
+      estado = await ESTADOS.find({ Estado: "REVISIÓN" });
+    } else {
+      estado = await ESTADOS.find({ Estado: "RESUELTO" });
     }
-
-    const user = await USUARIO.findOne({ _id: Resuelto_por_id });
-    const Nombre_resolutor = user.Nombre;
-    // const ticketActualizado = await TICKETS.updateOne(
-    //   { _id: Id_ticket },
-    //   {
-    //     $set: {
-    //       Estado: estadoDoc._id,
-    //       Asignado_a:
-    //         req.moderador && req.moderador !== false
-    //           ? req.moderador._id
-    //           : Asignado_a,
-    //       Asignado_final : Asignado_a,
-    //       Resuelto_por: Resuelto_por_id,
-    //       Fecha_hora_resolucion: new Date(),
-    //       Respuesta_cierre_reasignado: Descripcion_resolucion,
-    //     },
-    //     $push: {
-    //       Nombre,
-    //       Mensaje,
-    //       Fecha,
-    //     },
-    //   }
-    // );
-    res.json(ticketActualizado);
-  } catch (error) {
-    console.error("Error al obtener los tickets:", error);
-    res.status(500).json({ message: "Error al obtener los datos" });
-  }
+    const result = await TICKETS.updateOne(
+      { _id: id_ticket },
+      {
+        Estado: estado,
+        Resuelto_por: Id,
+        $push: {
+          Historia_ticket: {
+            Nombre: Id,
+            Mensaje: Rol === "Usuario" ? `El ticket ha sido enviado a revisión por ${Nombre} - ${Rol}.` : `El ticket ha sido resuelto por ${Nombre} - ${Rol}.`,
+            Fecha: new Date(),
+          },
+        },
+      }
+    );
+    res.status(200);
+  } catch (error) {}
 };
 
 export const areasReasignacion = async (req, res) => {
@@ -590,7 +579,7 @@ export const areasReasignacion = async (req, res) => {
     res.status(500).json({ message: "Error al obtener áreas y usuarios" });
   }
 };
-
+//TODO modificar el controlador, asignado_final ya no se usa
 export const reasignarTicket = async (req, res) => {
   const { id_usuario_reasignar, id_ticket } = req.body;
   const { Id, Nombre } = req.session.user;
@@ -619,7 +608,6 @@ export const reasignarTicket = async (req, res) => {
 
 export const getInfoSelects = async (req, res) => {
   try {
-    // Ejecutar ambas consultas en paralelo
     const [
       estados,
       tiposTickets,
@@ -644,7 +632,10 @@ export const getInfoSelects = async (req, res) => {
       AREA.find(),
       SECRETARIA.find(),
       DIRECCION_AREA.find(),
-      USUARIO.find({ isActive : {$ne : false}, Rol : "Moderador" }, {Nombre : 1, Correo : 1, Area : 1}),
+      USUARIO.find(
+        { isActive: { $ne: false }, Rol: "Moderador" },
+        { Nombre: 1, Correo: 1, Area: 1 }
+      ),
       DIRECCION_GENERAL.find(),
     ]);
 
@@ -660,7 +651,7 @@ export const getInfoSelects = async (req, res) => {
       secretarias,
       direccion_areas,
       direccion_generales,
-      usuarios
+      usuarios,
     });
   } catch (error) {
     console.error("Error fetching data:", error);
