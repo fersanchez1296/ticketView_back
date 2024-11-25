@@ -1,4 +1,17 @@
-import { TICKETS, ESTADOS, AREA, USUARIO } from "../models/index.js";
+import {
+  TICKETS,
+  ESTADOS,
+  AREA,
+  USUARIO,
+  TIPO_TICKET,
+  CATEGORIAS,
+  SERVICIOS,
+  SUBCATEGORIA,
+  PRIORIDADES,
+  SECRETARIA,
+  DIRECCION_AREA,
+  DIRECCION_GENERAL,
+} from "../models/index.js";
 import formateDate from "../functions/dateFormat.functions.js";
 
 export const getTickets = async (req, res) => {
@@ -526,27 +539,27 @@ export const resolverTicket = async (req, res) => {
 
     const user = await USUARIO.findOne({ _id: Resuelto_por_id });
     const Nombre_resolutor = user.Nombre;
-    const ticketActualizado = await TICKETS.updateOne(
-      { _id: Id_ticket },
-      {
-        $set: {
-          Estado: estadoDoc._id,
-          Asignado_a:
-            req.moderador && req.moderador !== false
-              ? req.moderador._id
-              : Asignado_a,
-          Asignado_final : Asignado_a,
-          Resuelto_por: Resuelto_por_id,
-          Fecha_hora_resolucion: new Date(),
-          Respuesta_cierre_reasignado: Descripcion_resolucion,
-        },
-        $push: {
-          Nombre,
-          Mensaje,
-          Fecha,
-        },
-      }
-    );
+    // const ticketActualizado = await TICKETS.updateOne(
+    //   { _id: Id_ticket },
+    //   {
+    //     $set: {
+    //       Estado: estadoDoc._id,
+    //       Asignado_a:
+    //         req.moderador && req.moderador !== false
+    //           ? req.moderador._id
+    //           : Asignado_a,
+    //       Asignado_final : Asignado_a,
+    //       Resuelto_por: Resuelto_por_id,
+    //       Fecha_hora_resolucion: new Date(),
+    //       Respuesta_cierre_reasignado: Descripcion_resolucion,
+    //     },
+    //     $push: {
+    //       Nombre,
+    //       Mensaje,
+    //       Fecha,
+    //     },
+    //   }
+    // );
     res.json(ticketActualizado);
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
@@ -601,5 +614,57 @@ export const reasignarTicket = async (req, res) => {
     res.status(200).json({ desc: "El ticket se actualizó" });
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const getInfoSelects = async (req, res) => {
+  try {
+    // Ejecutar ambas consultas en paralelo
+    const [
+      estados,
+      tiposTickets,
+      categorias,
+      servicios,
+      subcategoria,
+      prioridades,
+      areas,
+      secretarias,
+      direccion_areas,
+      usuarios,
+      direccion_generales,
+    ] = await Promise.all([
+      ESTADOS.find({
+        $or: [{ Estado: "NUEVO" }, { Estado: "PENDIENTE" }],
+      }),
+      TIPO_TICKET.find(),
+      CATEGORIAS.find(),
+      SERVICIOS.find(),
+      SUBCATEGORIA.find(),
+      PRIORIDADES.find(),
+      AREA.find(),
+      SECRETARIA.find(),
+      DIRECCION_AREA.find(),
+      USUARIO.find({ isActive : {$ne : false}, Rol : "Moderador" }, {Nombre : 1, Correo : 1, Area : 1}),
+      DIRECCION_GENERAL.find(),
+    ]);
+
+    // Preparar la respuesta
+    res.status(200).json({
+      estados,
+      tiposTickets,
+      categorias,
+      servicios,
+      subcategoria,
+      prioridades,
+      areas,
+      secretarias,
+      direccion_areas,
+      direccion_generales,
+      usuarios
+    });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    // Manejo de errores: responder con un mensaje de error
+    res.status(500).json({ error: "Error fetching data" });
   }
 };
