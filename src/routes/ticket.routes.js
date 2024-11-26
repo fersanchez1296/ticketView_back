@@ -12,7 +12,11 @@ import {
   getTicketsNuevos,
   areasReasignacion,
   reasignarTicket,
-  getInfoSelects
+  getInfoSelects,
+  cerrarTicket,
+  reabrirTicket,
+  aceptarResolucion,
+  rechazarResolucion,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -37,6 +41,35 @@ router.put(
 );
 router.get("/reasignar/areas", verifyToken, areasReasignacion);
 router.put("/resolver", verifyToken, resolverTicket);
-router.get("/crear/getInfoSelects",verifyToken, verifyRole(["Root", "Administrador"]), getInfoSelects);
+router.get(
+  "/crear/getInfoSelects",
+  verifyToken,
+  verifyRole(["Root", "Administrador"]),
+  getInfoSelects
+);
+router.put(
+  "/cerrar",
+  verifyToken,
+  verifyRole(["Root", "Administrador"]),
+  cerrarTicket
+);
+router.put(
+  "/reabrir",
+  verifyToken,
+  verifyRole(["Root", "Administrador"]),
+  reabrirTicket
+);
+router.put(
+  "/resolucion/aceptar",
+  verifyToken,
+  verifyRole(["Moderador"]),
+  aceptarResolucion
+);
+router.put(
+  "/resolucion/rechazar",
+  verifyToken,
+  verifyRole(["Moderador"]),
+  rechazarResolucion
+);
 
 export default router;
