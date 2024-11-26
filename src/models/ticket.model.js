@@ -110,7 +110,7 @@ const ticketModel = mongoose.Schema(
         ref: "USUARIOS"
       },
       "Area_reasignado_a": {
-        type: Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId || [],
         trim: true,
         ref: "AREA"
       },

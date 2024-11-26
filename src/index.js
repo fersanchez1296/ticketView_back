@@ -5,6 +5,7 @@ import ticketsRoute from "./routes/ticket.routes.js";
 import ticketsFilterRoute from "./routes/ticket.filters.route.js"
 import usuariosRoutes from "./routes/users.routes.js"
 import authRoutes from "./routes/auth.routes.js"
+import dashboard from "./routes/dashboard.routes.js"
 import cors from "cors";
 import "dotenv/config";
 import cookieParser from "cookie-parser";
@@ -29,6 +30,7 @@ app.use("/api", ticketsRoute);
 app.use("/api", ticketsFilterRoute);
 app.use("/api", usuariosRoutes);
 app.use("/api", authRoutes);
+app.use("/api", dashboard);
 
 
 connectDB() 
