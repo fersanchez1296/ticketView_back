@@ -368,15 +368,14 @@ export const getTicketsPendientes = async (req, res) => {
 };
 
 export const getTicketsRevision = async (req, res) => {
-  const { Id } = req.session.user;
+  const { Id, Area } = req.session.user;
   try {
     const estadoDoc = await ESTADOS.findOne({ Estado: "REVISIÓN" });
     if (!estadoDoc) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
     const tickets = await TICKETS.find({
-      Estado: estadoDoc._id,
-      Asignado_final: Id,
+      $and: [{ Estado: estadoDoc._id }, { Area_reasignado_a: { $in: Area } }],
     })
       .populate("Tipo_incidencia", "Tipo_de_incidencia -_id")
       .populate("Area_asignado", "Area _id")
@@ -534,26 +533,40 @@ export const resolverTicket = async (req, res) => {
   let estado;
   try {
     if (Rol != "Usuario") {
-      estado = await ESTADOS.find({ Estado: "REVISIÓN" });
+      [estado] = await ESTADOS.find({ Estado: "RESUELTO" });
     } else {
-      estado = await ESTADOS.find({ Estado: "RESUELTO" });
+      [estado] = await ESTADOS.find({ Estado: "REVISIÓN" });
     }
     const result = await TICKETS.updateOne(
-      { _id: id_ticket },
+      { _id },
       {
-        Estado: estado,
+        Estado: estado._id,
         Resuelto_por: Id,
+        Respuesta_cierre_reasignado: descripcion_resolucion,
         $push: {
           Historia_ticket: {
             Nombre: Id,
-            Mensaje: Rol === "Usuario" ? `El ticket ha sido enviado a revisión por ${Nombre} - ${Rol}.` : `El ticket ha sido resuelto por ${Nombre} - ${Rol}.`,
+            Mensaje:
+              Rol === "Usuario"
+                ? `El ticket ha sido enviado a revisión por ${Nombre} - ${Rol}.`
+                : `El ticket ha sido resuelto por ${Nombre} - ${Rol}.`,
             Fecha: new Date(),
           },
         },
       }
     );
-    res.status(200);
-  } catch (error) {}
+    if (result) {
+      return res
+        .status(200)
+        .json({ desc: "El estado del ticket ha sido modificado." });
+    } else {
+      return res
+        .status(500)
+        .json({ desc: "Error al acutualizar el estado del ticket." });
+    }
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const areasReasignacion = async (req, res) => {
@@ -579,29 +592,41 @@ export const areasReasignacion = async (req, res) => {
     res.status(500).json({ message: "Error al obtener áreas y usuarios" });
   }
 };
-//TODO modificar el controlador, asignado_final ya no se usa
+
 export const reasignarTicket = async (req, res) => {
   const { id_usuario_reasignar, id_ticket } = req.body;
-  const { Id, Nombre } = req.session.user;
+  const { Id, Nombre, Rol } = req.session.user;
   try {
     const user = await USUARIO.findOne({ _id: id_usuario_reasignar });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ desc: "El usuario no fue encontrado en la BD." });
+    }
     const Nombre_resolutor = user.Nombre;
     const result = await TICKETS.updateOne(
       { _id: id_ticket },
       {
+        Area_reasignado_a: user.Area,
         Reasignado_a: id_usuario_reasignar,
-        Asignado_final: id_usuario_reasignar,
         $push: {
           Historia_ticket: {
             Nombre: Id,
-            Mensaje: `El ticket ha sido reasignado a ${Nombre_resolutor} por ${Nombre}`,
+            Mensaje: `El ticket ha sido reasignado a ${Nombre_resolutor} por ${Nombre} - ${Rol}`,
             Fecha: new Date(),
           },
         },
       }
     );
-    res.status(200).json({ desc: "El ticket se actualizó" });
+    if (result) {
+      res.status(200).json({ desc: "El ticket fue reasignado correctamente." });
+    } else {
+      res
+        .status(500)
+        .json({ desc: "Ocurrio un error al reasignar el ticket." });
+    }
   } catch (error) {
+    res.status(500).json({ desc: "Error en el servidor" });
     console.log(error);
   }
 };
@@ -639,6 +664,18 @@ export const getInfoSelects = async (req, res) => {
       DIRECCION_GENERAL.find(),
     ]);
 
+    const areasResolutores = await Promise.all(
+      areas.map(async (area) => {
+        const resolutor = await USUARIO.find({ Area: area._id }).select(
+          "Nombre Correo"
+        );
+        return {
+          area: area.Area,
+          resolutores: resolutor,
+        };
+      })
+    );
+
     // Preparar la respuesta
     res.status(200).json({
       estados,
@@ -651,7 +688,7 @@ export const getInfoSelects = async (req, res) => {
       secretarias,
       direccion_areas,
       direccion_generales,
-      usuarios,
+      areasResolutores,
     });
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -659,3 +696,53 @@ export const getInfoSelects = async (req, res) => {
     res.status(500).json({ error: "Error fetching data" });
   }
 };
+
+export const cerrarTicket = async (req, res) => {
+  const { _id, Descripcion_cierre, Causa } = req.body;
+  const { Id, Nombre, Rol } = req.session.user;
+
+  try {
+    const result = await TICKETS.updateOne({
+      _id,
+      Cerrado_por: Id,
+      Descripcion_cierre,
+      Causa,
+      Fecha_hora_cierre: new Date(),
+      $push: {
+        Historia_ticket: {
+          Nombre: Id,
+          Mensaje: ~`El ticket fue cerrado por ${Nombre} - ${Rol}`,
+          Fecha: new Date(),
+        },
+      },
+    });
+    if (result) {
+      return res
+        .status(200)
+        .json({ desc: "Ticket cerrado de manera correcta." });
+    } else {
+      return res.status(500).json({ desc: "Error al cerrar el ticket." });
+    }
+  } catch (error) {
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+    console.log(error);
+  }
+};
+
+export const reabrirTicket = async (req, res) => {
+  "";
+};
+
+export const aceptarResolucion = async (req, res) => {
+  "";
+};
+
+export const rechazarResolucion = async (req, res) => {
+  "";
+};
+
+export const crearTicket = async (req, res) => {
+  "";
+};
+
+export const editarTicket = async (req, res) => {};
