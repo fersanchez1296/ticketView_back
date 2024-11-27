@@ -36,7 +36,7 @@ export const validateData = (schma) => {
       case "Reabrir":
         error = schemas.reabrirTicketSchema.validate(req.body);
         if (error) {
-          return res.status(400).json({ error: error.details[0].message });
+          return res.status(400).json({ error: error.error.details[0].message });
         }
         break;
       case "Reasignar":

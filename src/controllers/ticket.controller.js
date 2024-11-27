@@ -470,11 +470,13 @@ export const getTicketsCerrados = async (req, res) => {
         Fecha_limite_respuesta_SLA: formateDate(
           ticket.Fecha_limite_respuesta_SLA
         ),
-        Historia_ticket: ticket.Historia_ticket ? ticket.Historia_ticket.map((historia) => ({
-          Nombre: historia.Nombre,
-          Mensaje: historia.Mensaje,
-          Fecha: formateDate(historia.Fecha),
-        })) : [],
+        Historia_ticket: ticket.Historia_ticket
+          ? ticket.Historia_ticket.map((historia) => ({
+              Nombre: historia.Nombre,
+              Mensaje: historia.Mensaje,
+              Fecha: formateDate(historia.Fecha),
+            }))
+          : [],
       };
     });
     res.status(200).json(data);
@@ -754,8 +756,16 @@ export const cerrarTicket = async (req, res) => {
 
 //TODO falta evaular la gravedad del ticket (limite_tiempo_respuesta), evaluar si el ticket se reabre para la misma persona o alguien mas
 export const reabrirTicket = async (req, res) => {
-  const { _id, descripcion_reabirir, Descripcion_cierre, Descripcion } =
-    req.body;
+  const {
+    _id,
+    descripcion_reabirir,
+    Descripcion_cierre,
+    Descripcion,
+    Area_asignado,
+    Asignado_a,
+    Area_reasignado_a,
+    Reasignado_a,
+  } = req.body;
   const { Id, Rol, Nombre } = req.session.user;
   try {
     const [estado] = await ESTADOS.find({ Estado: "REABIERTO" });
@@ -766,6 +776,10 @@ export const reabrirTicket = async (req, res) => {
       { _id },
       {
         $set: {
+          Area_asignado,
+          Asignado_a,
+          Area_reasignado_a,
+          Reasignado_a,
           Estado: estado._id,
           Descripcion: descripcion_reabirir,
         },
@@ -874,7 +888,14 @@ export const rechazarResolucion = async (req, res) => {
 };
 
 export const crearTicket = async (req, res) => {
-  "";
+  const ticketNuevo = req.body;
+  const { Id, Rol } = req.session.user;
+  try {
+    const nuevoTicket = new TICKETS({...ticketNuevo});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ desc: "Error interno en el servidor" });
+  }
 };
 
 export const editarTicket = async (req, res) => {};

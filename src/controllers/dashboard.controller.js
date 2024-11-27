@@ -1,7 +1,7 @@
 import { TICKETS } from "../models/index.js";
 
 export const dashboard = async (req, res) => {
-  const { Id } = req.session.user;
+  const { Id, Area } = req.session.user;
   try {
     const [
       abiertos,
@@ -54,10 +54,8 @@ export const dashboard = async (req, res) => {
       }).countDocuments(),
       TICKETS.find({
         $and: [
-          {
-            $or: [{ Asignado_a: Id }, { Reasignado_a: Id }],
-          },
           { Estado: "672bc1010467f98349b61017" },
+          { Area_reasignado_a: { $in: Area } },
         ],
       }).countDocuments(),
       TICKETS.find({

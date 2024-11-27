@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-
+import autoIncrement from "mongoose-id-autoincrement";
 const HistoriaTicketSchema = new Schema({
   Nombre: { type: Schema.Types.ObjectId, ref: "USUARIOS", required: true },
   Mensaje: { type: String, required: true, trim: true },
@@ -158,5 +158,14 @@ const ticketModel = mongoose.Schema(
     timesStampes: true,
   }
 );
+
+autoIncrement.initialize(mongoose.connection)
+
+ticketModel.plugin(autoIncrement.plugin, {
+  model: "TICKETS",
+  field: "Id",
+  startAt: 1,
+  incrementBy: 1,
+});
 
 export default mongoose.model("TICKETS", ticketModel, "Tickets");
