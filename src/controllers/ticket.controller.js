@@ -747,8 +747,8 @@ export const cerrarTicket = async (req, res) => {
       return res.status(500).json({ desc: "Error al cerrar el ticket." });
     }
   } catch (error) {
-    return res.status(500).json({ desc: "Error interno en el servidor" });
     console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
 

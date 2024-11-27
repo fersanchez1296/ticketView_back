@@ -20,9 +20,7 @@ import {
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
-import { checkResolutor } from "../middleware/checkResolutor.middleware.js";
-import { checkIfUserActive } from "../middleware/checkIfUserActive.middleware.js";
-
+import { validateData } from "../middleware/validateData.middleware.js";
 const router = Router();
 
 router.get("/tickets", verifyToken, getTicketsAbiertos);
@@ -37,10 +35,11 @@ router.put(
   "/reasignar",
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),
+  validateData("Reasignar"),
   reasignarTicket
 );
 router.get("/reasignar/areas", verifyToken, areasReasignacion);
-router.put("/resolver", verifyToken, resolverTicket);
+router.put("/resolver", verifyToken, validateData("Resolver"), resolverTicket);
 router.get(
   "/crear/getInfoSelects",
   verifyToken,
@@ -51,24 +50,28 @@ router.put(
   "/cerrar",
   verifyToken,
   verifyRole(["Root", "Administrador"]),
+  validateData("Cerrar"),
   cerrarTicket
 );
 router.put(
   "/reabrir",
   verifyToken,
   verifyRole(["Root", "Administrador"]),
+  validateData("Reabrir"),
   reabrirTicket
 );
 router.put(
   "/resolucion/aceptar",
   verifyToken,
   verifyRole(["Moderador"]),
+  validateData("Aceptar"),
   aceptarResolucion
 );
 router.put(
   "/resolucion/rechazar",
   verifyToken,
   verifyRole(["Moderador"]),
+  validateData("Rechazar"),
   rechazarResolucion
 );
 
