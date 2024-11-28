@@ -17,6 +17,8 @@ import {
   reabrirTicket,
   aceptarResolucion,
   rechazarResolucion,
+  historico,
+  historicoAreas,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -74,5 +76,7 @@ router.put(
   validateData("Rechazar"),
   rechazarResolucion
 );
+router.get("/historico", verifyToken, verifyRole(["Root"]), historico);
+router.get("/historico/area", verifyToken, verifyRole(["Root"]), historicoAreas);
 
 export default router;

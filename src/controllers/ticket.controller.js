@@ -216,8 +216,8 @@ export const getTicketsEnCurso = async (req, res) => {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
     const tickets = await TICKETS.find({
+      $or: [{ Asignado_a: Id }, { Reasignado_a: Id }],
       Estado: estadoDoc._id,
-      Asignado_final: Id,
     })
       .populate("Tipo_incidencia", "Tipo_de_incidencia -_id")
       .populate("Area_asignado", "Area _id")
@@ -891,7 +891,7 @@ export const crearTicket = async (req, res) => {
   const ticketNuevo = req.body;
   const { Id, Rol } = req.session.user;
   try {
-    const nuevoTicket = new TICKETS({...ticketNuevo});
+    const nuevoTicket = new TICKETS({ ...ticketNuevo });
   } catch (error) {
     console.log(error);
     res.status(500).json({ desc: "Error interno en el servidor" });
@@ -899,3 +899,51 @@ export const crearTicket = async (req, res) => {
 };
 
 export const editarTicket = async (req, res) => {};
+
+export const historico = async (req, res) => {
+  try {
+    const areas = await AREA.find();
+    if (!areas) {
+      return res.status(400).json({ desc: "No se encontraron areas" });
+    }
+    return res.status(200).json({ areas, tickets: [] });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};
+
+export const historicoAreas = async (req, res) => {
+  const { area } = req.query;
+  try {
+    const tickets = await TICKETS.find({
+      $or: [{ Area_Asignado: area }, { Area_reasignado_a: area }],
+    })
+      .populate("Tipo_incidencia", "Tipo_de_incidencia -_id")
+      .populate("Area_asignado", "Area _id")
+      .populate("Categoria", "Categoria -_id")
+      .populate("Servicio", "Servicio -_id")
+      .populate("Subcategoria", "Subcategoria -_id")
+      .populate("Secretaria", "Secretaria -_id")
+      .populate("Direccion_general", "Direccion_General -_id")
+      .populate("Direccion_area", "direccion_area -_id")
+      .populate("Prioridad", "Prioridad Descripcion -_id")
+      .populate("Estado")
+      .populate("Asignado_a", "Nombre Coordinacion")
+      .populate("Reasignado_a", "Nombre Coordinacion")
+      .populate("Resuelto_por", "Nombre Coordinacion")
+      .populate("Creado_por", "Nombre -_id")
+      .populate("Area_reasignado_a", "Area -_id")
+      .populate("Cerrado_por", "Nombre Coordinacion -_id")
+      .populate("Asignado_final", "Nombre Coordinacion");
+    if (!tickets) {
+      return res
+        .status(404)
+        .json({ desc: "No se encontraron tickets para esta area" });
+    }
+    return res.status(200).json(tickets);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};

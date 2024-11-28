@@ -11,6 +11,13 @@ export const dashboard = async (req, res) => {
       nuevos,
       revision,
       resueltos,
+      totalAbiertos,
+      totalReabiertos,
+      totalCerrados,
+      totalPendientes,
+      totalNuevos,
+      totalRevision,
+      totalResueltos,
     ] = await Promise.all([
       TICKETS.find({
         $and: [
@@ -61,6 +68,30 @@ export const dashboard = async (req, res) => {
       TICKETS.find({
         $and: [{ Resuelto_por: Id }, { Estado: "67200415ab8f070f7ce3538d" }],
       }).countDocuments(),
+      //tickets totales
+      TICKETS.find({
+        Estado: "67200415ab8f070f7ce35389",
+      }).countDocuments(),
+      TICKETS.find({
+        Estado: "67200415ab8f070f7ce3538c",
+      }).countDocuments(),
+      TICKETS.find({
+        Estado: "67200415ab8f070f7ce35388",
+      }).countDocuments(),
+      TICKETS.find({
+        Estado: "67200415ab8f070f7ce3538b",
+      }).countDocuments(),
+      TICKETS.find({
+        Estado: "67200415ab8f070f7ce3538a",
+      }).countDocuments(),
+      TICKETS.find({
+        Estado: "672bc1010467f98349b61017",
+      }).countDocuments(),
+      TICKETS.find({
+        Estado: "67200415ab8f070f7ce3538d",
+      }).countDocuments(),
+      //tickets por coordinacion
+      
     ]);
     res.json({
       abiertos,
@@ -70,6 +101,13 @@ export const dashboard = async (req, res) => {
       nuevos,
       revision,
       resueltos,
+      totalAbiertos,
+      totalReabiertos,
+      totalCerrados,
+      totalPendientes,
+      totalNuevos,
+      totalRevision,
+      totalResueltos,
     });
   } catch (error) {}
 };
