@@ -131,7 +131,7 @@ const ticketModel = mongoose.Schema(
       trim: true,
       ref: "USUARIOS",
     },
-    Asignado_final: {
+    Asignado_final_a: {
       type: Schema.Types.ObjectId,
       trim: true,
       ref: "USUARIOS",
@@ -159,7 +159,7 @@ const ticketModel = mongoose.Schema(
   }
 );
 
-autoIncrement.initialize(mongoose.connection)
+autoIncrement.initialize(mongoose.connection);
 
 ticketModel.plugin(autoIncrement.plugin, {
   model: "TICKETS",

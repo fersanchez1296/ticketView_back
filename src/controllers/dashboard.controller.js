@@ -38,7 +38,13 @@ export const dashboard = async (req, res) => {
       TICKETS.find({
         $and: [
           {
-            $or: [{ Asignado_a: Id }, { Reasignado_a: Id }],
+            $or: [
+              { Asignado_a: Id },
+              { Reasignado_a: Id },
+              { Resuelto_por: Id },
+              { Cerrado_por: Id },
+              { Creado_por: Id },
+            ],
           },
           { Estado: "67200415ab8f070f7ce35388" },
         ],
@@ -91,7 +97,6 @@ export const dashboard = async (req, res) => {
         Estado: "67200415ab8f070f7ce3538d",
       }).countDocuments(),
       //tickets por coordinacion
-      
     ]);
     res.json({
       abiertos,
