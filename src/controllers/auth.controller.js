@@ -23,7 +23,10 @@ export const login = async (req, res) => {
       Rol: result.Rol,
       Area: result.Area,
     };
+<<<<<<< HEAD
     console.log(userData)
+=======
+>>>>>>> 2ef7b9d0d5a3cc03374c6dd73f6470f7602ba3a1
     const token = generateToken(userData);
     return res
       .cookie("access_token", token, {
@@ -31,7 +34,16 @@ export const login = async (req, res) => {
         maxAge: 1000 * 60 * 60,
       })
       .status(200)
+<<<<<<< HEAD
       .json({ status: 200, desc: "Cookie Establecida", Rol: result.Rol });
+=======
+      .json({
+        status: 200,
+        desc: "Cookie Establecida",
+        Rol: result.Rol,
+        Nombre: result.Nombre,
+      });
+>>>>>>> 2ef7b9d0d5a3cc03374c6dd73f6470f7602ba3a1
   } catch (error) {
     console.log(error);
     res.status(401).send(error.error);

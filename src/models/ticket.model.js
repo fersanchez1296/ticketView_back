@@ -1,5 +1,9 @@
 import mongoose, { Schema } from "mongoose";
+<<<<<<< HEAD
 
+=======
+import autoIncrement from "mongoose-id-autoincrement";
+>>>>>>> 2ef7b9d0d5a3cc03374c6dd73f6470f7602ba3a1
 const HistoriaTicketSchema = new Schema({
   Nombre: { type: Schema.Types.ObjectId, ref: "USUARIOS", required: true },
   Mensaje: { type: String, required: true, trim: true },
@@ -131,7 +135,11 @@ const ticketModel = mongoose.Schema(
       trim: true,
       ref: "USUARIOS",
     },
+<<<<<<< HEAD
     Asignado_final: {
+=======
+    Asignado_final_a: {
+>>>>>>> 2ef7b9d0d5a3cc03374c6dd73f6470f7602ba3a1
       type: Schema.Types.ObjectId,
       trim: true,
       ref: "USUARIOS",
@@ -159,4 +167,16 @@ const ticketModel = mongoose.Schema(
   }
 );
 
+<<<<<<< HEAD
+=======
+autoIncrement.initialize(mongoose.connection);
+
+ticketModel.plugin(autoIncrement.plugin, {
+  model: "TICKETS",
+  field: "Id",
+  startAt: 1,
+  incrementBy: 1,
+});
+
+>>>>>>> 2ef7b9d0d5a3cc03374c6dd73f6470f7602ba3a1
 export default mongoose.model("TICKETS", ticketModel, "Tickets");
