@@ -857,7 +857,7 @@ export const getTicketsResueltos = async (req, res) => {
 };
 
 export const resolverTicket = async (req, res) => {
-  const { _id, descripcion_resolucion } = req.body;
+  const { _id, Descripcion_resolucion } = req.body;
   const { Id, Rol, Nombre } = req.session.user;
   let estado;
   try {
@@ -872,15 +872,15 @@ export const resolverTicket = async (req, res) => {
         $set: {
           Estado: estado._id,
           Resuelto_por: Id,
-          Respuesta_cierre_reasignado: descripcion_resolucion,
+          Respuesta_cierre_reasignado: Descripcion_resolucion,
         },
         $push: {
           Historia_ticket: {
             Nombre: Id,
             Mensaje:
               Rol === "Usuario"
-                ? `El ticket ha sido enviado a revisión por ${Nombre} - ${Rol}. En espera de respuesta del moderador.`
-                : `El ticket ha sido resuelto por ${Nombre} - ${Rol}.`,
+                ? `El ticket ha sido enviado a revisión por ${Nombre}(${Rol}). En espera de respuesta del moderador.`
+                : `El ticket ha sido resuelto por ${Nombre}(${Rol}).`,
             Fecha: new Date(),
           },
         },
@@ -1233,34 +1233,78 @@ export const historico = async (req, res) => {
 export const historicoAreas = async (req, res) => {
   const { area } = req.query;
   try {
-    const tickets = await TICKETS.find({
-      $or: [{ Area_Asignado: area }, { Area_reasignado_a: area }],
-    })
-      .populate("Tipo_incidencia", "Tipo_de_incidencia -_id")
-      .populate("Area_asignado", "Area _id")
-      .populate("Categoria", "Categoria -_id")
-      .populate("Servicio", "Servicio -_id")
-      .populate("Subcategoria", "Subcategoria -_id")
-      .populate("Secretaria", "Secretaria -_id")
-      .populate("Direccion_general", "Direccion_General -_id")
-      .populate("Direccion_area", "direccion_area -_id")
-      .populate("Prioridad", "Prioridad Descripcion -_id")
-      .populate("Estado")
-      .populate("Asignado_a", "Nombre Coordinacion")
-      .populate("Reasignado_a", "Nombre Coordinacion")
-      .populate("Resuelto_por", "Nombre Coordinacion")
-      .populate("Creado_por", "Nombre -_id")
-      .populate("Area_reasignado_a", "Area -_id")
-      .populate("Cerrado_por", "Nombre Coordinacion -_id")
-      .populate("Asignado_final", "Nombre Coordinacion");
-    if (!tickets) {
-      return res
-        .status(404)
-        .json({ desc: "No se encontraron tickets para esta area" });
-    }
-    return res.status(200).json(tickets);
+    const resultado = await TICKETS.aggregate([
+      {
+        $match: {
+          $or: [
+            { Area_asignado: new ObjectId(area) },
+            { Area_reasignado_a: new ObjectId(area) },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          Asignado_final_a: {
+            $cond: [
+              {
+                $eq: ["$Asignado_a", new ObjectId(area)],
+              },
+              "$Asignado_a",
+              "$Reasignado_a",
+            ],
+          },
+        },
+      },
+    ]);
+    const ticketsConPopulate = await TICKETS.populate(resultado, [
+      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
+      { path: "Area_asignado", select: "Area _id" },
+      { path: "Categoria", select: "Categoria -_id" },
+      { path: "Servicio", select: "Servicio -_id" },
+      { path: "Subcategoria", select: "Subcategoria -_id" },
+      { path: "Secretaria", select: "Secretaria -_id" },
+      { path: "Direccion_general", select: "Direccion_General -_id" },
+      { path: "Direccion_area", select: "direccion_area -_id" },
+      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
+      { path: "Estado" },
+      { path: "Asignado_a", select: "Nombre Coordinacion" },
+      { path: "Reasignado_a", select: "Nombre Coordinacion" },
+      { path: "Resuelto_por", select: "Nombre Coordinacion" },
+      { path: "Creado_por", select: "Nombre -_id" },
+      { path: "Area_reasignado_a", select: "Area -_id" },
+      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
+      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
+      {
+        path: "Historia_ticket",
+        populate: { path: "Nombre", select: "Nombre -_id" },
+      },
+    ]);
+    const data = ticketsConPopulate.map((ticket) => {
+      return {
+        ...ticket,
+        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
+        Fecha_limite_resolucion_SLA: formateDate(
+          ticket.Fecha_limite_resolucion_SLA
+        ),
+        Fecha_hora_ultima_modificacion: formateDate(
+          ticket.Fecha_hora_ultima_modificacion
+        ),
+        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
+        Fecha_limite_respuesta_SLA: formateDate(
+          ticket.Fecha_limite_respuesta_SLA
+        ),
+        Historia_ticket: ticket.Historia_ticket
+          ? ticket.Historia_ticket.map((historia) => ({
+              Nombre: historia.Nombre,
+              Mensaje: historia.Mensaje,
+              Fecha: formateDate(historia.Fecha),
+            }))
+          : [],
+      };
+    });
+    res.status(200).json(data);
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ desc: "Error interno en el servidor" });
+    console.error("Error al obtener los tickets:", error);
+    res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
