@@ -19,6 +19,7 @@ import {
   rechazarResolucion,
   historico,
   historicoAreas,
+  coordinacion,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -77,6 +78,17 @@ router.put(
   rechazarResolucion
 );
 router.get("/historico", verifyToken, verifyRole(["Root"]), historico);
-router.get("/historico/area", verifyToken, verifyRole(["Root"]), historicoAreas);
+router.get(
+  "/historico/area",
+  verifyToken,
+  verifyRole(["Root", "Moderador"]),
+  historicoAreas
+);
+router.get(
+  "/coordinacion",
+  verifyToken,
+  verifyRole(["Moderador"]),
+  coordinacion
+);
 
 export default router;

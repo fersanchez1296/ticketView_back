@@ -1216,7 +1216,7 @@ export const crearTicket = async (req, res) => {
 };
 
 export const editarTicket = async (req, res) => {};
-
+//TODO cambiar nombre
 export const historico = async (req, res) => {
   try {
     const areas = await AREA.find();
@@ -1229,8 +1229,104 @@ export const historico = async (req, res) => {
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
-
+//TODO cambiar nombre
 export const historicoAreas = async (req, res) => {
+  const { area } = req.query;
+  try {
+    const resultado = await TICKETS.aggregate([
+      {
+        $match: {
+          $or: [
+            { Area_asignado: new ObjectId(area) },
+            { Area_reasignado_a: new ObjectId(area) },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          Asignado_final_a: {
+            $cond: [
+              {
+                $eq: ["$Asignado_a", new ObjectId(area)],
+              },
+              "$Asignado_a",
+              "$Reasignado_a",
+            ],
+          },
+        },
+      },
+    ]);
+    const ticketsConPopulate = await TICKETS.populate(resultado, [
+      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
+      { path: "Area_asignado", select: "Area _id" },
+      { path: "Categoria", select: "Categoria -_id" },
+      { path: "Servicio", select: "Servicio -_id" },
+      { path: "Subcategoria", select: "Subcategoria -_id" },
+      { path: "Secretaria", select: "Secretaria -_id" },
+      { path: "Direccion_general", select: "Direccion_General -_id" },
+      { path: "Direccion_area", select: "direccion_area -_id" },
+      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
+      { path: "Estado" },
+      { path: "Asignado_a", select: "Nombre Coordinacion" },
+      { path: "Reasignado_a", select: "Nombre Coordinacion" },
+      { path: "Resuelto_por", select: "Nombre Coordinacion" },
+      { path: "Creado_por", select: "Nombre -_id" },
+      { path: "Area_reasignado_a", select: "Area -_id" },
+      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
+      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
+      {
+        path: "Historia_ticket",
+        populate: { path: "Nombre", select: "Nombre -_id" },
+      },
+    ]);
+    const data = ticketsConPopulate.map((ticket) => {
+      return {
+        ...ticket,
+        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
+        Fecha_limite_resolucion_SLA: formateDate(
+          ticket.Fecha_limite_resolucion_SLA
+        ),
+        Fecha_hora_ultima_modificacion: formateDate(
+          ticket.Fecha_hora_ultima_modificacion
+        ),
+        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
+        Fecha_limite_respuesta_SLA: formateDate(
+          ticket.Fecha_limite_respuesta_SLA
+        ),
+        Historia_ticket: ticket.Historia_ticket
+          ? ticket.Historia_ticket.map((historia) => ({
+              Nombre: historia.Nombre,
+              Mensaje: historia.Mensaje,
+              Fecha: formateDate(historia.Fecha),
+            }))
+          : [],
+      };
+    });
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error al obtener los tickets:", error);
+    res.status(500).json({ message: "Error al obtener los datos" });
+  }
+};
+
+export const coordinacion = async (req, res) => {
+  const { Id } = req.session.user;
+  try {
+    const [areas] = await USUARIO.find({ _id: Id });
+    if(!areas){
+      return res.status(404).json({desc : "No se encontraron areas"})
+    }
+    const populate = await AREA.populate(areas, [
+      { path: "Area", select: "Area" },
+    ]);
+    return res.status(200).json({ areas : populate.Area, tickets: [] });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};
+
+export const coordinacionAreas = async (req, res) => {
   const { area } = req.query;
   try {
     const resultado = await TICKETS.aggregate([
