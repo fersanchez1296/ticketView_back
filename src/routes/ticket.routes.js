@@ -42,7 +42,7 @@ router.put(
   reasignarTicket
 );
 router.get("/reasignar/areas", verifyToken, areasReasignacion);
-router.put("/resolver", verifyToken, validateData("Resolver"), resolverTicket);
+router.put("/resolver", verifyToken, validateData("resolverTicket"), resolverTicket);
 router.get(
   "/crear/getInfoSelects",
   verifyToken,
@@ -64,14 +64,14 @@ router.put(
   reabrirTicket
 );
 router.put(
-  "/resolucion/aceptar",
+  "/resolver/aceptar",
   verifyToken,
   verifyRole(["Moderador"]),
   validateData("Aceptar"),
   aceptarResolucion
 );
 router.put(
-  "/resolucion/rechazar",
+  "/reosolver/rechazar",
   verifyToken,
   verifyRole(["Moderador"]),
   validateData("Rechazar"),
