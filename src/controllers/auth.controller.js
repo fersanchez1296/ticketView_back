@@ -24,7 +24,6 @@ export const login = async (req, res) => {
       Rol: result.Rol,
       Area: result.Area,
     };
-    console.log(userData)
     const token = generateToken(userData);
     return res
       .cookie("access_token", token, {
@@ -32,7 +31,12 @@ export const login = async (req, res) => {
         maxAge: 1000 * 60 * 60,
       })
       .status(200)
-      .json({ status: 200, desc: "Cookie Establecida", Rol: result.Rol });
+      .json({
+        status: 200,
+        desc: "Cookie Establecida",
+        Rol: result.Rol,
+        Nombre: result.Nombre,
+      });
   } catch (error) {
     console.log(error);
     res.status(401).send(error.error);
