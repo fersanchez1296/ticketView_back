@@ -924,7 +924,7 @@ export const areasReasignacion = async (req, res) => {
   }
 };
 
-export const reasignarTicket = async (req, res) => {
+export const reasignarTicket = async (req, res, next) => {
   const { id_usuario_reasignar, id_ticket } = req.body;
   const { Id, Nombre, Rol } = req.session.user;
   try {
@@ -953,6 +953,7 @@ export const reasignarTicket = async (req, res) => {
     );
     if (result) {
       res.status(200).json({ desc: "El ticket fue reasignado correctamente." });
+      next()
     } else {
       res
         .status(500)
