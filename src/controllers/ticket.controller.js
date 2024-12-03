@@ -880,6 +880,11 @@ export const resolverTicket = async (req, res) => {
     } else {
       [estado] = await ESTADOS.find({ Estado: "REVISIÓN" });
     }
+    if (!estado) {
+      return res
+        .status(404)
+        .json({ desc: "No se encontro el estado del ticket" });
+    }
     const result = await TICKETS.updateOne(
       { _id },
       {
@@ -893,7 +898,7 @@ export const resolverTicket = async (req, res) => {
             Nombre: Id,
             Mensaje:
               Rol === "Usuario"
-                ? `El ticket ha sido enviado a revisión por ${Nombre}(${Rol}). En espera de respuesta del moderador.`
+                ? `El ticket ha sido enviado a revisión por ${Nombre}(${Rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${Descripcion_resolucion}`
                 : `El ticket ha sido resuelto por ${Nombre}(${Rol}).`,
             Fecha: new Date(),
           },
@@ -903,7 +908,7 @@ export const resolverTicket = async (req, res) => {
     if (result) {
       return res
         .status(200)
-        .json({ desc: "El estado del ticket ha sido modificado." });
+        .json({ desc: "El estado del ticket ha sido modificado exitosamente." });
     } else {
       return res
         .status(500)
@@ -1161,7 +1166,7 @@ export const aceptarResolucion = async (req, res) => {
         $push: {
           Historia_ticket: {
             Nombre: Id,
-            Mensaje: `${Nombre} - ${Rol} ha aceptado la solucion del Resolutor. El estado del ticket es cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
+            Mensaje: `${Nombre}(${Rol}) ha aceptado la solucion del Resolutor. El estado del ticket es cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
             Fecha: new Date(),
           },
         },
@@ -1170,7 +1175,7 @@ export const aceptarResolucion = async (req, res) => {
     if (result) {
       return res
         .status(200)
-        .json({ desc: "El estado del ticket fue cambiado a Resuelto" });
+        .json({ desc: "El estado del ticket fue cambiado a Resuelto." });
     } else {
       return res.status(500).json({ desc: "Error al procesar la solicitud." });
     }
@@ -1193,13 +1198,15 @@ export const rechazarResolucion = async (req, res) => {
       {
         $set: {
           Estado: estado._id,
-          Resuelto_por: null,
-          Respuesta_cierre_reasignado: null,
+        },
+        $unset: {
+          Resuelto_por: "",
+          Respuesta_cierre_reasignado: "",
         },
         $push: {
           Historia_ticket: {
             Nombre: Id,
-            Mensaje: `${Nombre} - ${Rol} ha rechazado la solucion del Resolutor. El estado del ticket es cambiado a "Abierto". \nMotivo:\n${motivo_rechazo}`,
+            Mensaje: `${Nombre}(${Rol}) ha rechazado la solucion del Resolutor. El estado del ticket es cambiado a "Abierto". \nMotivo:\n${motivo_rechazo}`,
             Fecha: new Date(),
           },
         },
@@ -1208,9 +1215,9 @@ export const rechazarResolucion = async (req, res) => {
     if (result) {
       return res
         .status(200)
-        .json({ desc: "El estado del ticket fue cambiado a Abierto" });
+        .json({ desc: "Se cambio el estado del ticket a \"Abierto\" y fue enviado al Resolutor." });
     } else {
-      return res.status(500).json({ desc: "Error al procesar la solicitud." });
+      return res.status(500).json({ desc: "Error al cambiar el estado del ticket." });
     }
   } catch (error) {
     console.log(error);
