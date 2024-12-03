@@ -906,9 +906,9 @@ export const resolverTicket = async (req, res) => {
       }
     );
     if (result) {
-      return res
-        .status(200)
-        .json({ desc: "El estado del ticket ha sido modificado exitosamente." });
+      return res.status(200).json({
+        desc: "El estado del ticket ha sido modificado exitosamente.",
+      });
     } else {
       return res
         .status(500)
@@ -1090,46 +1090,84 @@ export const cerrarTicket = async (req, res) => {
   }
 };
 
-//TODO falta evaular la gravedad del ticket (limite_tiempo_respuesta), evaluar si el ticket se reabre para la misma persona o alguien mas
+//TODO falta evaular la gravedad del ticket (limite_tiempo_respuesta)
 export const reabrirTicket = async (req, res) => {
-  const {
-    _id,
-    descripcion_reabirir,
-    Descripcion_cierre,
-    Descripcion,
-    Area_asignado,
-    Asignado_a,
-    // Area_reasignado_a,
-    // Reasignado_a,
-  } = req.body;
+  const { _id, descripcion_reabrir, Area_asignado, Asignado_a } = req.body;
   const { Id, Rol, Nombre } = req.session.user;
+
   try {
-    const [estado] = await ESTADOS.find({ Estado: "REABIERTO" });
-    if (!estado) {
-      return res.status(404).json({ desc: "No se encontro el estado" });
+    // Obtener el ticket anterior
+    const [ticketAnterior] = await TICKETS.find({ _id });
+    if (!ticketAnterior) {
+      return res.status(404).json({ desc: "No se encontró el ticket" });
     }
+
+    // Extraer datos del ticket anterior
+    const {
+      Estado: Estado_anterior,
+      Area_asignado: Area_asignado_anterior,
+      Asignado_a: Asignado_a_anterior,
+      Area_reasignado_a: Area_reasignado_a_anterior,
+      Reasignado_a: Reasignado_a_anterior,
+      Descripcion: Descripcion_anterior,
+      Causa: Causa_anterior,
+      Prioridad: Prioridad_anterior,
+      Fecha_hora_cierre: Fecha_hora_cierre_anterior,
+      Respuesta_cierre_reasignado: Respuesta_cierre_reasignado_anterior,
+      Resuelto_por: Resuelto_por_anterior,
+    } = ticketAnterior;
+
+    // Obtener estado "REABIERTO"
+    const estado = await ESTADOS.findOne({ Estado: "REABIERTO" });
+    if (!estado) {
+      return res
+        .status(404)
+        .json({ desc: "No se encontró el estado REABIERTO" });
+    }
+
+    // Actualizar ticket
     const result = await TICKETS.updateOne(
       { _id },
       {
         $set: {
           Area_asignado,
           Asignado_a,
-          Area_reasignado_a,
-          Reasignado_a,
           Estado: estado._id,
-          Descripcion: descripcion_reabirir,
+          Descripcion: descripcion_reabrir,
+        },
+        $unset: {
+          Area_reasignado_a: "",
+          Reasignado_a: "",
+          Causa: "",
+          Prioridad: "",
+          Fecha_limite_respuesta_SLA: "",
+          Fecha_limite_resolucion_SLA: "",
+          Fecha_hora_cierre: "",
+          Respuesta_cierre_reasignado: "",
+          Resuelto_por: "",
         },
         $push: {
           Historia_ticket: {
             $each: [
               {
                 Nombre: Id,
-                Mensaje: `El ticket fue Reabierto por ${Nombre} - ${Rol}`,
+                Mensaje: `El ticket fue reabierto por ${Nombre} - ${Rol}`,
                 Fecha: new Date(),
               },
               {
                 Nombre: Id,
-                Mensaje: `Descripcion anterior : ${Descripcion} \nDescripcion de cierre anterior : ${Descripcion_cierre}`,
+                Mensaje: `Descripción anterior:
+                Estado anterior: ${Estado_anterior},
+                Área asignada anterior: ${Area_asignado_anterior},
+                Asignado anterior: ${Asignado_a_anterior},
+                Área reasignada anterior: ${Area_reasignado_a_anterior},
+                Reasignado anterior: ${Reasignado_a_anterior},
+                Descripción anterior: ${Descripcion_anterior},
+                Causa anterior: ${Causa_anterior},
+                Prioridad anterior: ${Prioridad_anterior},
+                Fecha de cierre anterior: ${Fecha_hora_cierre_anterior},
+                Respuesta cierre reasignado anterior: ${Respuesta_cierre_reasignado_anterior},
+                Resuelto por anterior: ${Resuelto_por_anterior}`,
                 Fecha: new Date(),
               },
             ],
@@ -1138,15 +1176,15 @@ export const reabrirTicket = async (req, res) => {
       }
     );
 
-    if (result) {
+    if (result.modifiedCount > 0) {
       return res.status(200).json({ desc: "El ticket fue reabierto" });
     } else {
       return res
         .status(500)
-        .json({ desc: "Ocurrio un error al rintentar reabrir el ticket" });
+        .json({ desc: "Ocurrió un error al intentar reabrir el ticket" });
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
@@ -1213,11 +1251,13 @@ export const rechazarResolucion = async (req, res) => {
       }
     );
     if (result) {
-      return res
-        .status(200)
-        .json({ desc: "Se cambio el estado del ticket a \"Abierto\" y fue enviado al Resolutor." });
+      return res.status(200).json({
+        desc: 'Se cambio el estado del ticket a "Abierto" y fue enviado al Resolutor.',
+      });
     } else {
-      return res.status(500).json({ desc: "Error al cambiar el estado del ticket." });
+      return res
+        .status(500)
+        .json({ desc: "Error al cambiar el estado del ticket." });
     }
   } catch (error) {
     console.log(error);
