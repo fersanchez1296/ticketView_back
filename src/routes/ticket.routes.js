@@ -20,6 +20,7 @@ import {
   historico,
   historicoAreas,
   coordinacion,
+  crearTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -40,10 +41,15 @@ router.put(
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),
   validateData("Reasignar"),
-  reasignarTicket,correo_reasignarTicket,
+  reasignarTicket,
 );
 router.get("/reasignar/areas", verifyToken, areasReasignacion);
-router.put("/resolver", verifyToken, validateData("Resolver"), resolverTicket);
+router.put(
+  "/resolver",
+  verifyToken,
+  validateData("resolverTicket"),
+  resolverTicket
+);
 router.get(
   "/crear/getInfoSelects",
   verifyToken,
@@ -65,19 +71,20 @@ router.put(
   reabrirTicket
 );
 router.put(
-  "/resolucion/aceptar",
+  "/resolver/aceptar",
   verifyToken,
   verifyRole(["Moderador"]),
   validateData("Aceptar"),
   aceptarResolucion
 );
 router.put(
-  "/resolucion/rechazar",
+  "/resolver/rechazar",
   verifyToken,
   verifyRole(["Moderador"]),
-  validateData("Rechazar"),
+  validateData("rechazarResolucion"),
   rechazarResolucion
 );
+
 router.get("/historico", verifyToken, verifyRole(["Root"]), historico);
 router.get(
   "/historico/area",
