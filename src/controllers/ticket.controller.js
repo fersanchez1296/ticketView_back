@@ -889,7 +889,7 @@ export const resolverTicket = async (req, res) => {
     if (result) {
       return res
         .status(200)
-        .json({ desc: "El estado del ticket ha sido modificado." });
+        .json({ desc: "El estado del ticket ha sido modificado exitosamente." });
     } else {
       return res
         .status(500)
@@ -935,7 +935,7 @@ export const reasignarTicket = async (req, res, next) => {
         .json({ desc: "El usuario no fue encontrado en la BD." });
     }
     const Nombre_resolutor = user.Nombre;
-    const result = await TICKETS.updateOne(
+    const result = await TICKETS.findOneAndUpdate(
       { _id: id_ticket },
       {
         $set: {
@@ -949,15 +949,17 @@ export const reasignarTicket = async (req, res, next) => {
             Fecha: new Date(),
           },
         },
-      }
+      },
+      { returnDocument: 'after', new: true }
     );
     if (result) {
-      next()
+      res.status(200).json({ desc: "El ticket fue reasignado correctamente." });
     } else {
       res
         .status(500)
         .json({ desc: "Ocurrio un error al reasignar el ticket." });
     }
+    next()
   } catch (error) {
     res.status(500).json({ desc: "Error en el servidor" });
     console.log(error);
@@ -1071,63 +1073,90 @@ export const cerrarTicket = async (req, res) => {
   }
 };
 
-//TODO falta evaular la gravedad del ticket (limite_tiempo_respuesta), evaluar si el ticket se reabre para la misma persona o alguien mas
+//TODO falta evaular la gravedad del ticket (limite_tiempo_respuesta)
 export const reabrirTicket = async (req, res) => {
-  const {
-    _id,
-    descripcion_reabirir,
-    Descripcion_cierre,
-    Descripcion,
-    Area_asignado,
-    Asignado_a,
-    // Area_reasignado_a,
-    // Reasignado_a,
-  } = req.body;
+  const { _id, descripcion_reabrir, Area_asignado, Asignado_a } = req.body;
   const { Id, Rol, Nombre } = req.session.user;
+
   try {
-    const [estado] = await ESTADOS.find({ Estado: "REABIERTO" });
-    if (!estado) {
-      return res.status(404).json({ desc: "No se encontro el estado" });
+    const [ticketAnterior] = await TICKETS.find({ _id });
+    if (!ticketAnterior) {
+      return res.status(404).json({ desc: "No se encontró el ticket" });
     }
+
+    const {
+      Estado: Estado_anterior,
+      Area_asignado: Area_asignado_anterior,
+      Asignado_a: Asignado_a_anterior,
+      Area_reasignado_a: Area_reasignado_a_anterior,
+      Reasignado_a: Reasignado_a_anterior,
+      Descripcion: Descripcion_anterior,
+      Causa: Causa_anterior,
+      Prioridad: Prioridad_anterior,
+      Fecha_hora_cierre: Fecha_hora_cierre_anterior,
+      Respuesta_cierre_reasignado: Respuesta_cierre_reasignado_anterior,
+      Resuelto_por: Resuelto_por_anterior,
+    } = ticketAnterior;
+
+    const estado = await ESTADOS.findOne({ Estado: "REABIERTO" });
+    if (!estado) {
+      return res
+        .status(404)
+        .json({ desc: "No se encontró el estado REABIERTO" });
+    }
+
     const result = await TICKETS.updateOne(
       { _id },
       {
         $set: {
           Area_asignado,
           Asignado_a,
-          Area_reasignado_a,
-          Reasignado_a,
           Estado: estado._id,
-          Descripcion: descripcion_reabirir,
+          Descripcion: descripcion_reabrir,
+        },
+        $unset: {
+          Area_reasignado_a: "",
+          Reasignado_a: "",
+          Causa: "",
+          Prioridad: "",
+          Fecha_limite_respuesta_SLA: "",
+          Fecha_limite_resolucion_SLA: "",
+          Fecha_hora_cierre: "",
+          Respuesta_cierre_reasignado: "",
+          Resuelto_por: "",
         },
         $push: {
           Historia_ticket: {
-            $each: [
-              {
-                Nombre: Id,
-                Mensaje: `El ticket fue Reabierto por ${Nombre} - ${Rol}`,
-                Fecha: new Date(),
-              },
-              {
-                Nombre: Id,
-                Mensaje: `Descripcion anterior : ${Descripcion} \nDescripcion de cierre anterior : ${Descripcion_cierre}`,
-                Fecha: new Date(),
-              },
-            ],
+            Nombre: Id,
+            Mensaje: `El ticket fue reabierto por ${Nombre}(${Rol})\n
+                Descripción anterior:\n
+                Estado anterior: ${Estado_anterior},\n
+                Área asignada anterior: ${Area_asignado_anterior},\n
+                Asignado anterior: ${Asignado_a_anterior},\n
+                Área reasignada anterior: ${Area_reasignado_a_anterior},\n
+                Reasignado anterior: ${Reasignado_a_anterior},\n
+                Descripción anterior: ${Descripcion_anterior},\n
+                Causa anterior: ${Causa_anterior},\n
+                Prioridad anterior: ${Prioridad_anterior},\n
+                Fecha de cierre anterior: ${Fecha_hora_cierre_anterior},\n
+                Respuesta cierre reasignado anterior: ${Respuesta_cierre_reasignado_anterior},\n
+                Resuelto por anterior: ${Resuelto_por_anterior}
+                `,
+            Fecha: new Date(),
           },
         },
       }
     );
 
-    if (result) {
+    if (result.modifiedCount > 0) {
       return res.status(200).json({ desc: "El ticket fue reabierto" });
     } else {
       return res
         .status(500)
-        .json({ desc: "Ocurrio un error al rintentar reabrir el ticket" });
+        .json({ desc: "Ocurrió un error al intentar reabrir el ticket" });
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
@@ -1194,9 +1223,9 @@ export const rechazarResolucion = async (req, res) => {
     if (result) {
       return res
         .status(200)
-        .json({ desc: "El estado del ticket fue cambiado a Abierto" });
+        .json({ desc: "Se cambio el estado del ticket a \"Abierto\" y fue enviado al Resolutor." });
     } else {
-      return res.status(500).json({ desc: "Error al procesar la solicitud." });
+      return res.status(500).json({ desc: "Error al cambiar el estado del ticket." });
     }
   } catch (error) {
     console.log(error);

@@ -40,7 +40,7 @@ router.put(
   "/reasignar",
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),
-  validateData("reasignarTicket"),
+  validateData("Reasignar"),
   reasignarTicket,correo_reasignarTicket,
 );
 router.get("/reasignar/areas", verifyToken, areasReasignacion);
@@ -74,7 +74,7 @@ router.put(
   "/resolver/aceptar",
   verifyToken,
   verifyRole(["Moderador"]),
-  validateData("Aceptar"),
+  validateData("aceptarResolucion"),
   aceptarResolucion
 );
 router.put(
