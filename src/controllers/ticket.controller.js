@@ -954,7 +954,7 @@ export const reasignarTicket = async (req, res) => {
         .json({ desc: "El usuario no fue encontrado en la BD." });
     }
     const Nombre_resolutor = user.Nombre;
-    const result = await TICKETS.updateOne(
+    const result = await TICKETS.findOneAndUpdate(
       { _id: id_ticket },
       {
         $set: {
@@ -968,15 +968,19 @@ export const reasignarTicket = async (req, res) => {
             Fecha: new Date(),
           },
         },
-      }
+      },
+      { returnDocument: 'after', new: true }
     );
     if (result) {
-      res.status(200).json({ desc: "El ticket fue reasignado correctamente." });
+      //res.status(200).json({ desc: "El ticket fue reasignado correctamente." });
+      req.datosCorreo = {...result}
+      next()
     } else {
       res
         .status(500)
         .json({ desc: "Ocurrio un error al reasignar el ticket." });
     }
+    next()
   } catch (error) {
     res.status(500).json({ desc: "Error en el servidor" });
     console.log(error);
@@ -1096,13 +1100,11 @@ export const reabrirTicket = async (req, res) => {
   const { Id, Rol, Nombre } = req.session.user;
 
   try {
-    // Obtener el ticket anterior
     const [ticketAnterior] = await TICKETS.find({ _id });
     if (!ticketAnterior) {
       return res.status(404).json({ desc: "No se encontró el ticket" });
     }
 
-    // Extraer datos del ticket anterior
     const {
       Estado: Estado_anterior,
       Area_asignado: Area_asignado_anterior,
@@ -1117,7 +1119,6 @@ export const reabrirTicket = async (req, res) => {
       Resuelto_por: Resuelto_por_anterior,
     } = ticketAnterior;
 
-    // Obtener estado "REABIERTO"
     const estado = await ESTADOS.findOne({ Estado: "REABIERTO" });
     if (!estado) {
       return res
@@ -1125,7 +1126,6 @@ export const reabrirTicket = async (req, res) => {
         .json({ desc: "No se encontró el estado REABIERTO" });
     }
 
-    // Actualizar ticket
     const result = await TICKETS.updateOne(
       { _id },
       {
@@ -1148,29 +1148,22 @@ export const reabrirTicket = async (req, res) => {
         },
         $push: {
           Historia_ticket: {
-            $each: [
-              {
-                Nombre: Id,
-                Mensaje: `El ticket fue reabierto por ${Nombre} - ${Rol}`,
-                Fecha: new Date(),
-              },
-              {
-                Nombre: Id,
-                Mensaje: `Descripción anterior:
-                Estado anterior: ${Estado_anterior},
-                Área asignada anterior: ${Area_asignado_anterior},
-                Asignado anterior: ${Asignado_a_anterior},
-                Área reasignada anterior: ${Area_reasignado_a_anterior},
-                Reasignado anterior: ${Reasignado_a_anterior},
-                Descripción anterior: ${Descripcion_anterior},
-                Causa anterior: ${Causa_anterior},
-                Prioridad anterior: ${Prioridad_anterior},
-                Fecha de cierre anterior: ${Fecha_hora_cierre_anterior},
-                Respuesta cierre reasignado anterior: ${Respuesta_cierre_reasignado_anterior},
-                Resuelto por anterior: ${Resuelto_por_anterior}`,
-                Fecha: new Date(),
-              },
-            ],
+            Nombre: Id,
+            Mensaje: `El ticket fue reabierto por ${Nombre}(${Rol})\n
+                Descripción anterior:\n
+                Estado anterior: ${Estado_anterior},\n
+                Área asignada anterior: ${Area_asignado_anterior},\n
+                Asignado anterior: ${Asignado_a_anterior},\n
+                Área reasignada anterior: ${Area_reasignado_a_anterior},\n
+                Reasignado anterior: ${Reasignado_a_anterior},\n
+                Descripción anterior: ${Descripcion_anterior},\n
+                Causa anterior: ${Causa_anterior},\n
+                Prioridad anterior: ${Prioridad_anterior},\n
+                Fecha de cierre anterior: ${Fecha_hora_cierre_anterior},\n
+                Respuesta cierre reasignado anterior: ${Respuesta_cierre_reasignado_anterior},\n
+                Resuelto por anterior: ${Resuelto_por_anterior}
+                `,
+            Fecha: new Date(),
           },
         },
       }
