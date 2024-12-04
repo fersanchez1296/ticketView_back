@@ -1,7 +1,10 @@
-import "dotenv/config"; 
-export const correo_reasignarTicket = async (req,res) => {
-  const nodemailer = require("nodemailer");
+import "dotenv/config";
+import nodemailer from "nodemailer";
+import { USUARIO } from "../models/index.js";
 
+export const correo_reasignarTicket = async (req, res) => {
+  const { id_usuario_reasignar, id_ticket } = req.body;
+  const { Id, Nombre, Rol } = req.session.user;
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
@@ -12,6 +15,7 @@ export const correo_reasignarTicket = async (req,res) => {
   });
 
   // Variables dinámicas que puedes personalizar
+
   const incidenciaId = 12345;
   const descripcion = "Descripción del problema";
   const nombreUsuario = "Nombre del Usuario";
@@ -22,10 +26,10 @@ export const correo_reasignarTicket = async (req,res) => {
   const mailOptions = {
     from: '"Mesa de Servicio" <carlos_ballesteros@jalisco.gob.mx>',
     to: "carlos.ballesteros8937@alumnos.udg.mx",
-    subject: `Has sido designado propietario de Incidencia #${incidenciaId}`,
+    subject: `Has sido designado propietario de Incidencia #${id_ticket}`,
     html: `
     <p>Estimado miembro del equipo de resolución de incidentes de la Mesa de Servicio de la Dirección de Tecnología de Información Financiera,</p>
-    <p>Te hemos asignado el ticket <b>#${incidenciaId}</b> que corresponde a la siguiente solicitud:</p>
+    <p>Te hemos asignado el ticket <b>#${id_ticket}</b> que corresponde a la siguiente solicitud:</p>
     <blockquote>"${descripcion}"</blockquote>
     <p>Responde a <b>${nombreUsuario}</b>. Sus datos de contacto son los siguientes:</p>
     <ul>
@@ -37,7 +41,7 @@ export const correo_reasignarTicket = async (req,res) => {
     <p>Gracias por tu atención.</p>
   `,
     // attachments: [
-        //<img src="cid:imagen1" alt="Imagen de ejemplo" style="width:auto;height:auto;" />
+    //<img src="cid:imagen1" alt="Imagen de ejemplo" style="width:auto;height:auto;" />
 
     //   {
     //     filename: "maguillerminaacevedoespinoza.png",
