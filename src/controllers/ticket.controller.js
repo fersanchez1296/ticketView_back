@@ -537,7 +537,13 @@ export const getTicketsRevision = async (req, res) => {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
     const tickets = await TICKETS.find({
-      $and: [{ Estado: estadoDoc._id }, { Area_reasignado_a: { $in: Area } }],
+      $and: [
+        { Estado: estadoDoc._id },
+        $or[
+          ({ Area_reasignado_a: { $in: Area } },
+          { Area_asignado: { $in: Area } })
+        ],
+      ],
     }).lean();
 
     const ticketsConPopulate = await TICKETS.populate(tickets, [
@@ -969,18 +975,18 @@ export const reasignarTicket = async (req, res) => {
           },
         },
       },
-      { returnDocument: 'after', new: true }
+      { returnDocument: "after", new: true }
     );
     if (result) {
       //res.status(200).json({ desc: "El ticket fue reasignado correctamente." });
-      req.datosCorreo = {...result}
-      next()
+      req.datosCorreo = { ...result };
+      next();
     } else {
       res
         .status(500)
         .json({ desc: "Ocurrio un error al reasignar el ticket." });
     }
-    next()
+    next();
   } catch (error) {
     res.status(500).json({ desc: "Error en el servidor" });
     console.log(error);
@@ -1093,7 +1099,7 @@ export const cerrarTicket = async (req, res) => {
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
-
+//FALTA AGREGAR AL REPOSITORIO (puts)
 //TODO falta evaular la gravedad del ticket (limite_tiempo_respuesta)
 export const reabrirTicket = async (req, res) => {
   const { _id, descripcion_reabrir, Area_asignado, Asignado_a } = req.body;
@@ -1268,7 +1274,7 @@ export const crearTicket = async (req, res) => {
     res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
-
+//TODO falta de agregar al repositorio (puts)
 export const editarTicket = async (req, res) => {};
 //TODO cambiar nombre
 export const historico = async (req, res) => {
