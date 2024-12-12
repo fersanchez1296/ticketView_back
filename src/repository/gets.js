@@ -94,7 +94,7 @@ export const getTicketsEnCurso = async (userId, estado) => {
   }
 };
 
-export const getTicketsRevision = async (Area, estado) => {
+export const getTicketsRevision = async (estado, Area) => {
   const RES = await TICKETS.find({
     $and: [
       { Estado: estado },

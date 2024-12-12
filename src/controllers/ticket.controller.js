@@ -14,7 +14,7 @@ import {
 } from "../models/index.js";
 import formateDate from "../functions/dateFormat.functions.js";
 import mongoose from "mongoose";
-import { getTicketsEnCurso, getEstadoTicket } from "../repository/gets.js";
+import * as Gets from "../repository/gets.js";
 const ObjectId = mongoose.Types.ObjectId;
 export const getTickets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -34,6 +34,7 @@ export const getTickets = async (req, res) => {
   }
 };
 //PENDIENTE DE MODIFICAR EL QUERY
+//TODO no se usa
 export const getTicketsAbiertos = async (req, res) => {
   const { collection } = req.query; // El nombre del estado enviado desde el cliente (ej. "abierto")
   const { Id, Rol, Coordinacion } = req.session.user; // ID del usuario autenticado
@@ -157,111 +158,18 @@ export const getTicketsAbiertos = async (req, res) => {
   }
 };
 
-export const getTicketsNuevos = async (req, res) => {
+export const ticketsNuevos = async (req, res, next) => {
   const { Id } = req.session.user;
   try {
-    const estadoDoc = await ESTADOS.findOne({ Estado: "NUEVO" });
-    if (!estadoDoc) {
-      return res.status(404).json({ message: "Estado no encontrado" });
-    }
-    const resultado = await TICKETS.aggregate([
-      {
-        $match: {
-          $and: [
-            {
-              $or: [
-                { Asignado_a: new ObjectId(Id) },
-                { Reasignado_a: new ObjectId(Id) },
-              ],
-            },
-            { Estado: estadoDoc._id },
-          ],
-        },
-      },
-      {
-        $addFields: {
-          Asignado_final_a: {
-            $cond: [
-              {
-                $eq: ["$Asignado_a", new ObjectId(Id)],
-              },
-              "$Asignado_a",
-              "$Reasignado_a",
-            ],
-          },
-        },
-      },
-      {
-        $project: {
-          Asignado_final: 0,
-        },
-      },
-    ]);
-    const ticketsConPopulate = await TICKETS.populate(resultado, [
-      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
-      { path: "Area_asignado", select: "Area _id" },
-      { path: "Categoria", select: "Categoria -_id" },
-      { path: "Servicio", select: "Servicio -_id" },
-      { path: "Subcategoria", select: "Subcategoria -_id" },
-      { path: "Secretaria", select: "Secretaria -_id" },
-      { path: "Direccion_general", select: "Direccion_General -_id" },
-      { path: "Direccion_area", select: "direccion_area -_id" },
-      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
-      { path: "Estado" },
-      { path: "Asignado_a", select: "Nombre Coordinacion" },
-      { path: "Reasignado_a", select: "Nombre Coordinacion" },
-      { path: "Resuelto_por", select: "Nombre Coordinacion" },
-      { path: "Creado_por", select: "Nombre -_id" },
-      { path: "Area_reasignado_a", select: "Area -_id" },
-      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
-      {
-        path: "Historia_ticket",
-        populate: { path: "Nombre", select: "Nombre -_id" },
-      },
-    ]);
-    const data = ticketsConPopulate.map((ticket) => {
-      return {
-        ...ticket,
-        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-        Fecha_limite_resolucion_SLA: formateDate(
-          ticket.Fecha_limite_resolucion_SLA
-        ),
-        Fecha_hora_ultima_modificacion: formateDate(
-          ticket.Fecha_hora_ultima_modificacion
-        ),
-        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-        Fecha_limite_respuesta_SLA: formateDate(
-          ticket.Fecha_limite_respuesta_SLA
-        ),
-        Historia_ticket: ticket.Historia_ticket
-          ? ticket.Historia_ticket.map((historia) => ({
-              Nombre: historia.Nombre,
-              Mensaje: historia.Mensaje,
-              Fecha: formateDate(historia.Fecha),
-            }))
-          : [],
-      };
-    });
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("Error al obtener los tickets:", error);
-    res.status(500).json({ message: "Error al obtener los datos" });
-  }
-};
-
-export const ticketsEnCurso = async (req, res, next) => {
-  const { Id } = req.session.user;
-  try {
-    const ESTADO = await getEstadoTicket("EN CURSO");
+    const ESTADO = await Gets.getEstadoTicket("NUEVO");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const RES = await getTicketsEnCurso(Id, ESTADO._id);
+    const RES = await Gets.getTicketsNuevos(Id, ESTADO._id);
     if (RES === false) {
       return res.status(500).json({ desc: "Error al obtener los tickets" });
     }
-    req.ticketsEnCurso = RES;
+    req.tickets = RES;
     next();
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
@@ -269,420 +177,112 @@ export const ticketsEnCurso = async (req, res, next) => {
   }
 };
 
-export const getTicketsReabiertos = async (req, res) => {
+export const ticketsEnCurso = async (req, res, next) => {
   const { Id } = req.session.user;
   try {
-    const estadoDoc = await ESTADOS.findOne({ Estado: "REABIERTO" });
-    if (!estadoDoc) {
+    const ESTADO = await Gets.getEstadoTicket("EN CURSO");
+    if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const resultado = await TICKETS.aggregate([
-      {
-        $match: {
-          $and: [
-            {
-              $or: [
-                { Asignado_a: new ObjectId(Id) },
-                { Reasignado_a: new ObjectId(Id) },
-              ],
-            },
-            { Estado: estadoDoc._id },
-          ],
-        },
-      },
-      {
-        $addFields: {
-          Asignado_final_a: {
-            $cond: [
-              {
-                $eq: ["$Asignado_a", new ObjectId(Id)],
-              },
-              "$Asignado_a",
-              "$Reasignado_a",
-            ],
-          },
-        },
-      },
-      {
-        $project: {
-          Asignado_final: 0,
-        },
-      },
-    ]);
-    const ticketsConPopulate = await TICKETS.populate(resultado, [
-      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
-      { path: "Area_asignado", select: "Area _id" },
-      { path: "Categoria", select: "Categoria -_id" },
-      { path: "Servicio", select: "Servicio -_id" },
-      { path: "Subcategoria", select: "Subcategoria -_id" },
-      { path: "Secretaria", select: "Secretaria -_id" },
-      { path: "Direccion_general", select: "Direccion_General -_id" },
-      { path: "Direccion_area", select: "direccion_area -_id" },
-      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
-      { path: "Estado" },
-      { path: "Asignado_a", select: "Nombre Coordinacion" },
-      { path: "Reasignado_a", select: "Nombre Coordinacion" },
-      { path: "Resuelto_por", select: "Nombre Coordinacion" },
-      { path: "Creado_por", select: "Nombre -_id" },
-      { path: "Area_reasignado_a", select: "Area -_id" },
-      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
-      {
-        path: "Historia_ticket",
-        populate: { path: "Nombre", select: "Nombre -_id" },
-      },
-    ]);
-    const data = ticketsConPopulate.map((ticket) => {
-      return {
-        ...ticket,
-        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-        Fecha_limite_resolucion_SLA: formateDate(
-          ticket.Fecha_limite_resolucion_SLA
-        ),
-        Fecha_hora_ultima_modificacion: formateDate(
-          ticket.Fecha_hora_ultima_modificacion
-        ),
-        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-        Fecha_limite_respuesta_SLA: formateDate(
-          ticket.Fecha_limite_respuesta_SLA
-        ),
-        Historia_ticket: ticket.Historia_ticket
-          ? ticket.Historia_ticket.map((historia) => ({
-              Nombre: historia.Nombre,
-              Mensaje: historia.Mensaje,
-              Fecha: formateDate(historia.Fecha),
-            }))
-          : [],
-      };
-    });
-    res.status(200).json(data);
+    const RES = await Gets.getTicketsEnCurso(Id, ESTADO._id);
+    if (RES === false) {
+      return res.status(500).json({ desc: "Error al obtener los tickets" });
+    }
+    req.tickets = RES;
+    next();
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
-    res.status(500).json({ message: "Error al obtener los datos" });
+    return res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
 
-export const getTicketsPendientes = async (req, res) => {
+export const ticketsReabiertos = async (req, res, next) => {
   const { Id } = req.session.user;
   try {
-    const estadoDoc = await ESTADOS.findOne({ Estado: "PENDIENTE" });
-    if (!estadoDoc) {
+    const ESTADO = await Gets.getEstadoTicket("REABIERTO");
+    if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const resultado = await TICKETS.aggregate([
-      {
-        $match: {
-          $and: [
-            {
-              $or: [
-                { Asignado_a: new ObjectId(Id) },
-                { Reasignado_a: new ObjectId(Id) },
-              ],
-            },
-            { Estado: estadoDoc._id },
-          ],
-        },
-      },
-      {
-        $addFields: {
-          Asignado_final_a: {
-            $cond: [
-              {
-                $eq: ["$Asignado_a", new ObjectId(Id)],
-              },
-              "$Asignado_a",
-              "$Reasignado_a",
-            ],
-          },
-        },
-      },
-      {
-        $project: {
-          Asignado_final: 0,
-        },
-      },
-    ]);
-    const ticketsConPopulate = await TICKETS.populate(resultado, [
-      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
-      { path: "Area_asignado", select: "Area _id" },
-      { path: "Categoria", select: "Categoria -_id" },
-      { path: "Servicio", select: "Servicio -_id" },
-      { path: "Subcategoria", select: "Subcategoria -_id" },
-      { path: "Secretaria", select: "Secretaria -_id" },
-      { path: "Direccion_general", select: "Direccion_General -_id" },
-      { path: "Direccion_area", select: "direccion_area -_id" },
-      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
-      { path: "Estado" },
-      { path: "Asignado_a", select: "Nombre Coordinacion" },
-      { path: "Reasignado_a", select: "Nombre Coordinacion" },
-      { path: "Resuelto_por", select: "Nombre Coordinacion" },
-      { path: "Creado_por", select: "Nombre -_id" },
-      { path: "Area_reasignado_a", select: "Area -_id" },
-      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
-      {
-        path: "Historia_ticket",
-        populate: { path: "Nombre", select: "Nombre -_id" },
-      },
-    ]);
-    const data = ticketsConPopulate.map((ticket) => {
-      return {
-        ...ticket,
-        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-        Fecha_limite_resolucion_SLA: formateDate(
-          ticket.Fecha_limite_resolucion_SLA
-        ),
-        Fecha_hora_ultima_modificacion: formateDate(
-          ticket.Fecha_hora_ultima_modificacion
-        ),
-        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-        Fecha_limite_respuesta_SLA: formateDate(
-          ticket.Fecha_limite_respuesta_SLA
-        ),
-        Historia_ticket: ticket.Historia_ticket
-          ? ticket.Historia_ticket.map((historia) => ({
-              Nombre: historia.Nombre,
-              Mensaje: historia.Mensaje,
-              Fecha: formateDate(historia.Fecha),
-            }))
-          : [],
-      };
-    });
-    res.status(200).json(data);
+    const RES = await Gets.getTicketsReabiertos(Id, ESTADO._id);
+    if (RES === false) {
+      return res.status(500).json({ desc: "Error al obtener los tickets" });
+    }
+    req.tickets = RES;
+    next();
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
-    res.status(500).json({ message: "Error al obtener los datos" });
+    return res.status(500).json({ message: "Error al obtener los datos" });
+  }
+};
+
+export const ticketsPendientes = async (req, res, next) => {
+  const { Id } = req.session.user;
+  try {
+    const ESTADO = await Gets.getEstadoTicket("PENDIENTE");
+    if (!ESTADO) {
+      return res.status(404).json({ message: "Estado no encontrado" });
+    }
+    const RES = await Gets.getTicketsPendientes(Id, ESTADO._id);
+    if (RES === false) {
+      return res.status(500).json({ desc: "Error al obtener los tickets" });
+    }
+    req.tickets = RES;
+    next();
+  } catch (error) {
+    console.error("Error al obtener los tickets:", error);
+    return res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
 //PENDIENTE DE MODIFICAR EL QUERY
-export const getTicketsRevision = async (req, res) => {
-  const { Id, Area } = req.session.user;
-
+export const ticketsRevision = async (req, res, next) => {
+  const { Area } = req.session.user;
   try {
-    const estadoDoc = await ESTADOS.findOne({ Estado: "REVISIÓN" });
-    if (!estadoDoc) {
+    const ESTADO = await Gets.getEstadoTicket("REVISIÓN");
+    if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const tickets = await TICKETS.find({
-      $and: [
-        { Estado: estadoDoc._id },
-        $or[
-          ({ Area_reasignado_a: { $in: Area } },
-          { Area_asignado: { $in: Area } })
-        ],
-      ],
-    }).lean();
-
-    const ticketsConPopulate = await TICKETS.populate(tickets, [
-      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
-      { path: "Area_asignado", select: "Area _id" },
-      { path: "Categoria", select: "Categoria -_id" },
-      { path: "Servicio", select: "Servicio -_id" },
-      { path: "Subcategoria", select: "Subcategoria -_id" },
-      { path: "Secretaria", select: "Secretaria -_id" },
-      { path: "Direccion_general", select: "Direccion_General -_id" },
-      { path: "Direccion_area", select: "direccion_area -_id" },
-      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
-      { path: "Estado" },
-      { path: "Asignado_a", select: "Nombre Coordinacion" },
-      { path: "Reasignado_a", select: "Nombre Coordinacion" },
-      { path: "Resuelto_por", select: "Nombre Coordinacion" },
-      { path: "Creado_por", select: "Nombre -_id" },
-      { path: "Area_reasignado_a", select: "Area -_id" },
-      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
-      {
-        path: "Historia_ticket",
-        populate: { path: "Nombre", select: "Nombre -_id" },
-      },
-    ]);
-
-    const data = ticketsConPopulate.map((ticket) => {
-      return {
-        ...ticket,
-        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-        Fecha_limite_resolucion_SLA: formateDate(
-          ticket.Fecha_limite_resolucion_SLA
-        ),
-        Fecha_hora_ultima_modificacion: formateDate(
-          ticket.Fecha_hora_ultima_modificacion
-        ),
-        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-        Fecha_limite_respuesta_SLA: formateDate(
-          ticket.Fecha_limite_respuesta_SLA
-        ),
-        Historia_ticket: ticket.Historia_ticket
-          ? ticket.Historia_ticket.map((historia) => ({
-              Nombre: historia.Nombre,
-              Mensaje: historia.Mensaje,
-              Fecha: formateDate(historia.Fecha),
-            }))
-          : [],
-      };
-    });
-    res.status(200).json(data);
+    const RES = await Gets.getTicketsRevision(ESTADO, Area);
+    if (RES === false) {
+      return res.status(500).json({ desc: "Error al obtener los tickets" });
+    }
+    req.tickets = RES;
+    next();
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
-    res.status(500).json({ message: "Error al obtener los datos" });
+    return res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
 //PENDIENTE DE MODIFICAR EL QUERY
-export const getTicketsCerrados = async (req, res) => {
+export const ticketsCerrados = async (req, res, next) => {
   const { Id, Rol } = req.session.user;
-  let resultado;
+  let resp;
   try {
-    const resuelto = await ESTADOS.findOne({ Estado: "CERRADO" });
-    if (!resuelto) {
-      return res.status(404).json({ message: "Estado no encontrado" });
+    const ESTADO = await Gets.getEstadoTicket("CERRADO");
+    if (!ESTADO) {
+      return resp.status(404).json({ message: "Estado no encontrado" });
     }
     if (Rol === "Usuario" || Rol === "Moderador") {
-      //resolutor
-      resultado = await TICKETS.aggregate([
-        {
-          $match: {
-            $and: [
-              {
-                Estado: resuelto._id,
-              },
-              {
-                $or: [
-                  { Resuelto_por: new ObjectId(Id) },
-                  { Asignado_a: new ObjectId(Id) },
-                  { Reasignado_a: new ObjectId(Id) },
-                ],
-              },
-            ],
-          },
-        },
-        {
-          $addFields: {
-            Asignado_final_a: {
-              $cond: [
-                { $eq: ["$Resuelto_por", new ObjectId(Id)] },
-                "$Resuelto_por", // Si la condición es verdadera
-                {
-                  $cond: [
-                    { $eq: ["$Asignado_a", new ObjectId(Id)] },
-                    "$Asignado_a", // Si `$Asignado_a` coincide
-                    "$Reasignado_a", // Si ninguna de las anteriores coincide
-                  ],
-                },
-              ],
-            },
-          },
-        },
-        {
-          $project: {
-            Asignado_final: 0, // Excluir el campo Asignado_final si existe
-          },
-        },
-      ]);
+      resp = await Gets.getTicketsCerradosForResolAndMod(Id, ESTADO);
+      if (resp === false) {
+        return res.status(500).json({ desc: "Error al obtener los tickets" });
+      }
+      req.tickets = resp;
+      next();
     } else {
-      resultado = await TICKETS.aggregate([
-        {
-          $match: {
-            $and: [
-              { Estado: resuelto._id },
-              {
-                $or: [
-                  { Resuelto_por: new ObjectId(Id) },
-                  { Asignado_a: new ObjectId(Id) },
-                  { Reasignado_a: new ObjectId(Id) },
-                  { Cerrado_por: new ObjectId(Id) },
-                  { Creado_por: new ObjectId(Id) },
-                ],
-              },
-            ],
-          },
-        },
-        {
-          $addFields: {
-            Asignado_final_a: {
-              $cond: [
-                { $eq: ["$Resuelto_por", new ObjectId(Id)] },
-                "$Resuelto_por", // Si coincide con Resuelto_por
-                {
-                  $cond: [
-                    { $eq: ["$Asignado_a", new ObjectId(Id)] },
-                    "$Asignado_a", // Si coincide con Asignado_a
-                    {
-                      $cond: [
-                        { $eq: ["$Reasignado_a", new ObjectId(Id)] },
-                        "$Reasignado_a", // Si coincide con Reasignado_a
-                        "$Cerrado_por", // Por último, si coincide con Cerrado_por
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          },
-        },
-        {
-          $project: {
-            Asignado_final: 0, // Excluir el campo Asignado_final si existe
-          },
-        },
-      ]);
+      resp = await Gets.getTicketsCerradosForAdmin(Id, ESTADO);
+      if (resp === false) {
+        return res.status(500).json({ desc: "Error al obtener los tickets" });
+      }
+      req.tickets = resp;
+      next();
     }
-
-    const ticketsConPopulate = await TICKETS.populate(resultado, [
-      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
-      { path: "Area_asignado", select: "Area _id" },
-      { path: "Categoria", select: "Categoria -_id" },
-      { path: "Servicio", select: "Servicio -_id" },
-      { path: "Subcategoria", select: "Subcategoria -_id" },
-      { path: "Secretaria", select: "Secretaria -_id" },
-      { path: "Direccion_general", select: "Direccion_General -_id" },
-      { path: "Direccion_area", select: "direccion_area -_id" },
-      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
-      { path: "Estado" },
-      { path: "Asignado_a", select: "Nombre Coordinacion" },
-      { path: "Reasignado_a", select: "Nombre Coordinacion" },
-      { path: "Resuelto_por", select: "Nombre Coordinacion" },
-      { path: "Creado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Area_reasignado_a", select: "Area -_id" },
-      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
-      {
-        path: "Historia_ticket",
-        populate: { path: "Nombre", select: "Nombre -_id" },
-      },
-    ]);
-    const data = ticketsConPopulate.map((ticket) => {
-      return {
-        ...ticket,
-        Resuelto_por: ticket.Resuelto_por
-          ? ticket.Resuelto_por
-          : "Sin Resolver",
-        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-        Fecha_limite_resolucion_SLA: formateDate(
-          ticket.Fecha_limite_resolucion_SLA
-        ),
-        Fecha_hora_ultima_modificacion: formateDate(
-          ticket.Fecha_hora_ultima_modificacion
-        ),
-        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-        Fecha_limite_respuesta_SLA: formateDate(
-          ticket.Fecha_limite_respuesta_SLA
-        ),
-        Historia_ticket: ticket.Historia_ticket
-          ? ticket.Historia_ticket.map((historia) => ({
-              Nombre: historia.Nombre,
-              Mensaje: historia.Mensaje,
-              Fecha: formateDate(historia.Fecha),
-            }))
-          : [],
-      };
-    });
-    res.status(200).json(data);
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
     res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
 
-export const getTicketsResueltos = async (req, res) => {
+export const ticketsResueltos = async (req, res) => {
   const { Id, Rol } = req.session.user;
   let resultado;
   try {
@@ -854,25 +454,27 @@ export const resolverTicket = async (req, res) => {
 
 export const areasReasignacion = async (req, res) => {
   const { Area } = req.session.user;
-
   try {
-    const areas = await AREA.find({ _id: { $in: Area } });
-    const areasResolutores = await Promise.all(
-      areas.map(async (area) => {
-        const resolutor = await USUARIO.find({ Area: area._id }).select(
-          "Nombre Correo"
-        );
+    const AREAS = await Gets.getAreasParaReasignacion(Area);
+    if(!AREAS){
+      return res.status(404).json({desc : "No se encontraron áreas"})
+    }
+    const AREASRESOLUTORES = await Promise.all(
+      AREAS.map(async (area) => {
+        const RESOLUTOR = await getResolutoresParaReasignacionPorArea(area._id)
         return {
           area: area.Area,
-          resolutores: resolutor,
+          resolutores: RESOLUTOR,
         };
       })
     );
-
-    res.json({ areasResolutores });
+    if(!AREASRESOLUTORES){
+      return res.status(404).json({desc : "No se encontraron resolutores"})
+    }
+    res.status(200).json({ AREASRESOLUTORES });
   } catch (error) {
-    console.error("Error al obtener áreas y usuarios:", error);
-    res.status(500).json({ message: "Error al obtener áreas y usuarios" });
+    console.error("Error al obtener áreas y resolutores:", error);
+    res.status(500).json({ message: "Error al obtener áreas y resolutores" });
   }
 };
 

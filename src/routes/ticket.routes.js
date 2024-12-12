@@ -3,13 +3,13 @@ import {
   getTickets,
   getTicketsAbiertos,
   resolverTicket,
-  getTicketsCerrados,
-  getTicketsResueltos,
+  ticketsCerrados,
+  ticketsResueltos,
   ticketsEnCurso,
-  getTicketsReabiertos,
-  getTicketsPendientes,
-  getTicketsRevision,
-  getTicketsNuevos,
+  ticketsReabiertos,
+  ticketsPendientes,
+  ticketsRevision,
+  ticketsNuevos,
   areasReasignacion,
   reasignarTicket,
   getInfoSelects,
@@ -26,17 +26,55 @@ import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
 import { validateData } from "../middleware/validateData.middleware.js";
 import { populateTickets } from "../middleware/populateTickets.middleware.js";
-import { formatearCampos } from "../middleware/formatearFechas.middleware.js";
+import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 const router = Router();
 
 router.get("/tickets", verifyToken, getTicketsAbiertos);
-router.get("/tickets/nuevos", verifyToken, getTicketsNuevos);
-router.get("/tickets/en%20curso", verifyToken, ticketsEnCurso, populateTickets, formatearCampos);
-router.get("/tickets/reabiertos", verifyToken, getTicketsReabiertos);
-router.get("/tickets/pendientes", verifyToken, getTicketsPendientes);
-router.get("/tickets/cerrados", verifyToken, getTicketsCerrados);
-router.get("/tickets/resueltos", verifyToken, getTicketsResueltos);
-router.get("/tickets/revision", verifyToken, getTicketsRevision);
+router.get(
+  "/tickets/nuevos",
+  verifyToken,
+  ticketsNuevos,
+  formatearCamposFecha,
+  populateTickets
+);
+router.get(
+  "/tickets/en%20curso",
+  verifyToken,
+  ticketsEnCurso,
+  formatearCamposFecha,
+  populateTickets
+);
+router.get("/tickets/reabiertos", verifyToken, ticketsReabiertos),
+  formatearCamposFecha,
+  populateTickets;
+router.get(
+  "/tickets/pendientes",
+  verifyToken,
+  ticketsPendientes,
+  formatearCamposFecha,
+  populateTickets
+);
+router.get(
+  "/tickets/cerrados",
+  verifyToken,
+  ticketsCerrados,
+  formatearCamposFecha,
+  populateTickets
+);
+router.get(
+  "/tickets/resueltos",
+  verifyToken,
+  ticketsResueltos,
+  formatearCamposFecha,
+  populateTickets
+);
+router.get(
+  "/tickets/revision",
+  verifyToken,
+  ticketsRevision,
+  formatearCamposFecha,
+  populateTickets
+);
 router.put(
   "/reasignar",
   verifyToken,
