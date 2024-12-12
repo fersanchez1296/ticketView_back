@@ -5,7 +5,7 @@ import {
   resolverTicket,
   getTicketsCerrados,
   getTicketsResueltos,
-  getTicketsEnCurso,
+  ticketsEnCurso,
   getTicketsReabiertos,
   getTicketsPendientes,
   getTicketsRevision,
@@ -25,11 +25,13 @@ import {
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
 import { validateData } from "../middleware/validateData.middleware.js";
+import { populateTickets } from "../middleware/populateTickets.middleware.js";
+import { formatearCampos } from "../middleware/formatearFechas.middleware.js";
 const router = Router();
 
 router.get("/tickets", verifyToken, getTicketsAbiertos);
 router.get("/tickets/nuevos", verifyToken, getTicketsNuevos);
-router.get("/tickets/en%20curso", verifyToken, getTicketsEnCurso);
+router.get("/tickets/en%20curso", verifyToken, ticketsEnCurso, populateTickets, formatearCampos);
 router.get("/tickets/reabiertos", verifyToken, getTicketsReabiertos);
 router.get("/tickets/pendientes", verifyToken, getTicketsPendientes);
 router.get("/tickets/cerrados", verifyToken, getTicketsCerrados);

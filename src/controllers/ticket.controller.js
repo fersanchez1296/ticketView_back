@@ -14,6 +14,7 @@ import {
 } from "../models/index.js";
 import formateDate from "../functions/dateFormat.functions.js";
 import mongoose from "mongoose";
+import { getTicketsEnCurso, getEstadoTicket } from "../repository/gets.js";
 const ObjectId = mongoose.Types.ObjectId;
 export const getTickets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -249,96 +250,22 @@ export const getTicketsNuevos = async (req, res) => {
   }
 };
 
-export const getTicketsEnCurso = async (req, res) => {
+export const ticketsEnCurso = async (req, res, next) => {
   const { Id } = req.session.user;
   try {
-    const estadoDoc = await ESTADOS.findOne({ Estado: "EN CURSO" });
-    if (!estadoDoc) {
+    const ESTADO = await getEstadoTicket("EN CURSO");
+    if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const resultado = await TICKETS.aggregate([
-      {
-        $match: {
-          $and: [
-            {
-              $or: [
-                { Asignado_a: new ObjectId(Id) },
-                { Reasignado_a: new ObjectId(Id) },
-              ],
-            },
-            { Estado: estadoDoc._id },
-          ],
-        },
-      },
-      {
-        $addFields: {
-          Asignado_final_a: {
-            $cond: [
-              {
-                $eq: ["$Asignado_a", new ObjectId(Id)],
-              },
-              "$Asignado_a",
-              "$Reasignado_a",
-            ],
-          },
-        },
-      },
-      {
-        $project: {
-          Asignado_final: 0,
-        },
-      },
-    ]);
-    const ticketsConPopulate = await TICKETS.populate(resultado, [
-      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
-      { path: "Area_asignado", select: "Area _id" },
-      { path: "Categoria", select: "Categoria -_id" },
-      { path: "Servicio", select: "Servicio -_id" },
-      { path: "Subcategoria", select: "Subcategoria -_id" },
-      { path: "Secretaria", select: "Secretaria -_id" },
-      { path: "Direccion_general", select: "Direccion_General -_id" },
-      { path: "Direccion_area", select: "direccion_area -_id" },
-      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
-      { path: "Estado" },
-      { path: "Asignado_a", select: "Nombre Coordinacion" },
-      { path: "Reasignado_a", select: "Nombre Coordinacion" },
-      { path: "Resuelto_por", select: "Nombre Coordinacion" },
-      { path: "Creado_por", select: "Nombre -_id" },
-      { path: "Area_reasignado_a", select: "Area -_id" },
-      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
-      {
-        path: "Historia_ticket",
-        populate: { path: "Nombre", select: "Nombre -_id" },
-      },
-    ]);
-    const data = ticketsConPopulate.map((ticket) => {
-      return {
-        ...ticket,
-        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-        Fecha_limite_resolucion_SLA: formateDate(
-          ticket.Fecha_limite_resolucion_SLA
-        ),
-        Fecha_hora_ultima_modificacion: formateDate(
-          ticket.Fecha_hora_ultima_modificacion
-        ),
-        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-        Fecha_limite_respuesta_SLA: formateDate(
-          ticket.Fecha_limite_respuesta_SLA
-        ),
-        Historia_ticket: ticket.Historia_ticket
-          ? ticket.Historia_ticket.map((historia) => ({
-              Nombre: historia.Nombre,
-              Mensaje: historia.Mensaje,
-              Fecha: formateDate(historia.Fecha),
-            }))
-          : [],
-      };
-    });
-    res.status(200).json(data);
+    const RES = await getTicketsEnCurso(Id, ESTADO._id);
+    if (RES === false) {
+      return res.status(500).json({ desc: "Error al obtener los tickets" });
+    }
+    req.ticketsEnCurso = RES;
+    next();
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
-    res.status(500).json({ message: "Error al obtener los datos" });
+    return res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
 

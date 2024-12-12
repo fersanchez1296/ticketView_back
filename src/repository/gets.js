@@ -53,41 +53,45 @@ export const getTicketsNuevos = async (userId, estado) => {
 };
 
 export const getTicketsEnCurso = async (userId, estado) => {
-  const RES = await TICKETS.aggregate([
-    {
-      $match: {
-        $and: [
-          {
-            $or: [
-              { Asignado_a: new ObjectId(userId) },
-              { Reasignado_a: new ObjectId(userId) },
-            ],
-          },
-          { Estado: estado },
-        ],
-      },
-    },
-    {
-      $addFields: {
-        Asignado_final_a: {
-          $cond: [
+  try {
+    const RES = await TICKETS.aggregate([
+      {
+        $match: {
+          $and: [
             {
-              $eq: ["$Asignado_a", new ObjectId(userId)],
+              $or: [
+                { Asignado_a: new ObjectId(userId) },
+                { Reasignado_a: new ObjectId(userId) },
+              ],
             },
-            "$Asignado_a",
-            "$Reasignado_a",
+            { Estado: new ObjectId(estado) },
           ],
         },
       },
-    },
-    {
-      $project: {
-        Asignado_final: 0,
+      {
+        $addFields: {
+          Asignado_final_a: {
+            $cond: [
+              {
+                $eq: ["$Asignado_a", new ObjectId(userId)],
+              },
+              "$Asignado_a",
+              "$Reasignado_a",
+            ],
+          },
+        },
       },
-    },
-  ]);
-
-  return RES;
+      {
+        $project: {
+          Asignado_final: 0,
+        },
+      },
+    ]);
+    return RES;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
 };
 
 export const getTicketsRevision = async (Area, estado) => {
