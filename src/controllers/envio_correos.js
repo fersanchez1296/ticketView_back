@@ -1,10 +1,11 @@
 import "dotenv/config";
 import nodemailer from "nodemailer";
 import { USUARIO } from "../models/index.js";
+import { TICKETS } from "../models/index.js";
 
 export const correo_reasignarTicket = async (req, res) => {
   const { id_usuario_reasignar, id_ticket } = req.body;
-  const { Id, Nombre, Rol } = req.session.user;
+  const { Id, Nombre, Rol, Correo } = req.session.user;
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
@@ -15,23 +16,22 @@ export const correo_reasignarTicket = async (req, res) => {
   });
 
   // Variables dinámicas que puedes personalizar
-
-  const incidenciaId = 12345;
-  const descripcion = "Descripción del problema";
-  const nombreUsuario = "Nombre del Usuario";
-  const dependencia = "Nombre de la Dependencia";
-  const edificio = "Nombre del Edificio";
-  const telefono = "123456789";
+  const user_reasignar = await USUARIO.findOne({ _id: id_usuario_reasignar });
+  const ticket = await TICKETS.findOne({ _id: id_ticket });
+  const Correo_resolutor = user_reasignar.Correo;
+  const Id_ticket = ticket.Id;
+  const Descripcion_ticket = ticket.Descripcion;
+  const Nombre_cliente = ticket.Nombre_cliente;
 
   const mailOptions = {
-    from: '"Mesa de Servicio" <carlos_ballesteros@jalisco.gob.mx>',
-    to: "carlos.ballesteros8937@alumnos.udg.mx",
-    subject: `Has sido designado propietario de Incidencia #${id_ticket}`,
+    from: Correo,
+    to: Correo_resolutor,
+    subject: `Has sido designado propietario de Incidencia #${Id_ticket}`,
     html: `
     <p>Estimado miembro del equipo de resolución de incidentes de la Mesa de Servicio de la Dirección de Tecnología de Información Financiera,</p>
-    <p>Te hemos asignado el ticket <b>#${id_ticket}</b> que corresponde a la siguiente solicitud:</p>
-    <blockquote>"${descripcion}"</blockquote>
-    <p>Responde a <b>${nombreUsuario}</b>. Sus datos de contacto son los siguientes:</p>
+    <p>Te hemos asignado el ticket <b>#${Id_ticket}</b> que corresponde a la siguiente solicitud:</p>
+    <blockquote>"${Descripcion_ticket}"</blockquote>
+    <p>Responde a <b>${Nombre_cliente}</b>. Sus datos de contacto son los siguientes:</p>
     <ul>
       <li><b>Dependencia:</b> ${dependencia}</li>
       <li><b>Edificio:</b> ${edificio}</li>
