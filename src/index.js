@@ -18,7 +18,7 @@ const format = '[:date] :method :url :status :response-time ms - :res[content-le
 const app = express();
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "http://localhost:4000", //API Gateway
     //origin: "*",
     credentials: true,
   })
@@ -26,7 +26,7 @@ app.use(
 app.use(morgan(format));
 app.use(express.json());
 app.use(cookieParser())
-app.use("/api", ticketsRoute);
+app.use("", ticketsRoute);
 app.use("/api", ticketsFilterRoute);
 app.use("/api", usuariosRoutes);
 app.use("/api", authRoutes);
