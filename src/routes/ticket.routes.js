@@ -17,10 +17,10 @@ import {
   reabrirTicket,
   aceptarResolucion,
   rechazarResolucion,
-  historico,
-  historicoAreas,
-  coordinacion,
+  obtenerAreas,
+  obtenerTicketsPorArea,
   crearTicket,
+  obtenerAreasModerador,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -124,18 +124,20 @@ router.put(
   rechazarResolucion
 );
 
-router.get("/historico", verifyToken, verifyRole(["Root"]), historico);
+router.get("/historico", verifyToken, verifyRole(["Root"]), obtenerAreas);
 router.get(
   "/historico/area",
   verifyToken,
   verifyRole(["Root", "Moderador"]),
-  historicoAreas
+  obtenerTicketsPorArea,
+  formatearCamposFecha,
+  populateTickets
 );
 router.get(
   "/coordinacion",
   verifyToken,
   verifyRole(["Moderador"]),
-  coordinacion
+  obtenerAreasModerador
 );
 
 export default router;

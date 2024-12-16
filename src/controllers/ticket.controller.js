@@ -1,17 +1,4 @@
-import {
-  TICKETS,
-  ESTADOS,
-  AREA,
-  USUARIO,
-  TIPO_TICKET,
-  CATEGORIAS,
-  SERVICIOS,
-  SUBCATEGORIA,
-  PRIORIDADES,
-  SECRETARIA,
-  DIRECCION_AREA,
-  DIRECCION_GENERAL,
-} from "../models/index.js";
+import { TICKETS, ESTADOS, USUARIO } from "../models/index.js";
 import formateDate from "../functions/dateFormat.functions.js";
 import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
@@ -159,13 +146,13 @@ export const getTicketsAbiertos = async (req, res) => {
 };
 
 export const ticketsNuevos = async (req, res, next) => {
-  const { Id } = req.session.user;
+  const { userId } = req.session.user;
   try {
     const ESTADO = await Gets.getEstadoTicket("NUEVO");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const RES = await Gets.getTicketsNuevos(Id, ESTADO._id);
+    const RES = await Gets.getTicketsNuevos(userId, ESTADO._id);
     if (RES === false) {
       return res.status(500).json({ desc: "Error al obtener los tickets" });
     }
@@ -178,13 +165,13 @@ export const ticketsNuevos = async (req, res, next) => {
 };
 
 export const ticketsEnCurso = async (req, res, next) => {
-  const { Id } = req.session.user;
+  const { userId } = req.session.user;
   try {
     const ESTADO = await Gets.getEstadoTicket("EN CURSO");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const RES = await Gets.getTicketsEnCurso(Id, ESTADO._id);
+    const RES = await Gets.getTicketsEnCurso(userId, ESTADO._id);
     if (RES === false) {
       return res.status(500).json({ desc: "Error al obtener los tickets" });
     }
@@ -197,13 +184,13 @@ export const ticketsEnCurso = async (req, res, next) => {
 };
 
 export const ticketsReabiertos = async (req, res, next) => {
-  const { Id } = req.session.user;
+  const { userId } = req.session.user;
   try {
     const ESTADO = await Gets.getEstadoTicket("REABIERTO");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const RES = await Gets.getTicketsReabiertos(Id, ESTADO._id);
+    const RES = await Gets.getTicketsReabiertos(userId, ESTADO._id);
     if (RES === false) {
       return res.status(500).json({ desc: "Error al obtener los tickets" });
     }
@@ -216,13 +203,13 @@ export const ticketsReabiertos = async (req, res, next) => {
 };
 
 export const ticketsPendientes = async (req, res, next) => {
-  const { Id } = req.session.user;
+  const { userId } = req.session.user;
   try {
     const ESTADO = await Gets.getEstadoTicket("PENDIENTE");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const RES = await Gets.getTicketsPendientes(Id, ESTADO._id);
+    const RES = await Gets.getTicketsPendientes(userId, ESTADO._id);
     if (RES === false) {
       return res.status(500).json({ desc: "Error al obtener los tickets" });
     }
@@ -254,22 +241,22 @@ export const ticketsRevision = async (req, res, next) => {
 };
 //PENDIENTE DE MODIFICAR EL QUERY
 export const ticketsCerrados = async (req, res, next) => {
-  const { Id, Rol } = req.session.user;
+  const { userId, rol } = req.session.user;
   let resp;
   try {
     const ESTADO = await Gets.getEstadoTicket("CERRADO");
     if (!ESTADO) {
       return resp.status(404).json({ message: "Estado no encontrado" });
     }
-    if (Rol === "Usuario" || Rol === "Moderador") {
-      resp = await Gets.getTicketsCerradosForResolAndMod(Id, ESTADO);
+    if (rol === "Usuario" || rol === "Moderador") {
+      resp = await Gets.getTicketsCerradosForResolAndMod(userId, ESTADO._id);
       if (resp === false) {
         return res.status(500).json({ desc: "Error al obtener los tickets" });
       }
       req.tickets = resp;
       next();
     } else {
-      resp = await Gets.getTicketsCerradosForAdmin(Id, ESTADO);
+      resp = await Gets.getTicketsCerradosForAdmin(userId, ESTADO._id);
       if (resp === false) {
         return res.status(500).json({ desc: "Error al obtener los tickets" });
       }
@@ -283,7 +270,7 @@ export const ticketsCerrados = async (req, res, next) => {
 };
 
 export const ticketsResueltos = async (req, res) => {
-  const { Id, Rol } = req.session.user;
+  const { userId, Rol } = req.session.user;
   let resultado;
   try {
     const resuelto = await ESTADOS.findOne({ Estado: "RESUELTO" });
@@ -299,7 +286,7 @@ export const ticketsResueltos = async (req, res) => {
               {
                 Estado: resuelto._id,
               },
-              { Resuelto_por: new ObjectId(Id) },
+              { Resuelto_por: new ObjectId(userId) },
             ],
           },
         },
@@ -308,7 +295,7 @@ export const ticketsResueltos = async (req, res) => {
             Asignado_final_a: {
               $cond: [
                 {
-                  $eq: ["$Resuelto_por", new ObjectId(Id)],
+                  $eq: ["$Resuelto_por", new ObjectId(userId)],
                 },
                 "$Resuelto_por",
                 "$Resuelto_por",
@@ -326,7 +313,7 @@ export const ticketsResueltos = async (req, res) => {
       resultado = await TICKETS.aggregate([
         {
           $match: {
-            $and: [{ Estado: resuelto._id }, { Creado_por: new ObjectId(Id) }],
+            $and: [{ Estado: resuelto._id }, { Creado_por: new ObjectId(userId) }],
           },
         },
         {
@@ -334,7 +321,7 @@ export const ticketsResueltos = async (req, res) => {
             Asignado_final_a: {
               $cond: [
                 {
-                  $eq: ["$Resuelto_por", new ObjectId(Id)],
+                  $eq: ["$Resuelto_por", new ObjectId(userId)],
                 },
                 "$Resuelto_por",
                 "$Resuelto_por",
@@ -456,20 +443,20 @@ export const areasReasignacion = async (req, res) => {
   const { Area } = req.session.user;
   try {
     const AREAS = await Gets.getAreasParaReasignacion(Area);
-    if(!AREAS){
-      return res.status(404).json({desc : "No se encontraron áreas"})
+    if (!AREAS) {
+      return res.status(404).json({ desc: "No se encontraron áreas" });
     }
     const AREASRESOLUTORES = await Promise.all(
       AREAS.map(async (area) => {
-        const RESOLUTOR = await getResolutoresParaReasignacionPorArea(area._id)
+        const RESOLUTOR = await getResolutoresParaReasignacionPorArea(area._id);
         return {
           area: area.Area,
           resolutores: RESOLUTOR,
         };
       })
     );
-    if(!AREASRESOLUTORES){
-      return res.status(404).json({desc : "No se encontraron resolutores"})
+    if (!AREASRESOLUTORES) {
+      return res.status(404).json({ desc: "No se encontraron resolutores" });
     }
     res.status(200).json({ AREASRESOLUTORES });
   } catch (error) {
@@ -524,68 +511,13 @@ export const reasignarTicket = async (req, res) => {
 
 export const getInfoSelects = async (req, res) => {
   try {
-    const [
-      estados,
-      tiposTickets,
-      categorias,
-      servicios,
-      subcategoria,
-      prioridades,
-      areas,
-      secretarias,
-      direccion_areas,
-      usuarios,
-      direccion_generales,
-    ] = await Promise.all([
-      ESTADOS.find({
-        $or: [{ Estado: "NUEVO" }, { Estado: "PENDIENTE" }],
-      }),
-      TIPO_TICKET.find(),
-      CATEGORIAS.find(),
-      SERVICIOS.find(),
-      SUBCATEGORIA.find(),
-      PRIORIDADES.find(),
-      AREA.find(),
-      SECRETARIA.find(),
-      DIRECCION_AREA.find(),
-      USUARIO.find(
-        { isActive: { $ne: false }, Rol: "Moderador" },
-        { Nombre: 1, Correo: 1, Area: 1 }
-      ),
-      DIRECCION_GENERAL.find(),
-    ]);
-
-    const areasResolutores = await Promise.all(
-      areas.map(async (area) => {
-        const resolutor = await USUARIO.find({
-          Area: area._id,
-          isActive: true,
-          Rol: "Moderador",
-        }).select("Nombre Correo");
-        return {
-          area: area.Area,
-          resolutores: resolutor,
-        };
-      })
-    );
-
-    // Preparar la respuesta
-    res.status(200).json({
-      estados,
-      tiposTickets,
-      categorias,
-      servicios,
-      subcategoria,
-      prioridades,
-      areas,
-      secretarias,
-      direccion_areas,
-      direccion_generales,
-      areasResolutores,
-    });
+    const RES = Gets.getInfoSelectsCrearTicket();
+    if (!RES) {
+      return res.status(404).json({ desc: "No se encontró información" });
+    }
+    return res.status(200).json(RES);
   } catch (error) {
     console.error("Error fetching data:", error);
-    // Manejo de errores: responder con un mensaje de error
     res.status(500).json({ error: "Error fetching data" });
   }
 };
@@ -805,110 +737,43 @@ export const crearTicket = async (req, res) => {
 };
 //TODO falta de agregar al repositorio (puts)
 export const editarTicket = async (req, res) => {};
-//TODO cambiar nombre
-export const historico = async (req, res) => {
+
+export const obtenerAreas = async (req, res) => {
   try {
-    const areas = await AREA.find();
-    if (!areas) {
+    const AREAS = await Gets.getAreas();
+    if (!AREAS) {
       return res.status(400).json({ desc: "No se encontraron areas" });
     }
-    return res.status(200).json({ areas, tickets: [] });
+    return res.status(200).json({ areas: AREAS, tickets: [] });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
-//TODO cambiar nombre
-export const historicoAreas = async (req, res) => {
+
+export const obtenerTicketsPorArea = async (req, res, next) => {
   const { area } = req.query;
   try {
-    const resultado = await TICKETS.aggregate([
-      {
-        $match: {
-          $or: [
-            { Area_asignado: new ObjectId(area) },
-            { Area_reasignado_a: new ObjectId(area) },
-          ],
-        },
-      },
-      {
-        $addFields: {
-          Asignado_final_a: {
-            $cond: [
-              {
-                $eq: ["$Asignado_a", new ObjectId(area)],
-              },
-              "$Asignado_a",
-              "$Reasignado_a",
-            ],
-          },
-        },
-      },
-    ]);
-    const ticketsConPopulate = await TICKETS.populate(resultado, [
-      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
-      { path: "Area_asignado", select: "Area _id" },
-      { path: "Categoria", select: "Categoria -_id" },
-      { path: "Servicio", select: "Servicio -_id" },
-      { path: "Subcategoria", select: "Subcategoria -_id" },
-      { path: "Secretaria", select: "Secretaria -_id" },
-      { path: "Direccion_general", select: "Direccion_General -_id" },
-      { path: "Direccion_area", select: "direccion_area -_id" },
-      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
-      { path: "Estado" },
-      { path: "Asignado_a", select: "Nombre Coordinacion" },
-      { path: "Reasignado_a", select: "Nombre Coordinacion" },
-      { path: "Resuelto_por", select: "Nombre Coordinacion" },
-      { path: "Creado_por", select: "Nombre -_id" },
-      { path: "Area_reasignado_a", select: "Area -_id" },
-      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
-      {
-        path: "Historia_ticket",
-        populate: { path: "Nombre", select: "Nombre -_id" },
-      },
-    ]);
-    const data = ticketsConPopulate.map((ticket) => {
-      return {
-        ...ticket,
-        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-        Fecha_limite_resolucion_SLA: formateDate(
-          ticket.Fecha_limite_resolucion_SLA
-        ),
-        Fecha_hora_ultima_modificacion: formateDate(
-          ticket.Fecha_hora_ultima_modificacion
-        ),
-        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-        Fecha_limite_respuesta_SLA: formateDate(
-          ticket.Fecha_limite_respuesta_SLA
-        ),
-        Historia_ticket: ticket.Historia_ticket
-          ? ticket.Historia_ticket.map((historia) => ({
-              Nombre: historia.Nombre,
-              Mensaje: historia.Mensaje,
-              Fecha: formateDate(historia.Fecha),
-            }))
-          : [],
-      };
-    });
-    res.status(200).json(data);
+    const TICKETS = Gets.getTicketsPorArea(area);
+    if (!TICKETS) {
+      return res.status(400).json({ desc: "No se encontraron areas." });
+    }
+    req.tickets = TICKETS;
+    next();
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
     res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
 
-export const coordinacion = async (req, res) => {
-  const { Id } = req.session.user;
+export const obtenerAreasModerador = async (req, res, next) => {
+  const { Id, Area } = req.session.user;
   try {
-    const [areas] = await USUARIO.find({ _id: Id });
-    if (!areas) {
-      return res.status(404).json({ desc: "No se encontraron areas" });
+    const AREAS = await Gets.getAreasModerador(Area);
+    if (!AREAS) {
+      return res.send(404).json({ desc: "No se encontrarón areas." });
     }
-    const populate = await AREA.populate(areas, [
-      { path: "Area", select: "Area" },
-    ]);
-    return res.status(200).json({ areas: populate.Area, tickets: [] });
+    return res.status(200).json({ areas: AREAS });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
