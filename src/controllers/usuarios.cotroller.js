@@ -48,8 +48,16 @@ export const getUsuariosPorCoordinacion = async (req, res) => {
 };
 
 export const pruebaemail = async (req, res) => {
-  console.log("Entrando a la funcion");
-  const message = "Mensaje desde ticket service";
-  redisClient.publish("ticket_channel_abierto", JSON.stringify(message));
+  const message = {
+    correo: "fernando.sanchezplascencia@jalisco.gob.mx",
+    correoUsuario: "fernando.sanchezplascencia@jalisco.gob.mx",
+    idTicket: "1",
+    descripcionTicket: "Ayuda con incidencia",
+    correoCliente: "fernando.sanchez3411@alumnos.udg.mx",
+    nombreCliente: "Fernando Sanchez Plascencia",
+    dependenciaCliente: "DTIF",
+    telefonoCliente: "3317058711"
+  };
+  redisClient.publish("channel_cerrarTicket", JSON.stringify(message));
   res.send("Publicado en redis");
 };

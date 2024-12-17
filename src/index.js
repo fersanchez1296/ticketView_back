@@ -34,6 +34,5 @@ app.use("/api", dashboard);
 connectDB();
 redisClient.connect().then(() => {
   console.log("Redis connected");
-
   app.listen(process.env.PORT);
 });

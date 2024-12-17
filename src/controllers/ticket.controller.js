@@ -1,4 +1,5 @@
 import { TICKETS, ESTADOS, USUARIO } from "../models/index.js";
+import { redisClient } from "../config/redis_connection.js";
 import formateDate from "../functions/dateFormat.functions.js";
 import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
@@ -464,7 +465,7 @@ export const areasReasignacion = async (req, res) => {
     res.status(500).json({ message: "Error al obtener áreas y resolutores" });
   }
 };
-
+//TODO revisar
 export const reasignarTicket = async (req, res) => {
   const { id_usuario_reasignar, id_ticket } = req.body;
   const { Id, Nombre, Rol } = req.session.user;
@@ -495,6 +496,7 @@ export const reasignarTicket = async (req, res) => {
     );
     if (result) {
       //res.status(200).json({ desc: "El ticket fue reasignado correctamente." });
+      redisClient.publish("channel_reasignarTicket", JSON.stringify(message));
       req.datosCorreo = { ...result };
       next();
     } else {
@@ -547,8 +549,8 @@ export const cerrarTicket = async (req, res) => {
         },
       }
     );
-    console.log(result);
     if (result) {
+      redisClient.publish("channel_cerrarTicket", JSON.stringify(message));
       return res
         .status(200)
         .json({ desc: "Ticket cerrado de manera correcta." });
@@ -730,6 +732,7 @@ export const crearTicket = async (req, res) => {
   const { Id, Rol } = req.session.user;
   try {
     const nuevoTicket = new TICKETS({ ...ticketNuevo });
+    redisClient.publish("channel_crearTicket", JSON.stringify(message));
   } catch (error) {
     console.log(error);
     res.status(500).json({ desc: "Error interno en el servidor" });
