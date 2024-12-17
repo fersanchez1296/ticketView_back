@@ -11,6 +11,7 @@ import TIPO_TICKET from "./tipo_ticket.model.js";
 import SERVICIOS from "./servicios.model.js";
 import USUARIO from "./usuario.model.js"
 import BLACKLIST from "./blacklist.model.js";
+import CLIENTES from "./clientes.model.js";
 export {
     TICKETS,
     CATEGORIAS,
@@ -25,4 +26,5 @@ export {
     SERVICIOS,
     USUARIO, 
     BLACKLIST,
+    CLIENTES,
 }

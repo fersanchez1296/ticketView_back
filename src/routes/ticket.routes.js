@@ -25,6 +25,7 @@ import {
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
 import { validateData } from "../middleware/validateData.middleware.js";
+import { correo_reasignarTicket } from "../controllers/envio_correos.js";
 import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 const router = Router();
@@ -79,8 +80,8 @@ router.put(
   "/reasignar",
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),
-  validateData("reasignarTicket"),
-  reasignarTicket
+  validateData("Reasignar"),
+  reasignarTicket,correo_reasignarTicket,
 );
 router.get("/reasignar/areas", verifyToken, areasReasignacion);
 router.put(
