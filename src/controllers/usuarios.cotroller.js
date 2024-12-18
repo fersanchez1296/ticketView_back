@@ -1,6 +1,9 @@
 import { USUARIO } from "../models/index.js";
 import encryptPassword from "../functions/encryptPassword.function.js";
-import { redisClient } from "../config/redis_connection.js";
+import multer from "multer";
+import axios from "axios";
+import FormData from "form-data";
+import fs from "fs";
 export const register = async (req, res) => {
   const { user } = req.session;
   if (!user) return res.status(403).send("Acceso no autorizado");
@@ -47,17 +50,29 @@ export const getUsuariosPorCoordinacion = async (req, res) => {
   }
 };
 
+const upload = multer({ dest: "temp/" });
+
 export const pruebaemail = async (req, res) => {
-  const message = {
-    correo: "fernando.sanchezplascencia@jalisco.gob.mx",
-    correoUsuario: "fernando.sanchezplascencia@jalisco.gob.mx",
-    idTicket: "1",
-    descripcionTicket: "Ayuda con incidencia",
-    correoCliente: "fernando.sanchez3411@alumnos.udg.mx",
-    nombreCliente: "Fernando Sanchez Plascencia",
-    dependenciaCliente: "DTIF",
-    telefonoCliente: "3317058711"
-  };
-  redisClient.publish("channel_cerrarTicket", JSON.stringify(message));
-  res.send("Publicado en redis");
+  try {
+    const { originalname, path } = req.file;
+    const formData = new FormData();
+    formData.append("file", fs.createReadStream(path), originalname);
+
+    const response = await axios.post(
+      "http://localhost:4400/files",
+      formData,
+      { headers: formData.getHeaders() }
+    );
+
+    fs.unlinkSync(path);
+
+    const fileUrl = response.data.url;
+    return res.json({
+      message: "Ticket creado correctamente",
+      archivoUrl: fileUrl,
+    });
+  } catch (error) {
+    console.error("Error al enviar el archivo:", error.message);
+    return res.status(500).json({ error: "Error al subir el archivo" });
+  }
 };
