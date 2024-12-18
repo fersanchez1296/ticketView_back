@@ -21,6 +21,7 @@ import {
   obtenerTicketsPorArea,
   crearTicket,
   obtenerAreasModerador,
+  buscarTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -139,5 +140,12 @@ router.get(
   verifyRole(["Moderador"]),
   obtenerAreasModerador
 );
+
+router.post("/tickets/:id",
+  // verifyToken,
+  buscarTicket,
+  formatearCamposFecha,
+  populateTickets
+ );
 
 export default router;

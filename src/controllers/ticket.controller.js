@@ -314,7 +314,10 @@ export const ticketsResueltos = async (req, res) => {
       resultado = await TICKETS.aggregate([
         {
           $match: {
-            $and: [{ Estado: resuelto._id }, { Creado_por: new ObjectId(userId) }],
+            $and: [
+              { Estado: resuelto._id },
+              { Creado_por: new ObjectId(userId) },
+            ],
           },
         },
         {
@@ -777,6 +780,19 @@ export const obtenerAreasModerador = async (req, res, next) => {
       return res.send(404).json({ desc: "No se encontrarón areas." });
     }
     return res.status(200).json({ areas: AREAS });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};
+
+export const buscarTicket = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const RES = await Gets.getTicketPorID(id);
+    if (!RES) return res.send(404).json({ desc: "No se encontro el ticket." });
+    req.tickets = RES;
+    next()
   } catch (error) {
     console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
