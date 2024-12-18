@@ -45,9 +45,13 @@ router.get(
   formatearCamposFecha,
   populateTickets
 );
-router.get("/tickets/reabiertos", verifyToken, ticketsReabiertos),
+router.get(
+  "/tickets/reabiertos",
+  verifyToken,
+  ticketsReabiertos,
   formatearCamposFecha,
-  populateTickets;
+  populateTickets
+);
 router.get(
   "/tickets/pendientes",
   verifyToken,
@@ -81,9 +85,9 @@ router.put(
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),
   validateData("Reasignar"),
-  reasignarTicket,
+  reasignarTicket
 );
-router.get("/reasignar/areas", verifyToken, areasReasignacion);
+router.get("/tickets/reasignar/areas", verifyToken, areasReasignacion);
 router.put(
   "/resolver",
   verifyToken,
@@ -91,7 +95,7 @@ router.put(
   resolverTicket
 );
 router.get(
-  "/crear/getInfoSelects",
+  "/tickets/crear/getInfoSelects",
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   getInfoSelects
@@ -125,9 +129,9 @@ router.put(
   rechazarResolucion
 );
 
-router.get("/historico", verifyToken, verifyRole(["Root"]), obtenerAreas);
+router.get("/tickets/historico", verifyToken, verifyRole(["Root"]), obtenerAreas);
 router.get(
-  "/historico/area",
+  "/tickets/historico/area",
   verifyToken,
   verifyRole(["Root", "Moderador"]),
   obtenerTicketsPorArea,
@@ -135,17 +139,18 @@ router.get(
   populateTickets
 );
 router.get(
-  "/coordinacion",
+  "/tickets/coordinacion",
   verifyToken,
   verifyRole(["Moderador"]),
   obtenerAreasModerador
 );
 
-router.post("/tickets/:id",
+router.post(
+  "/tickets/:id",
   // verifyToken,
   buscarTicket,
   formatearCamposFecha,
   populateTickets
- );
+);
 
 export default router;

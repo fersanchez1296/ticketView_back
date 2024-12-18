@@ -444,15 +444,17 @@ export const resolverTicket = async (req, res) => {
 };
 
 export const areasReasignacion = async (req, res) => {
-  const { Area } = req.session.user;
+  const { areas } = req.session.user;
   try {
-    const AREAS = await Gets.getAreasParaReasignacion(Area);
+    const AREAS = await Gets.getAreasParaReasignacion(areas);
     if (!AREAS) {
       return res.status(404).json({ desc: "No se encontraron áreas" });
     }
     const AREASRESOLUTORES = await Promise.all(
       AREAS.map(async (area) => {
-        const RESOLUTOR = await getResolutoresParaReasignacionPorArea(area._id);
+        const RESOLUTOR = await Gets.getResolutoresParaReasignacionPorArea(
+          area._id
+        );
         return {
           area: area.Area,
           resolutores: RESOLUTOR,
@@ -790,9 +792,11 @@ export const buscarTicket = async (req, res, next) => {
   const { id } = req.params;
   try {
     const RES = await Gets.getTicketPorID(id);
-    if (!RES) return res.send(404).json({ desc: "No se encontro el ticket." });
+    if (!RES) {
+      return res.status(404).json({ desc: "No se encontro el ticket." });
+    }
     req.tickets = RES;
-    next()
+    next();
   } catch (error) {
     console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });

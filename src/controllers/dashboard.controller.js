@@ -2,7 +2,7 @@ import { TICKETS } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
 export const dashboard = async (req, res) => {
-  const { Id, Area } = req.session.user;
+  const { userId, areas } = req.session.user;
   try {
     const [
       abiertos,
@@ -23,7 +23,7 @@ export const dashboard = async (req, res) => {
       TICKETS.find({
         $and: [
           {
-            $or: [{ Asignado_a: Id }, { Reasignado_a: Id }],
+            $or: [{ Asignado_a: userId }, { Reasignado_a: userId }],
           },
           { Estado: "67200415ab8f070f7ce35389" },
         ],
@@ -31,7 +31,7 @@ export const dashboard = async (req, res) => {
       TICKETS.find({
         $and: [
           {
-            $or: [{ Asignado_a: Id }, { Reasignado_a: Id }],
+            $or: [{ Asignado_a: userId }, { Reasignado_a: userId }],
           },
           { Estado: "67200415ab8f070f7ce3538c" },
         ],
@@ -40,11 +40,11 @@ export const dashboard = async (req, res) => {
         $and: [
           {
             $or: [
-              { Asignado_a: Id },
-              { Reasignado_a: Id },
-              { Resuelto_por: Id },
-              { Cerrado_por: Id },
-              { Creado_por: Id },
+              { Asignado_a: userId },
+              { Reasignado_a: userId },
+              { Resuelto_por: userId },
+              { Cerrado_por: userId },
+              { Creado_por: userId },
             ],
           },
           { Estado: "67200415ab8f070f7ce35388" },
@@ -53,7 +53,7 @@ export const dashboard = async (req, res) => {
       TICKETS.find({
         $and: [
           {
-            $or: [{ Asignado_a: Id }, { Reasignado_a: Id }],
+            $or: [{ Asignado_a: userId }, { Reasignado_a: userId }],
           },
           { Estado: "67200415ab8f070f7ce3538b" },
         ],
@@ -61,7 +61,7 @@ export const dashboard = async (req, res) => {
       TICKETS.find({
         $and: [
           {
-            $or: [{ Asignado_a: Id }, { Reasignado_a: Id }],
+            $or: [{ Asignado_a: userId }, { Reasignado_a: userId }],
           },
           { Estado: "67200415ab8f070f7ce3538a" },
         ],
@@ -69,11 +69,11 @@ export const dashboard = async (req, res) => {
       TICKETS.find({
         $and: [
           { Estado: "672bc1010467f98349b61017" },
-          { Area_reasignado_a: { $in: Area } },
+          { Area_reasignado_a: { $in: areas } },
         ],
       }).countDocuments(),
       TICKETS.find({
-        $and: [{ Resuelto_por: Id }, { Estado: "67200415ab8f070f7ce3538d" }],
+        $and: [{ Resuelto_por: userId }, { Estado: "67200415ab8f070f7ce3538d" }],
       }).countDocuments(),
       //tickets totales
       TICKETS.find({

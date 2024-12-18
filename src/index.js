@@ -18,7 +18,7 @@ const format =
 const app = express();
 app.use(
   cors({
-    origin: "http://localhost:4000", //API Gateway
+    origin: ["http://localhost:4000", "http://localhost:3000"], //API Gateway
     //origin: "*",
     credentials: true,
   })
@@ -27,9 +27,9 @@ app.use(morgan(format));
 app.use(express.json());
 app.use(cookieParser());
 app.use(ticketsRoute);
-app.use("/api", ticketsFilterRoute);
-app.use("/api", usuariosRoutes);
-app.use("/api", dashboard);
+app.use(ticketsFilterRoute);
+app.use(usuariosRoutes);
+app.use(dashboard);
 
 connectDB();
 redisClient.connect().then(() => {
