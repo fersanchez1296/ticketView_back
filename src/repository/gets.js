@@ -656,3 +656,15 @@ export const getInfoDashboard = async () => {
     return false;
   }
 };
+
+export const getTicketPorID = async (id) => {
+try {
+  const RES = await TICKETS.findOne({
+    Id:id
+  })
+  return RES
+} catch (error) {
+  return false
+}
+
+};
