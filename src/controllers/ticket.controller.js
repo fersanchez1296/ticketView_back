@@ -798,3 +798,40 @@ export const buscarTicket = async (req, res, next) => {
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
+
+export const createTicket= async (req, res) => {
+  const {ticketState} = req.body;
+  if(!ticketState) return res.status(400).json({error})
+  const {Tipo_de_incidencia,Incidencia_grave,Categoria,Estado,Servicio,Subcategoria}= ticketState
+  try {
+    const newTicket = new TICKETS({
+      Tipo_de_incidencia,
+      Incidencia_grave,
+      Categoria,
+      Estado,
+      Servicio,
+      Subcategoria,
+      Prioridad,
+      PendingReason,
+      NumeroRec_Oficio,
+      Numero_Oficio,
+      Descripcion,
+      //Falta ver que pedo con la subida de archivos
+      Asignado_a,
+      Area_asignado,
+      Secretaria,
+      Direccion_general,
+      Direccion_area,
+      Nombre_cliente,
+      Telefono_cliente,
+      Correo_cliente,
+      Creado_por: req.user.id,
+    });
+const savedTicket = await newTicket.save();
+    res.status(201).json(savedTicket);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al guardar el ticket" });
+  }
+};
+
