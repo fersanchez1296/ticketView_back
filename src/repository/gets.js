@@ -378,6 +378,7 @@ export const getTicketsResueltosForAdmin = async (userId, estado) => {
 };
 
 export const getAreasParaReasignacion = async (Area) => {
+  console.log(Area);
   try {
     const RES = await AREA.find({ _id: { $in: Area } });
     return RES;

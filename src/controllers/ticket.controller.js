@@ -518,7 +518,8 @@ export const reasignarTicket = async (req, res) => {
 
 export const getInfoSelects = async (req, res) => {
   try {
-    const RES = Gets.getInfoSelectsCrearTicket();
+    const RES = await Gets.getInfoSelectsCrearTicket();
+    console.log(RES);
     if (!RES) {
       return res.status(404).json({ desc: "No se encontró información" });
     }
