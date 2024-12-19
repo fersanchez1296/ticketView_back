@@ -20,6 +20,7 @@ import {
   obtenerAreas,
   obtenerTicketsPorArea,
   crearTicket,
+  createTicket,
   obtenerAreasModerador,
   buscarTicket,
 } from "../controllers/ticket.controller.js";
@@ -152,5 +153,9 @@ router.post(
   formatearCamposFecha,
   populateTickets
 );
+
+ router.post("/ticket_crear",
+  verifyToken,verifyRole(["Root"]),
+  createTicket)
 
 export default router;
