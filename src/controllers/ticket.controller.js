@@ -154,7 +154,7 @@ export const ticketsNuevos = async (req, res, next) => {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
     const RES = await Gets.getTicketsNuevos(userId, ESTADO._id);
-    if (RES === false) {
+    if (!RES) {
       return res.status(500).json({ desc: "Error al obtener los tickets" });
     }
     req.tickets = RES;
@@ -791,8 +791,11 @@ export const obtenerAreasModerador = async (req, res, next) => {
 
 export const buscarTicket = async (req, res, next) => {
   const { id } = req.params;
+  console.log(id);
+  console.log(req.params)
   try {
     const RES = await Gets.getTicketPorID(id);
+    console.log(RES);
     if (!RES) {
       return res.status(404).json({ desc: "No se encontro el ticket." });
     }
@@ -804,12 +807,39 @@ export const buscarTicket = async (req, res, next) => {
   }
 };
 
-export const createTicket= async (req, res) => {
-  const {ticketState} = req.body;
-  if(!ticketState) return res.status(400).json({error})
-  const {Tipo_de_incidencia,Incidencia_grave,Categoria,Estado,Servicio,Subcategoria}= ticketState
+export const createTicket = async (req, res) => {
+  const { userId, nombre, rol, correo } = req.session.user;
+  const { ticketState } = req.body;
+  if (!ticketState)
+    return res.status(400).json({ desc: "No hay nada en el body" });
+  const {
+    Tipo_de_incidencia,
+    Incidencia_grave,
+    Categoria,
+    Estado,
+    Servicio,
+    Subcategoria,
+    Prioridad,
+    PendingReason,
+    NumeroRec_Oficio,
+    Numero_Oficio,
+    Descripcion,
+    Asignado_a,
+    Area_asignado,
+    Secretaria,
+    Direccion_general,
+    Direccion_area,
+    Nombre_cliente,
+    Telefono_cliente,
+    Correo_cliente,
+  } = ticketState;
   try {
     const newTicket = new TICKETS({
+      Fecha_hora_creacion: new Date(),
+      Fecha_limite_resolucion_SLA: new Date(),
+      Fecha_limite_respuesta_SLA: new Date(),
+      Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
+      Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
       Tipo_de_incidencia,
       Incidencia_grave,
       Categoria,
@@ -822,21 +852,42 @@ export const createTicket= async (req, res) => {
       Numero_Oficio,
       Descripcion,
       //Falta ver que pedo con la subida de archivos
-      Asignado_a,
-      Area_asignado,
+      Asignado_a: Asignado_a._id,
+      Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //obtener el area
       Secretaria,
       Direccion_general,
       Direccion_area,
       Nombre_cliente,
       Telefono_cliente,
       Correo_cliente,
-      Creado_por: req.user.id,
+      Creado_por: userId,
+      Historia_ticket: [
+        {
+          Nombre: userId,
+          Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
+          Fecha: new Date(),
+        },
+      ],
     });
-const savedTicket = await newTicket.save();
-    res.status(201).json(savedTicket);
+    const savedTicket = await newTicket.save();
+    const correoAsignado = await USUARIO.findOne({_id : savedTicket.Asignado_a});
+    const correoData = {
+      correo,
+      idTicket: savedTicket.Id,
+      descripcionTicket: savedTicket.Descripcion,
+      correoCliente: savedTicket.Correo_cliente,
+      correoUsuario: correoAsignado.Correo,
+      nombreCliente: savedTicket.Nombre_cliente,
+      telefonoCliente: savedTicket.Telefono_cliente,
+      dependenciaCliente: "DTIF"
+    }
+    if (!savedTicket) {
+      res.status(500).json({ error: "Error al guardar el ticket" });
+    }
+    redisClient.publish("channel_crearTicket", JSON.stringify(correoData));
+    res.status(201).json({ desc: "Ticket guardado correctamente" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al guardar el ticket" });
   }
 };
-

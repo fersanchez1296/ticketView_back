@@ -130,7 +130,12 @@ router.put(
   rechazarResolucion
 );
 
-router.get("/tickets/historico", verifyToken, verifyRole(["Root"]), obtenerAreas);
+router.get(
+  "/tickets/historico",
+  verifyToken,
+  verifyRole(["Root"]),
+  obtenerAreas
+);
 router.get(
   "/tickets/historico/area",
   verifyToken,
@@ -147,15 +152,17 @@ router.get(
 );
 
 router.post(
-  "/tickets/:id",
-  // verifyToken,
+  "/tickets/buscar/:id",
+  verifyToken,
   buscarTicket,
   formatearCamposFecha,
   populateTickets
 );
-
- router.post("/ticket_crear",
-  verifyToken,verifyRole(["Root"]),
-  createTicket)
+router.post(
+  "/tickets/crear/ticket",
+  verifyToken,
+  verifyRole(["Root"]),
+  createTicket
+);
 
 export default router;
