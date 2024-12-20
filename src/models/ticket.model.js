@@ -158,6 +158,10 @@ const ticketModel = mongoose.Schema(
       type: String,
       trim: true,
     },
+    Dependencia_cliente:{
+      type: String,
+      trim: true,
+    },
   },
   {
     timesStampes: true,
