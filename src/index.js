@@ -9,6 +9,8 @@ import cors from "cors";
 import "dotenv/config";
 import cookieParser from "cookie-parser";
 import { redisClient } from "./config/redis_connection.js";
+import path from "path";
+import { __dirname, __filename } from "./config/config.js";
 
 morgan.token("date", function () {
   return new Date().toISOString();
@@ -26,6 +28,7 @@ app.use(
 app.use(morgan(format));
 app.use(express.json());
 app.use(cookieParser());
+app.use("src/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(ticketsRoute);
 app.use(ticketsFilterRoute);
 app.use(usuariosRoutes);

@@ -29,8 +29,8 @@ import { verifyRole } from "../middleware/verifyRole.middleware.js";
 import { validateData } from "../middleware/validateData.middleware.js";
 import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
+import { uploadMiddleware } from "../middleware/upload.middleware.js";
 const router = Router();
-
 router.get("/tickets", verifyToken, getTicketsAbiertos);
 router.get(
   "/tickets/nuevos",
@@ -160,6 +160,15 @@ router.post(
 );
 router.post(
   "/tickets/crear/ticket",
+  (req, res, next) => {
+    console.log("Antes de multer");
+    next();
+  },
+  uploadMiddleware,
+  (req, res, next) => {
+    console.log("Después de multer");
+    next();
+  },
   verifyToken,
   verifyRole(["Root"]),
   createTicket

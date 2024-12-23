@@ -3,6 +3,9 @@ import { redisClient } from "../config/redis_connection.js";
 import formateDate from "../functions/dateFormat.functions.js";
 import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
+import axios from "axios";
+import FormData from "form-data";
+import fs from "fs";
 const ObjectId = mongoose.Types.ObjectId;
 export const getTickets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -792,7 +795,7 @@ export const obtenerAreasModerador = async (req, res, next) => {
 export const buscarTicket = async (req, res, next) => {
   const { id } = req.params;
   console.log(id);
-  console.log(req.params)
+  console.log(req.params);
   try {
     const RES = await Gets.getTicketPorID(id);
     console.log(RES);
@@ -808,8 +811,26 @@ export const buscarTicket = async (req, res, next) => {
 };
 
 export const createTicket = async (req, res) => {
+  console.log(req.file);
   const { userId, nombre, rol, correo } = req.session.user;
   const { ticketState } = req.body;
+  const { name, path } = req.file;
+  console.log(name, path);
+  const formData = new FormData();
+  formData.append("file", fs.createReadStream(path), name);
+
+  const response = await axios.post(
+    "http://files-service-node:4400/files",
+    formData,
+    {
+      headers: formData.getHeaders(),
+    }
+  );
+
+  fs.unlinkSync(path);
+
+  const fileUrl = response.data.url;
+  console.log(fileUrl);
   if (!ticketState)
     return res.status(400).json({ desc: "No hay nada en el body" });
   const {
@@ -869,8 +890,10 @@ export const createTicket = async (req, res) => {
         },
       ],
     });
-    const savedTicket = await newTicket.save();
-    const correoAsignado = await USUARIO.findOne({_id : savedTicket.Asignado_a});
+    //const savedTicket = await newTicket.save();
+    const correoAsignado = await USUARIO.findOne({
+      _id: savedTicket.Asignado_a,
+    });
     const correoData = {
       correo,
       idTicket: savedTicket.Id,
@@ -879,12 +902,12 @@ export const createTicket = async (req, res) => {
       correoUsuario: correoAsignado.Correo,
       nombreCliente: savedTicket.Nombre_cliente,
       telefonoCliente: savedTicket.Telefono_cliente,
-      dependenciaCliente: "DTIF"
-    }
+      dependenciaCliente: "DTIF",
+    };
     if (!savedTicket) {
       res.status(500).json({ error: "Error al guardar el ticket" });
     }
-    redisClient.publish("channel_crearTicket", JSON.stringify(correoData));
+    //redisClient.publish("channel_crearTicket", JSON.stringify(correoData));
     res.status(201).json({ desc: "Ticket guardado correctamente" });
   } catch (error) {
     console.error(error);
