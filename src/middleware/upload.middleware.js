@@ -1,11 +1,12 @@
 import multer from "multer";
-
+import path from "path";
+import { __dirname, __filename } from "../config/config.js";
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "src/uploads");
+    const uploadPath = path.join(__dirname, "src", "temp");
+    cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    console.log(file, "middleware");
     const uniqueName = `${Date.now()}-${file.originalname}`;
     cb(null, uniqueName);
   },
@@ -14,7 +15,6 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
-    console.log(file, "middleware");
     if (file.mimetype !== "application/pdf") {
       return cb(new Error("Solo se permiten archivos PDF"));
     }

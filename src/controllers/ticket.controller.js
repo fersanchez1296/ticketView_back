@@ -522,7 +522,6 @@ export const reasignarTicket = async (req, res) => {
 export const getInfoSelects = async (req, res) => {
   try {
     const RES = await Gets.getInfoSelectsCrearTicket();
-    console.log(RES);
     if (!RES) {
       return res.status(404).json({ desc: "No se encontró información" });
     }
@@ -811,26 +810,27 @@ export const buscarTicket = async (req, res, next) => {
 };
 
 export const createTicket = async (req, res) => {
-  console.log(req.file);
+  const token = req.cookies.access_token;
   const { userId, nombre, rol, correo } = req.session.user;
   const { ticketState } = req.body;
-  const { name, path } = req.file;
-  console.log(name, path);
+  const { originalname, path } = req.file;
   const formData = new FormData();
-  formData.append("file", fs.createReadStream(path), name);
+  formData.append("file", fs.createReadStream(path), originalname);
 
-  const response = await axios.post(
-    "http://files-service-node:4400/files",
-    formData,
-    {
-      headers: formData.getHeaders(),
-    }
-  );
+  try {
+    const response = await axios.post("http://files-service-node:4400/files", formData, {
+      headers: {
+        ...formData.getHeaders(),
+        Cookie: `access_token=${token}`,
+      },
+      withCredentials: true,
+    });
+    fs.unlinkSync(path);
+    const fileUrl = response.data.url;
+  } catch (error) {
+    console.log(error);
+  }
 
-  fs.unlinkSync(path);
-
-  const fileUrl = response.data.url;
-  console.log(fileUrl);
   if (!ticketState)
     return res.status(400).json({ desc: "No hay nada en el body" });
   const {

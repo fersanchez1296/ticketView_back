@@ -30,7 +30,9 @@ import { validateData } from "../middleware/validateData.middleware.js";
 import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 import { uploadMiddleware } from "../middleware/upload.middleware.js";
+import multer from "multer";
 const router = Router();
+const upload = multer({ dest: "temp/" });
 router.get("/tickets", verifyToken, getTicketsAbiertos);
 router.get(
   "/tickets/nuevos",
@@ -164,6 +166,7 @@ router.post(
     console.log("Antes de multer");
     next();
   },
+  // upload.single("file"),
   uploadMiddleware,
   (req, res, next) => {
     console.log("Después de multer");

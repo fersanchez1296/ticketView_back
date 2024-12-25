@@ -11,10 +11,14 @@ import cookieParser from "cookie-parser";
 import { redisClient } from "./config/redis_connection.js";
 import path from "path";
 import { __dirname, __filename } from "./config/config.js";
-
+import fs from "fs";
 morgan.token("date", function () {
   return new Date().toISOString();
 });
+const tempDir = path.join(__dirname, "src", "temp");
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
 const format =
   "[:date] :method :url :status :response-time ms - :res[content-length]";
 const app = express();
@@ -28,7 +32,7 @@ app.use(
 app.use(morgan(format));
 app.use(express.json());
 app.use(cookieParser());
-app.use("src/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("temp", express.static(path.join(__dirname, "temp")));
 app.use(ticketsRoute);
 app.use(ticketsFilterRoute);
 app.use(usuariosRoutes);
@@ -36,6 +40,7 @@ app.use(dashboard);
 
 connectDB();
 redisClient.connect().then(() => {
+  console.log(__dirname);
   console.log("Redis connected");
   app.listen(process.env.PORT);
 });

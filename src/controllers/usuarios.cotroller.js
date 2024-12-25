@@ -59,7 +59,7 @@ export const pruebaemail = async (req, res) => {
     formData.append("file", fs.createReadStream(path), originalname);
 
     const response = await axios.post(
-      "http://localhost:4400/files",
+      "http://localhost:4401/files",
       formData,
       { headers: formData.getHeaders() }
     );
