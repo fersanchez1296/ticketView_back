@@ -1,8 +1,8 @@
 import Joi from "joi";
-const cerrarTicketSchema = Joi.object({
+const cerrarSchema = Joi.object({
   _id: Joi.string().alphanum().required(),
   Descripcion_cierre: Joi.string().required(),
   Causa: Joi.string().required(),
 });
 
-export default cerrarTicketSchema;
+export default cerrarSchema;

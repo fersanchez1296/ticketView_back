@@ -162,6 +162,10 @@ const ticketModel = mongoose.Schema(
       type: String,
       trim: true,
     },
+    Archivo:{
+      type: Object || String,
+      trim: true,
+    },
   },
   {
     timesStampes: true,

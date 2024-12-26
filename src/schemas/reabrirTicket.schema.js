@@ -1,5 +1,5 @@
 import Joi from "joi";
-const reabrirTicketSchema = Joi.object({
+const reabrirSchema = Joi.object({
   _id: Joi.string().alphanum().required(),
   Asignado_a: Joi.string().alphanum().required(),
   Area_asignado: Joi.string().alphanum().required(),
@@ -10,4 +10,4 @@ const reabrirTicketSchema = Joi.object({
   Descripcion: Joi.string().required(),
 });
 
-export default reabrirTicketSchema;
+export default reabrirSchema;

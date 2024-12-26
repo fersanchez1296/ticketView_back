@@ -1,5 +1,5 @@
 import Joi from "joi";
-const crearTicketSchema = Joi.object({
+const crearSchema = Joi.object({
   Tipo_incidencia: Joi.string().alphanum().required(),
   Estado: Joi.string().alphanum().required(),
   Area_asignado: Joi.string().alphanum().required(),
@@ -18,4 +18,4 @@ const crearTicketSchema = Joi.object({
   Numero_Oficio: Joi.string().allow(null, ''),
 });
 
-export default crearTicketSchema;
+export default crearSchema;

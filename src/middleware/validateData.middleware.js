@@ -68,8 +68,7 @@ export const validateData = (schemaName) => {
     const schema = schemas[`${schemaName}Schema`];
     if (!schema) {
       return res.status(400).json({ error: "Invalid schema name" });
-    }
-
+    };
     const { error } = schema.validate(req.body);
     if (error) {
       return res

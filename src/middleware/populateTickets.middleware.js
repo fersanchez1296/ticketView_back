@@ -1,7 +1,6 @@
 import { TICKETS } from "../models/index.js";
 
 export const populateTickets = async (req, res, next) => {
-  console.log(req.ticketsFormateados)
   try {
     const POPULATE = await TICKETS.populate(req.ticketsFormateados, [
       { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },

@@ -17,6 +17,7 @@ export const postCrearTicket = async (nuevoTicket, userId, nombre, rol) => {
     }
     return savedTicket;
   } catch (error) {
+    console.log("Error", error);
     return false;
   }
 };

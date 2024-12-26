@@ -11,7 +11,6 @@ export const getTickets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
-  console.log(page, limit);
   try {
     const results = await TICKETS.find().skip(skip).limit(limit);
     const total = await TICKETS.countDocuments();
@@ -29,7 +28,6 @@ export const getTickets = async (req, res) => {
 export const getTicketsAbiertos = async (req, res) => {
   const { collection } = req.query; // El nombre del estado enviado desde el cliente (ej. "abierto")
   const { Id, Rol, Coordinacion } = req.session.user; // ID del usuario autenticado
-  console.log(Rol);
   try {
     const estadoDoc = await ESTADOS.findOne({ Estado: collection }); // Colección de estados
     if (!estadoDoc) {
@@ -226,13 +224,14 @@ export const ticketsPendientes = async (req, res, next) => {
 };
 //PENDIENTE DE MODIFICAR EL QUERY
 export const ticketsRevision = async (req, res, next) => {
-  const { Area } = req.session.user;
+  const { areas } = req.session.user;
   try {
     const ESTADO = await Gets.getEstadoTicket("REVISIÓN");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const RES = await Gets.getTicketsRevision(ESTADO, Area);
+    const RES = await Gets.getTicketsRevision(ESTADO._id, areas);
+    console.log(RES);
     if (RES === false) {
       return res.status(500).json({ desc: "Error al obtener los tickets" });
     }
@@ -399,10 +398,10 @@ export const ticketsResueltos = async (req, res) => {
 
 export const resolverTicket = async (req, res) => {
   const { _id, Descripcion_resolucion } = req.body;
-  const { Id, Rol, Nombre } = req.session.user;
+  const { userId, rol, nombre } = req.session.user;
   let estado;
   try {
-    if (Rol != "Usuario") {
+    if (rol != "Usuario") {
       [estado] = await ESTADOS.find({ Estado: "RESUELTO" });
     } else {
       [estado] = await ESTADOS.find({ Estado: "REVISIÓN" });
@@ -412,21 +411,21 @@ export const resolverTicket = async (req, res) => {
         .status(404)
         .json({ desc: "No se encontro el estado del ticket" });
     }
-    const result = await TICKETS.updateOne(
+    const result = await TICKETS.findOneAndUpdate(
       { _id },
       {
         $set: {
           Estado: estado._id,
-          Resuelto_por: Id,
+          Resuelto_por: userId,
           Respuesta_cierre_reasignado: Descripcion_resolucion,
         },
         $push: {
           Historia_ticket: {
-            Nombre: Id,
+            Nombre: userId,
             Mensaje:
-              Rol === "Usuario"
-                ? `El ticket ha sido enviado a revisión por ${Nombre}(${Rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${Descripcion_resolucion}`
-                : `El ticket ha sido resuelto por ${Nombre}(${Rol}).`,
+              rol === "Usuario"
+                ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${Descripcion_resolucion}`
+                : `El ticket ha sido resuelto por ${nombre}(${rol}).`,
             Fecha: new Date(),
           },
         },
@@ -474,9 +473,9 @@ export const areasReasignacion = async (req, res) => {
   }
 };
 //TODO revisar
-export const reasignarTicket = async (req, res) => {
+export const reasignarTicket = async (req, res, next) => {
   const { id_usuario_reasignar, id_ticket } = req.body;
-  const { Id, Nombre, Rol } = req.session.user;
+  const { userId, nombre, rol, correo } = req.session.user;
   try {
     const user = await USUARIO.findOne({ _id: id_usuario_reasignar });
     if (!user) {
@@ -484,7 +483,7 @@ export const reasignarTicket = async (req, res) => {
         .status(404)
         .json({ desc: "El usuario no fue encontrado en la BD." });
     }
-    const Nombre_resolutor = user.Nombre;
+    const Nombre_resolutor = user.Nombre; // a quien se va a reasignar
     const result = await TICKETS.findOneAndUpdate(
       { _id: id_ticket },
       {
@@ -494,8 +493,8 @@ export const reasignarTicket = async (req, res) => {
         },
         $push: {
           Historia_ticket: {
-            Nombre: Id,
-            Mensaje: `El ticket ha sido reasignado a ${Nombre_resolutor} por ${Nombre} - ${Rol}`,
+            Nombre: userId,
+            Mensaje: `El ticket ha sido reasignado a ${Nombre_resolutor} por ${nombre} - ${rol}`,
             Fecha: new Date(),
           },
         },
@@ -503,9 +502,17 @@ export const reasignarTicket = async (req, res) => {
       { returnDocument: "after", new: true }
     );
     if (result) {
-      //res.status(200).json({ desc: "El ticket fue reasignado correctamente." });
-      redisClient.publish("channel_reasignarTicket", JSON.stringify(message));
-      req.datosCorreo = { ...result };
+      const correoData = {
+        correo,
+        correoResol: user.Correo,
+        idTicket: result.Id,
+        descripcionTicket: result.Descripcion,
+        nombreCliente: result.Nombre_cliente,
+        telefonoCliente: result.Telefono_cliente,
+        dependenciaCliente: result.Dependencia_cliente,
+      };
+      req.channel = "channel_reasignarTicket";
+      req.correoData = correoData;
       next();
     } else {
       res
@@ -532,36 +539,43 @@ export const getInfoSelects = async (req, res) => {
   }
 };
 
-export const cerrarTicket = async (req, res) => {
+export const cerrarTicket = async (req, res, next) => {
   const { _id, Descripcion_cierre, Causa } = req.body;
-  const { Id, Nombre, Rol } = req.session.user;
+  const { userId, nombre, rol, correo } = req.session.user;
 
   try {
-    const [estado] = await ESTADOS.find({ Estado: "CERRADO" });
-    const result = await TICKETS.updateOne(
+    const estado = await ESTADOS.findOneAndUpdate({ Estado: "CERRADO" });
+    const result = await TICKETS.findOneAndUpdate(
       { _id },
       {
         $set: {
           Estado: estado._id,
-          Cerrado_por: Id,
+          Cerrado_por: userId,
           Descripcion_cierre,
           Causa,
           Fecha_hora_cierre: new Date(),
         },
         $push: {
           Historia_ticket: {
-            Nombre: Id,
-            Mensaje: `El ticket fue cerrado por ${Nombre} - ${Rol}`,
+            Nombre: userId,
+            Mensaje: `El ticket fue cerrado por ${nombre}(${rol})`,
             Fecha: new Date(),
           },
         },
-      }
+      },
+      { returnDocument: "after", new: true }
     );
+    console.log(result);
     if (result) {
-      redisClient.publish("channel_cerrarTicket", JSON.stringify(message));
-      return res
-        .status(200)
-        .json({ desc: "Ticket cerrado de manera correcta." });
+      const correoData = {
+        correo,
+        idTicket: result.Id,
+        descripcionTicket: result.Descripcion_cierre,
+        correoCliente: result.Correo_cliente,
+      };
+      req.channel = "channel_cerrarTicket";
+      req.correoData = correoData;
+      next()
     } else {
       return res.status(500).json({ desc: "Error al cerrar el ticket." });
     }
@@ -880,45 +894,26 @@ export const createTicket = async (req, res, next) => {
     Descripcion_resolucion: unused11,
     ...nuevoTicket
   } = ticketState;
+  //Se agregan las propiedades necesarias al objeto
+  nuevoTicket = {
+    ...nuevoTicket,
+    Fecha_hora_creacion: new Date(),
+    Fecha_limite_resolucion_SLA: new Date(),
+    Fecha_limite_respuesta_SLA: new Date(),
+    Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
+    Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
+    Creado_por: userId,
+    Asignado_a,
+    Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //buscar el area
+    Archivo: req.dataArchivo ? req.dataArchivo : "Sin oficios",
+  };
   try {
-    const newTicket = new TICKETS({
-      Fecha_hora_creacion: new Date(),
-      Fecha_limite_resolucion_SLA: new Date(),
-      Fecha_limite_respuesta_SLA: new Date(),
-      Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
-      Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
-      Tipo_de_incidencia,
-      Incidencia_grave,
-      Categoria,
-      Estado,
-      Servicio,
-      Subcategoria,
-      Prioridad,
-      PendingReason,
-      NumeroRec_Oficio,
-      Numero_Oficio,
-      Descripcion,
-      //Falta ver que pedo con la subida de archivos
-      Asignado_a: Asignado_a._id,
-      Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //obtener el area
-      Secretaria,
-      Direccion_general,
-      Direccion_area,
-      Nombre_cliente,
-      Telefono_cliente,
-      Correo_cliente,
-      Creado_por: userId,
-      Historia_ticket: [
-        {
-          Nombre: userId,
-          Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
-          Fecha: new Date(),
-        },
-      ],
-    });
-    const savedTicket = await newTicket.save();
+    const RES = await postCrearTicket(nuevoTicket, userId, nombre, rol);
+    if (!RES) {
+      return res.status(500).json({ desc: "Error al guardar el ticket." });
+    }
     const correoAsignado = await USUARIO.findOne({
-      _id: savedTicket.Asignado_a,
+      _id: RES.Asignado_a,
     });
     const correoData = {
       correo,

@@ -85,17 +85,19 @@ router.get(
   populateTickets
 );
 router.put(
-  "/reasignar",
+  "/tickets/reasignar",
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),
-  validateData("Reasignar"),
-  reasignarTicket
+  validateData("reasignar"),
+  reasignarTicket,
+  enviarCorreo
 );
 router.get("/tickets/reasignar/areas", verifyToken, areasReasignacion);
 router.put(
-  "/resolver",
+  "/tickets/resolver",
   verifyToken,
-  validateData("resolverTicket"),
+  verifyRole(["Root", "Administrador", "Moderador", "Usuario"]),
+  validateData("resolver"),
   resolverTicket
 );
 router.get(
@@ -105,34 +107,34 @@ router.get(
   getInfoSelects
 );
 router.put(
-  "/cerrar",
+  "/tickets/cerrar",
   verifyToken,
   verifyRole(["Root", "Administrador"]),
-  validateData("Cerrar"),
-  cerrarTicket
+  validateData("cerrar"),
+  cerrarTicket,
+  enviarCorreo
 );
 router.put(
-  "/reabrir",
+  "/tickets/reabrir",
   verifyToken,
   verifyRole(["Root", "Administrador"]),
-  validateData("Reabrir"),
+  validateData("reabrir"),
   reabrirTicket
 );
 router.put(
-  "/resolver/aceptar",
+  "/tickets/resolver/aceptar",
   verifyToken,
   verifyRole(["Moderador"]),
   validateData("aceptarResolucion"),
   aceptarResolucion
 );
 router.put(
-  "/resolver/rechazar",
+  "/tickets/resolver/rechazar",
   verifyToken,
   verifyRole(["Moderador"]),
   validateData("rechazarResolucion"),
   rechazarResolucion
 );
-
 router.get(
   "/tickets/historico",
   verifyToken,
@@ -153,7 +155,6 @@ router.get(
   verifyRole(["Moderador"]),
   obtenerAreasModerador
 );
-
 router.post(
   "/tickets/buscar/:id",
   verifyToken,
@@ -170,13 +171,11 @@ router.post(
   createTicket,
   enviarCorreo
 );
-
 router.put(
-  "/editar",
+  "/tickets/editar", //agregar id como parametro
   verifyToken,
   verifyRole(["Root"]),
   editTicket
 );
-
 
 export default router;

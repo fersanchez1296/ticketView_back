@@ -16,7 +16,6 @@ import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
 export const getTicketsNuevos = async (userId, estado) => {
   try {
-    console.log(userId, estado);
     const RES = await TICKETS.aggregate([
       {
         $match: {
@@ -103,14 +102,16 @@ export const getTicketsRevision = async (estado, Area) => {
   try {
     const RES = await TICKETS.find({
       $and: [
-        { Estado: estado },
-        $or[
-          ({ Area_reasignado_a: { $in: Area } },
-          { Area_asignado: { $in: Area } })
-        ],
+        { Estado: new ObjectId(estado) },
+        {
+          $or: [
+            { Area_reasignado_a: { $in: Area } },
+            { Area_asignado: { $in: Area } },
+          ],
+        },
       ],
     }).lean();
-
+    console.log(RES);
     return RES;
   } catch (error) {
     return false;
@@ -378,7 +379,6 @@ export const getTicketsResueltosForAdmin = async (userId, estado) => {
 };
 
 export const getAreasParaReasignacion = async (Area) => {
-  console.log(Area);
   try {
     const RES = await AREA.find({ _id: { $in: Area } });
     return RES;
