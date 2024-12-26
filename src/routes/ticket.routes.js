@@ -22,15 +22,18 @@ import {
   createTicket,
   obtenerAreasModerador,
   buscarTicket,
-  editarTicket,
+  editTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
 import { validateData } from "../middleware/validateData.middleware.js";
 import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
+import { uploadMiddleware } from "../middleware/upload.middleware.js";
+import multer from "multer";
+import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
+import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 const router = Router();
-
 router.get("/tickets", verifyToken, getTicketsAbiertos);
 router.get(
   "/tickets/nuevos",
@@ -160,16 +163,19 @@ router.post(
 );
 router.post(
   "/tickets/crear/ticket",
+  uploadMiddleware,
   verifyToken,
   verifyRole(["Root"]),
-  createTicket
+  guardarArchivo,
+  createTicket,
+  enviarCorreo
 );
 
 router.put(
   "/editar",
   verifyToken,
   verifyRole(["Root"]),
-  editarTicket
+  editTicket
 );
 
 
