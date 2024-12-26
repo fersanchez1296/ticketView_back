@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
 import { postCrearTicket } from "../repository/posts.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
+import { putEditarTicket } from "../repository/puts.js";
 const ObjectId = mongoose.Types.ObjectId;
 export const getTickets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -745,8 +746,6 @@ export const crearTicket = async (req, res) => {
     res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
-//TODO falta de agregar al repositorio (puts)
-export const editarTicket = async (req, res) => {};
 
 export const obtenerAreas = async (req, res) => {
   try {
@@ -792,11 +791,9 @@ export const obtenerAreasModerador = async (req, res, next) => {
 
 export const buscarTicket = async (req, res, next) => {
   const { id } = req.params;
-  console.log(id);
-  console.log(req.params);
+
   try {
     const RES = await Gets.getTicketPorID(id);
-    console.log(RES);
     if (!RES) {
       return res.status(404).json({ desc: "No se encontro el ticket." });
     }
@@ -805,6 +802,60 @@ export const buscarTicket = async (req, res, next) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};
+
+//TODO falta de agregar al repositorio (puts)
+export const editTicket = async (req, res) => {
+  const { userId, nombre, rol } = req.session.user; // Datos del usuario que edita
+  const { ticketState } = req.body; // Datos actualizados del ticket
+
+  if (!ticketState || !ticketState._id) {
+    return res.status(400).json({
+      error: "No se proporcionó el ID del ticket o el estado del ticket",
+    });
+  }
+
+  const {
+    Id,
+    Prioridad,
+    Estado,
+    Tipo_de_incidencia,
+    NumeroRec_Oficio,
+    Numero_Oficio,
+    PendingReason,
+    Servicio,
+    Categoria,
+    Subcategoria,
+    Descripcion,
+    Secretaria,
+    Direccion_general,
+    Direccion_area,
+    Nombre_cliente,
+    Telefono_cliente,
+    Correo_cliente,
+    ...ticketEditado
+  } = ticketState;
+
+  try {
+    // Buscar y actualizar el ticket
+    const updatedTicket = await putEditarTicket(
+      ticketEditado,
+      userId,
+      nombre,
+      rol
+    );
+
+    if (!updatedTicket) {
+      return res.status(404).json({ error: "Error al editar el ticket" });
+    }
+
+    res.status(200).json({
+      desc: "Ticket actualizado correctamente",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al actualizar el ticket" });
   }
 };
 
@@ -829,26 +880,45 @@ export const createTicket = async (req, res, next) => {
     Descripcion_resolucion: unused11,
     ...nuevoTicket
   } = ticketState;
-  //Se agregan las propiedades necesarias al objeto
-  nuevoTicket = {
-    ...nuevoTicket,
-    Fecha_hora_creacion: new Date(),
-    Fecha_limite_resolucion_SLA: new Date(),
-    Fecha_limite_respuesta_SLA: new Date(),
-    Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
-    Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
-    Creado_por: userId,
-    Asignado_a,
-    Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //buscar el area
-    Archivo: req.dataArchivo ? req.dataArchivo : "Sin oficios",
-  };
   try {
-    const RES = await postCrearTicket(nuevoTicket, userId, nombre, rol);
-    if (!RES) {
-      return res.status(500).json({ desc: "Error al guardar el ticket." });
-    }
+    const newTicket = new TICKETS({
+      Fecha_hora_creacion: new Date(),
+      Fecha_limite_resolucion_SLA: new Date(),
+      Fecha_limite_respuesta_SLA: new Date(),
+      Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
+      Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
+      Tipo_de_incidencia,
+      Incidencia_grave,
+      Categoria,
+      Estado,
+      Servicio,
+      Subcategoria,
+      Prioridad,
+      PendingReason,
+      NumeroRec_Oficio,
+      Numero_Oficio,
+      Descripcion,
+      //Falta ver que pedo con la subida de archivos
+      Asignado_a: Asignado_a._id,
+      Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //obtener el area
+      Secretaria,
+      Direccion_general,
+      Direccion_area,
+      Nombre_cliente,
+      Telefono_cliente,
+      Correo_cliente,
+      Creado_por: userId,
+      Historia_ticket: [
+        {
+          Nombre: userId,
+          Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
+          Fecha: new Date(),
+        },
+      ],
+    });
+    const savedTicket = await newTicket.save();
     const correoAsignado = await USUARIO.findOne({
-      _id: RES.Asignado_a,
+      _id: savedTicket.Asignado_a,
     });
     const correoData = {
       correo,

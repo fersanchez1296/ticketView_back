@@ -19,10 +19,10 @@ import {
   rechazarResolucion,
   obtenerAreas,
   obtenerTicketsPorArea,
-  crearTicket,
   createTicket,
   obtenerAreasModerador,
   buscarTicket,
+  editTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -170,5 +170,13 @@ router.post(
   createTicket,
   enviarCorreo
 );
+
+router.put(
+  "/editar",
+  verifyToken,
+  verifyRole(["Root"]),
+  editTicket
+);
+
 
 export default router;
