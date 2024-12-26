@@ -809,7 +809,7 @@ export const buscarTicket = async (req, res, next) => {
 };
 
 export const createTicket = async (req, res, next) => {
-  if (!ticketState)
+  if (!req.body.ticketState)
     return res.status(400).json({ desc: "No se envio informacion" });
   const { userId, nombre, rol, correo } = req.session.user;
   const ticketState = JSON.parse(req.body.ticketState);
