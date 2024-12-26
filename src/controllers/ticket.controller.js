@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
 import { postCrearTicket } from "../repository/posts.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
+import { putEditarTicket } from "../repository/puts.js";
 const ObjectId = mongoose.Types.ObjectId;
 export const getTickets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -382,10 +383,10 @@ export const ticketsResueltos = async (req, res) => {
         ),
         Historia_ticket: ticket.Historia_ticket
           ? ticket.Historia_ticket.map((historia) => ({
-            Nombre: historia.Nombre,
-            Mensaje: historia.Mensaje,
-            Fecha: formateDate(historia.Fecha),
-          }))
+              Nombre: historia.Nombre,
+              Mensaje: historia.Mensaje,
+              Fecha: formateDate(historia.Fecha),
+            }))
           : [],
       };
     });
@@ -790,11 +791,9 @@ export const obtenerAreasModerador = async (req, res, next) => {
 
 export const buscarTicket = async (req, res, next) => {
   const { id } = req.params;
-  console.log(id);
-  console.log(req.params);
+
   try {
     const RES = await Gets.getTicketPorID(id);
-    console.log(RES);
     if (!RES) {
       return res.status(404).json({ desc: "No se encontro el ticket." });
     }
@@ -812,11 +811,13 @@ export const editTicket = async (req, res) => {
   const { ticketState } = req.body; // Datos actualizados del ticket
 
   if (!ticketState || !ticketState._id) {
-    return res.status(400).json({ error: "No se proporcionó el ID del ticket o el estado del ticket" });
+    return res.status(400).json({
+      error: "No se proporcionó el ID del ticket o el estado del ticket",
+    });
   }
 
   const {
-    Id, // ID del ticket que queremos actualizar
+    Id,
     Prioridad,
     Estado,
     Tipo_de_incidencia,
@@ -833,55 +834,30 @@ export const editTicket = async (req, res) => {
     Nombre_cliente,
     Telefono_cliente,
     Correo_cliente,
+    ...ticketEditado
   } = ticketState;
 
   try {
     // Buscar y actualizar el ticket
-    const updatedTicket = await TICKETS.findByIdAndUpdate(
-      Id, 
-      {
-        $set: {
-          Id,
-          Prioridad,
-          Estado,
-          Tipo_de_incidencia,
-          NumeroRec_Oficio,
-          Numero_Oficio,
-          PendingReason,
-          Servicio,
-          Categoria,
-          Subcategoria,
-          Descripcion,
-          Secretaria,
-          Direccion_general,
-          Direccion_area,
-          Nombre_cliente,
-          Telefono_cliente,
-          Correo_cliente,
-          Fecha_hora_ultima_modificacion: new Date(),
-        },
-        $push: {
-          Historia_ticket: {
-            Nombre: userId,
-            Mensaje: `El ticket ha sido actualizado por ${nombre} (${rol}).`,
-            Fecha: new Date(),
-          },
-        },
-      },
-      { new: true } // Retorna el documento actualizado
+    const updatedTicket = await putEditarTicket(
+      ticketEditado,
+      userId,
+      nombre,
+      rol
     );
 
     if (!updatedTicket) {
-      return res.status(404).json({ error: "Ticket no encontrado" });
+      return res.status(404).json({ error: "Error al editar el ticket" });
     }
 
-    res.status(200).json({ desc: "Ticket actualizado correctamente", ticket: updatedTicket });
+    res.status(200).json({
+      desc: "Ticket actualizado correctamente",
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al actualizar el ticket" });
   }
 };
-
 
 export const createTicket = async (req, res, next) => {
   if (!ticketState)
@@ -941,7 +917,9 @@ export const createTicket = async (req, res, next) => {
       ],
     });
     const savedTicket = await newTicket.save();
-    const correoAsignado = await USUARIO.findOne({_id : savedTicket.Asignado_a});
+    const correoAsignado = await USUARIO.findOne({
+      _id: savedTicket.Asignado_a,
+    });
     const correoData = {
       correo,
       idTicket: RES.Id,

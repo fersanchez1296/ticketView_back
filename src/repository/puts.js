@@ -143,4 +143,30 @@ export const putRechazarResolucion = async (
   return RES;
 };
 
-export const putEditarTicket = async () => {};
+export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
+  try {
+    const respuesta = await TICKETS.findByIdAndUpdate(
+      { _id: ticketEditado._id },
+      {
+        $set: {
+          ...nuevoTicket,
+          Fecha_hora_ultima_modificacion: new Date(),
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `El ticket ha sido actualizado por ${nombre} (${rol}).`,
+            Fecha: new Date(),
+          },
+        },
+      },
+      { new: true } // Retorna el documento actualizado
+    );
+    if (!respuesta) {
+      return false;
+    }
+    return respuesta;
+  } catch (error) {
+    return false;
+  }
+};
