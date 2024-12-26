@@ -3,9 +3,8 @@ import { redisClient } from "../config/redis_connection.js";
 import formateDate from "../functions/dateFormat.functions.js";
 import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
-import axios from "axios";
-import FormData from "form-data";
-import fs from "fs";
+import { postCrearTicket } from "../repository/posts.js";
+import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 const ObjectId = mongoose.Types.ObjectId;
 export const getTickets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -809,106 +808,60 @@ export const buscarTicket = async (req, res, next) => {
   }
 };
 
-export const createTicket = async (req, res) => {
-  const token = req.cookies.access_token;
-  const { userId, nombre, rol, correo } = req.session.user;
-  const { ticketState } = req.body;
-  const { originalname, path } = req.file;
-  const formData = new FormData();
-  formData.append("file", fs.createReadStream(path), originalname);
-
-  try {
-    const response = await axios.post("http://files-service-node:4400/files", formData, {
-      headers: {
-        ...formData.getHeaders(),
-        Cookie: `access_token=${token}`,
-      },
-      withCredentials: true,
-    });
-    fs.unlinkSync(path);
-    const fileUrl = response.data.url;
-  } catch (error) {
-    console.log(error);
-  }
-
+export const createTicket = async (req, res, next) => {
   if (!ticketState)
-    return res.status(400).json({ desc: "No hay nada en el body" });
-  const {
-    Tipo_de_incidencia,
-    Incidencia_grave,
-    Categoria,
-    Estado,
-    Servicio,
-    Subcategoria,
-    Prioridad,
-    PendingReason,
-    NumeroRec_Oficio,
-    Numero_Oficio,
-    Descripcion,
-    Asignado_a,
-    Area_asignado,
-    Secretaria,
-    Direccion_general,
-    Direccion_area,
-    Nombre_cliente,
-    Telefono_cliente,
-    Correo_cliente,
+    return res.status(400).json({ desc: "No se envio informacion" });
+  const { userId, nombre, rol, correo } = req.session.user;
+  const ticketState = JSON.parse(req.body.ticketState);
+  const Asignado_a = ticketState.Asignado_a;
+  //Se eliminan las propiedades que no se necesitan del objeto recibido
+  let {
+    _id: unused1,
+    Id: unused2,
+    Descripcion_mandar_a_Escritorio: unused3,
+    Descripcion_cierre: unused4,
+    Causa: unused5,
+    Resuelto_por: unused6,
+    Cerrado_por: unused7,
+    Fecha_hora_cierre: unused8,
+    Reasignado_a: unused9,
+    Area_reasignado_a: unused10,
+    Descripcion_resolucion: unused11,
+    ...nuevoTicket
   } = ticketState;
+  //Se agregan las propiedades necesarias al objeto
+  nuevoTicket = {
+    ...nuevoTicket,
+    Fecha_hora_creacion: new Date(),
+    Fecha_limite_resolucion_SLA: new Date(),
+    Fecha_limite_respuesta_SLA: new Date(),
+    Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
+    Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
+    Creado_por: userId,
+    Asignado_a,
+    Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //buscar el area
+    Archivo: req.dataArchivo ? req.dataArchivo : "Sin oficios",
+  };
   try {
-    const newTicket = new TICKETS({
-      Fecha_hora_creacion: new Date(),
-      Fecha_limite_resolucion_SLA: new Date(),
-      Fecha_limite_respuesta_SLA: new Date(),
-      Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
-      Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
-      Tipo_de_incidencia,
-      Incidencia_grave,
-      Categoria,
-      Estado,
-      Servicio,
-      Subcategoria,
-      Prioridad,
-      PendingReason,
-      NumeroRec_Oficio,
-      Numero_Oficio,
-      Descripcion,
-      //Falta ver que pedo con la subida de archivos
-      Asignado_a: Asignado_a._id,
-      Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //obtener el area
-      Secretaria,
-      Direccion_general,
-      Direccion_area,
-      Nombre_cliente,
-      Telefono_cliente,
-      Correo_cliente,
-      Creado_por: userId,
-      Historia_ticket: [
-        {
-          Nombre: userId,
-          Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
-          Fecha: new Date(),
-        },
-      ],
-    });
-    //const savedTicket = await newTicket.save();
+    const RES = await postCrearTicket(nuevoTicket, userId, nombre, rol);
+    if (!RES) {
+      return res.status(500).json({ desc: "Error al guardar el ticket." });
+    }
     const correoAsignado = await USUARIO.findOne({
-      _id: savedTicket.Asignado_a,
+      _id: RES.Asignado_a,
     });
     const correoData = {
       correo,
-      idTicket: savedTicket.Id,
-      descripcionTicket: savedTicket.Descripcion,
-      correoCliente: savedTicket.Correo_cliente,
+      idTicket: RES.Id,
+      descripcionTicket: RES.Descripcion,
+      correoCliente: RES.Correo_cliente,
       correoUsuario: correoAsignado.Correo,
-      nombreCliente: savedTicket.Nombre_cliente,
-      telefonoCliente: savedTicket.Telefono_cliente,
-      dependenciaCliente: "DTIF",
+      nombreCliente: RES.Nombre_cliente,
+      telefonoCliente: RES.Telefono_cliente,
+      dependenciaCliente: RES.Dependencia_cliente,
     };
-    if (!savedTicket) {
-      res.status(500).json({ error: "Error al guardar el ticket" });
-    }
-    //redisClient.publish("channel_crearTicket", JSON.stringify(correoData));
-    res.status(201).json({ desc: "Ticket guardado correctamente" });
+    req.correoData = correoData;
+    next();
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al guardar el ticket" });

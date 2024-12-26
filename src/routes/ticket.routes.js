@@ -31,8 +31,9 @@ import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 import { uploadMiddleware } from "../middleware/upload.middleware.js";
 import multer from "multer";
+import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
+import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 const router = Router();
-const upload = multer({ dest: "temp/" });
 router.get("/tickets", verifyToken, getTicketsAbiertos);
 router.get(
   "/tickets/nuevos",
@@ -162,19 +163,12 @@ router.post(
 );
 router.post(
   "/tickets/crear/ticket",
-  (req, res, next) => {
-    console.log("Antes de multer");
-    next();
-  },
-  // upload.single("file"),
   uploadMiddleware,
-  (req, res, next) => {
-    console.log("Después de multer");
-    next();
-  },
   verifyToken,
   verifyRole(["Root"]),
-  createTicket
+  guardarArchivo,
+  createTicket,
+  enviarCorreo
 );
 
 export default router;
