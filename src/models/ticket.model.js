@@ -162,7 +162,7 @@ const ticketModel = mongoose.Schema(
       type: String,
       trim: true,
     },
-    Archivo:{
+    Files:{
       type: Object || String,
       trim: true,
     },

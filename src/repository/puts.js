@@ -145,23 +145,24 @@ export const putRechazarResolucion = async (
 
 export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
   try {
-    const respuesta = await TICKETS.findByIdAndUpdate(
+    const respuesta = await TICKETS.findOneAndUpdate(
       { _id: ticketEditado._id },
       {
         $set: {
-          ...nuevoTicket,
+          ...ticketEditado,
           Fecha_hora_ultima_modificacion: new Date(),
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
-            Mensaje: `El ticket ha sido actualizado por ${nombre} (${rol}).`,
+            Mensaje: `El ticket ha sido editado por ${nombre} (${rol}).`,
             Fecha: new Date(),
           },
         },
       },
       { new: true } // Retorna el documento actualizado
     );
+    console.log(respuesta);
     if (!respuesta) {
       return false;
     }
