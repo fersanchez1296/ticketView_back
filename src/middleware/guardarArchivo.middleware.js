@@ -40,7 +40,6 @@ const guardarArchivo = async (req, res, next) => {
       res.status(500).json({ desc: "Error interno en el servidor." });
     }
   }
-  next();
 };
 
 export default guardarArchivo;

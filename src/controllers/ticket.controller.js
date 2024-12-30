@@ -929,6 +929,8 @@ export const createTicket = async (req, res, next) => {
     };
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
+    console.log(req.correoData)
+    console.log(req.channel)
     next();
   } catch (error) {
     console.error(error);
