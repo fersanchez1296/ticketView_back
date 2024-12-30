@@ -665,6 +665,9 @@ export const getTicketPorID = async (id) => {
     const RES = await TICKETS.findOne({
       Id: id,
     }).lean();
+    if(!RES){
+      return false;
+    }
     return [RES];
   } catch (error) {
     return false;

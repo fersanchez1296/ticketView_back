@@ -812,7 +812,7 @@ export const buscarTicket = async (req, res, next) => {
   try {
     const RES = await Gets.getTicketPorID(id);
     if (!RES) {
-      return res.status(404).json({ desc: "No se encontro el ticket." });
+      return res.status(404).json({ desc: "No se encontro el numero de ticket en la base de datos" });
     }
     req.tickets = RES;
     next();
@@ -907,7 +907,7 @@ export const createTicket = async (req, res, next) => {
     Creado_por: userId,
     Asignado_a,
     Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //buscar el area
-    Files: req.dataArchivo ? req.dataArchivo : "Sin oficios",
+    Files: req.dataArchivo ? req.dataArchivo : "",
   };
   try {
     const RES = await postCrearTicket(nuevoTicket, userId, nombre, rol);
