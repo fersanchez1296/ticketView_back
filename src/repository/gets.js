@@ -389,9 +389,10 @@ export const getAreasParaReasignacion = async (Area) => {
 
 export const getResolutoresParaReasignacionPorArea = async (Area) => {
   try {
-    const RES = await USUARIO.find({ Area: new ObjectId(Area) }).select(
-      "Nombre Correo"
-    );
+    const RES = await USUARIO.find({
+      Area: new ObjectId(Area),
+      isActive: true,
+    }).select("Nombre Correo");
     return RES;
   } catch (error) {
     return false;
@@ -665,10 +666,19 @@ export const getTicketPorID = async (id) => {
     const RES = await TICKETS.findOne({
       Id: id,
     }).lean();
-    if(!RES){
+    if (!RES) {
       return false;
     }
     return [RES];
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getPrioridades = async () => {
+  try {
+    const RES = await PRIORIDADES.find();
+    return RES;
   } catch (error) {
     return false;
   }

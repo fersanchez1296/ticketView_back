@@ -92,7 +92,9 @@ router.put(
   reasignarTicket,
   enviarCorreo
 );
-router.get("/tickets/reasignar/areas", verifyToken, areasReasignacion);
+router.get("/tickets/reasignar/areas", 
+  verifyToken, 
+  areasReasignacion);
 router.put(
   "/tickets/resolver",
   verifyToken,
