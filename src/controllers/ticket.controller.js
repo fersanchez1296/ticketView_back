@@ -450,6 +450,8 @@ export const areasReasignacion = async (req, res) => {
   const { areas } = req.session.user;
   try {
     const AREAS = await Gets.getAreasParaReasignacion(areas);
+    const prioridades = await Gets.getPrioridades();
+    console.log(prioridades);
     if (!AREAS) {
       return res.status(404).json({ desc: "No se encontraron áreas" });
     }
@@ -467,7 +469,7 @@ export const areasReasignacion = async (req, res) => {
     if (!AREASRESOLUTORES) {
       return res.status(404).json({ desc: "No se encontraron resolutores" });
     }
-    res.status(200).json({ AREASRESOLUTORES });
+    res.status(200).json({ AREASRESOLUTORES, prioridades });
   } catch (error) {
     console.error("Error al obtener áreas y resolutores:", error);
     res.status(500).json({ message: "Error al obtener áreas y resolutores" });
