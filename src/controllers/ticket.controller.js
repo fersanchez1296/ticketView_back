@@ -476,6 +476,7 @@ export const areasReasignacion = async (req, res) => {
   }
 };
 //TODO revisar
+//agregar un middleware para buscar al usuario en el microservicio de usuarios
 export const reasignarTicket = async (req, res, next) => {
   const { id_usuario_reasignar, id_ticket } = req.body;
   const { userId, nombre, rol, correo } = req.session.user;

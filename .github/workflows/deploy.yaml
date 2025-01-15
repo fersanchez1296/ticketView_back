@@ -1,0 +1,25 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2.3.5
+
+    - name: SSH into server and deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        script: |
+          cd ~/actions-runner-ticketservice/
+          docker-compose -f docker-compose-backendservice.yml
+        debug: true

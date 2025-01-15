@@ -6,7 +6,6 @@ import ticketsFilterRoute from "./routes/ticket.filters.route.js";
 import usuariosRoutes from "./routes/users.routes.js";
 import dashboard from "./routes/dashboard.routes.js";
 import cors from "cors";
-import "dotenv/config";
 import cookieParser from "cookie-parser";
 import { redisClient } from "./config/redis_connection.js";
 import path from "path";
@@ -24,7 +23,10 @@ const format =
 const app = express();
 app.use(
   cors({
-    origin: ["http://localhost:4000", "http://localhost:3000"], //API Gateway
+    origin: [
+      `http://${process.env.APIGATEWAY_SERVICE_HOST}:${process.env.APIGATEWAY_SERVICE_PORT}`,
+      "http://localhost:3000",
+    ], //API Gateway
     //origin: "*",
     credentials: true,
   })
@@ -42,6 +44,6 @@ connectDB();
 redisClient.connect().then(() => {
   console.log(__dirname);
   console.log("Redis connected");
-  console.log(`Server running on port ${process.env.PORT}`);
-  app.listen(process.env.PORT);
+  console.log(`Server running on port ${process.env.BACKEND_PORT}`);
+  app.listen(process.env.BACKEND_PORT);
 });

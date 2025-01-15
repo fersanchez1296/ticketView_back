@@ -1,9 +1,8 @@
 // redis_connection.js
 import redis from "redis"
-import "dotenv/config";
 
 // Crear un cliente Redis
 export const redisClient = redis.createClient({
-  url: `redis://${process.env.REDIS_HOST}:6379`,
+  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
 });
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
