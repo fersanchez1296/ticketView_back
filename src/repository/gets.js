@@ -11,6 +11,7 @@ import {
   SECRETARIA,
   DIRECCION_AREA,
   DIRECCION_GENERAL,
+  DEPENDENCIAS
 } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
@@ -415,6 +416,7 @@ export const getInfoSelectsCrearTicket = async () => {
       DIRECCIONESAREAS_,
       USUARIOS_,
       DIRECCIONESGENERALES_,
+      DEPENDENCIAS_
     ] = await Promise.all([
       ESTADOS.find({
         $or: [{ Estado: "NUEVO" }, { Estado: "PENDIENTE" }],
@@ -432,6 +434,7 @@ export const getInfoSelectsCrearTicket = async () => {
         { Nombre: 1, Correo: 1, Area: 1 }
       ),
       DIRECCION_GENERAL.find(),
+      DEPENDENCIAS.find(),
     ]);
 
     const AREASRESOLUTORES = await Promise.all(
@@ -459,6 +462,7 @@ export const getInfoSelectsCrearTicket = async () => {
       direccion_areas: DIRECCIONESAREAS_,
       direccion_generales: DIRECCIONESGENERALES_,
       areasResolutores: AREASRESOLUTORES,
+      dependencias: DEPENDENCIAS_
     };
   } catch (error) {
     return false;

@@ -815,7 +815,11 @@ export const buscarTicket = async (req, res, next) => {
   try {
     const RES = await Gets.getTicketPorID(id);
     if (!RES) {
-      return res.status(404).json({ desc: "No se encontro el numero de ticket en la base de datos" });
+      return res
+        .status(404)
+        .json({
+          desc: "No se encontro el numero de ticket en la base de datos",
+        });
     }
     req.tickets = RES;
     next();
@@ -897,21 +901,29 @@ export const createTicket = async (req, res, next) => {
     Reasignado_a: unused9,
     Area_reasignado_a: unused10,
     Descripcion_resolucion: unused11,
+    id: unused12,
     ...nuevoTicket
   } = ticketState;
   //Se agregan las propiedades necesarias al objeto
   nuevoTicket = {
     ...nuevoTicket,
     Fecha_hora_creacion: fechaActual,
-    Fecha_limite_resolucion_SLA: addHours(fechaActual, ticketState.Fecha_limite_resolucion_SLA),
-    Fecha_limite_respuesta_SLA:  addHours(fechaActual, ticketState.Fecha_limite_respuesta_SLA),
+    Fecha_limite_resolucion_SLA: addHours(
+      fechaActual,
+      ticketState.Fecha_limite_resolucion_SLA
+    ),
+    Fecha_limite_respuesta_SLA: addHours(
+      fechaActual,
+      ticketState.Fecha_limite_respuesta_SLA
+    ),
     Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
     Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
     Creado_por: userId,
     Asignado_a,
-    Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //buscar el area
+    Area_asignado: new ObjectId("67350936aa438f58c6228fee"),
     Files: req.dataArchivo ? req.dataArchivo : "",
   };
+  console.log(nuevoTicket);
   try {
     const RES = await postCrearTicket(nuevoTicket, userId, nombre, rol);
     if (!RES) {
@@ -932,8 +944,6 @@ export const createTicket = async (req, res, next) => {
     };
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
-    console.log(req.correoData)
-    console.log(req.channel)
     next();
   } catch (error) {
     console.error(error);
