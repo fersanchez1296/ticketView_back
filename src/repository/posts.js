@@ -10,6 +10,7 @@ export const postCrearTicket = async (nuevoTicket, userId, nombre, rol) => {
           Fecha: new Date(),
         },
       ],
+      Files: [nuevoTicket.Files],
     });
     const savedTicket = await newTicket.save();
     if (!savedTicket) {

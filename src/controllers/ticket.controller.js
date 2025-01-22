@@ -476,6 +476,7 @@ export const areasReasignacion = async (req, res) => {
   }
 };
 //TODO revisar
+//agregar un middleware para buscar al usuario en el microservicio de usuarios
 export const reasignarTicket = async (req, res, next) => {
   const { id_usuario_reasignar, id_ticket } = req.body;
   const { userId, nombre, rol, correo } = req.session.user;
@@ -814,7 +815,11 @@ export const buscarTicket = async (req, res, next) => {
   try {
     const RES = await Gets.getTicketPorID(id);
     if (!RES) {
-      return res.status(404).json({ desc: "No se encontro el numero de ticket en la base de datos" });
+      return res
+        .status(404)
+        .json({
+          desc: "No se encontro el numero de ticket en la base de datos",
+        });
     }
     req.tickets = RES;
     next();
@@ -881,38 +886,28 @@ export const createTicket = async (req, res, next) => {
     return res.status(400).json({ desc: "No se envio informacion" });
   const fechaActual = new Date();
   const { userId, nombre, rol, correo } = req.session.user;
-  const ticketState = JSON.parse(req.body.ticketState);
+  let ticketState = JSON.parse(req.body.ticketState);
   const Asignado_a = ticketState.Asignado_a;
-  //Se eliminan las propiedades que no se necesitan del objeto recibido
-  let {
-    _id: unused1,
-    Id: unused2,
-    Descripcion_mandar_a_Escritorio: unused3,
-    Descripcion_cierre: unused4,
-    Causa: unused5,
-    Resuelto_por: unused6,
-    Cerrado_por: unused7,
-    Fecha_hora_cierre: unused8,
-    Reasignado_a: unused9,
-    Area_reasignado_a: unused10,
-    Descripcion_resolucion: unused11,
-    ...nuevoTicket
-  } = ticketState;
-  //Se agregan las propiedades necesarias al objeto
-  nuevoTicket = {
-    ...nuevoTicket,
+  ticketState = {
+    ...ticketState,
     Fecha_hora_creacion: fechaActual,
-    Fecha_limite_resolucion_SLA: addHours(fechaActual, ticketState.Fecha_limite_resolucion_SLA),
-    Fecha_limite_respuesta_SLA:  addHours(fechaActual, ticketState.Fecha_limite_respuesta_SLA),
+    Fecha_limite_resolucion_SLA: addHours(
+      fechaActual,
+      ticketState.Fecha_limite_resolucion_SLA
+    ),
+    Fecha_limite_respuesta_SLA: addHours(
+      fechaActual,
+      ticketState.Fecha_limite_respuesta_SLA
+    ),
     Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
     Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
     Creado_por: userId,
     Asignado_a,
-    Area_asignado: new ObjectId("67350936aa438f58c6228fee"), //buscar el area
+    Area_asignado: new ObjectId("67350936aa438f58c6228fee"),
     Files: req.dataArchivo ? req.dataArchivo : "",
   };
   try {
-    const RES = await postCrearTicket(nuevoTicket, userId, nombre, rol);
+    const RES = await postCrearTicket(ticketState, userId, nombre, rol);
     if (!RES) {
       return res.status(500).json({ desc: "Error al guardar el ticket." });
     }
@@ -931,8 +926,6 @@ export const createTicket = async (req, res, next) => {
     };
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
-    console.log(req.correoData)
-    console.log(req.channel)
     next();
   } catch (error) {
     console.error(error);

@@ -1,10 +1,15 @@
 import mongoose, { Schema } from "mongoose";
 import AutoIncrementFactory from "mongoose-sequence";
-const AutoIncrement = AutoIncrementFactory(mongoose.connection)
+const AutoIncrement = AutoIncrementFactory(mongoose.connection);
 const HistoriaTicketSchema = new Schema({
   Nombre: { type: Schema.Types.ObjectId, ref: "USUARIOS", required: true },
   Mensaje: { type: String, required: true, trim: true },
   Fecha: { type: Date, required: true, default: Date.now },
+});
+
+const fileSchema = new Schema({
+  name: { type: String, trim: true },
+  url: { type: String },
 });
 
 const ticketModel = mongoose.Schema(
@@ -158,12 +163,12 @@ const ticketModel = mongoose.Schema(
       type: String,
       trim: true,
     },
-    Dependencia_cliente:{
+    Dependencia_cliente: {
       type: String,
       trim: true,
     },
-    Files:{
-      type: Object || String,
+    Files: {
+      type: [fileSchema] || String,
       trim: true,
     },
   },
@@ -173,7 +178,7 @@ const ticketModel = mongoose.Schema(
 );
 
 ticketModel.plugin(AutoIncrement, {
-  id: 'ticket_id_seq',
+  Id: "ticket_id_seq",
   inc_field: "Id",
   start_seq: 54102,
 });
