@@ -8,7 +8,6 @@ import {
   SERVICIOS,
   SUBCATEGORIA,
   PRIORIDADES,
-  SECRETARIA,
   DIRECCION_AREA,
   DIRECCION_GENERAL,
   DEPENDENCIAS
@@ -412,7 +411,6 @@ export const getInfoSelectsCrearTicket = async () => {
       SUBCATEGORIA_,
       PRIORIDADES_,
       AREAS_,
-      SECRETARIAS_,
       DIRECCIONESAREAS_,
       USUARIOS_,
       DIRECCIONESGENERALES_,
@@ -427,7 +425,6 @@ export const getInfoSelectsCrearTicket = async () => {
       SUBCATEGORIA.find(),
       PRIORIDADES.find(),
       AREA.find(),
-      SECRETARIA.find(),
       DIRECCION_AREA.find(),
       USUARIO.find(
         { isActive: { $ne: false }, Rol: "Moderador" },
@@ -458,7 +455,6 @@ export const getInfoSelectsCrearTicket = async () => {
       subcategoria: SUBCATEGORIA_,
       prioridades: PRIORIDADES_,
       areas: AREAS_,
-      secretarias: SECRETARIAS_,
       direccion_areas: DIRECCIONESAREAS_,
       direccion_generales: DIRECCIONESGENERALES_,
       areasResolutores: AREASRESOLUTORES,

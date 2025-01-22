@@ -30,6 +30,7 @@ import { validateData } from "../middleware/validateData.middleware.js";
 import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 import { uploadMiddleware } from "../middleware/upload.middleware.js";
+import { guardarCliente } from "../middleware/guardarCliente.middleware.js"
 import multer from "multer";
 import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
@@ -169,6 +170,7 @@ router.post(
   uploadMiddleware,
   verifyToken,
   verifyRole(["Root"]),
+  guardarCliente,
   guardarArchivo,
   createTicket,
   enviarCorreo

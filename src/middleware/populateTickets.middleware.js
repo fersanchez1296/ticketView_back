@@ -8,7 +8,6 @@ export const populateTickets = async (req, res, next) => {
       { path: "Categoria", select: "Categoria _id" },
       { path: "Servicio", select: "Servicio _id" },
       { path: "Subcategoria", select: "Subcategoria _id" },
-      { path: "Secretaria", select: "Secretaria _id" },
       { path: "Direccion_general", select: "Direccion_General _id" },
       { path: "Direccion_area", select: "direccion_area _id" },
       { path: "Prioridad", select: "Prioridad Descripcion _id" },

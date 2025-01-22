@@ -70,11 +70,6 @@ const ticketModel = mongoose.Schema(
       type: String,
       trim: true,
     },
-    Secretaria: {
-      type: Schema.Types.ObjectId,
-      trim: true,
-      ref: "SECRETARIA",
-    },
     Direccion_general: {
       type: Schema.Types.ObjectId,
       trim: true,

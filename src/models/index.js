@@ -5,7 +5,6 @@ import DIRECCION_GENERAL from "./direccion_general.model.js";
 import AREA from "./area.model.js";
 import ESTADOS from "./estados.model.js";
 import PRIORIDADES from "./prioridades.model.js";
-import SECRETARIA from "./secretaria.model.js";
 import SUBCATEGORIA from "./subcategoria.model.js";
 import TIPO_TICKET from "./tipo_ticket.model.js";
 import SERVICIOS from "./servicios.model.js";
@@ -21,7 +20,6 @@ export {
     AREA,
     ESTADOS,
     PRIORIDADES,
-    SECRETARIA,
     SUBCATEGORIA,
     TIPO_TICKET,
     SERVICIOS,

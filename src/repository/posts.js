@@ -1,24 +1,38 @@
 import { TICKETS, ESTADOS, USUARIO } from "../models/index.js";
-export const postCrearTicket = async (nuevoTicket, userId, nombre, rol) => {
+export const postCrearTicket = async (
+  nuevoTicket,
+  userId,
+  nombre,
+  rol,
+  sessionDB
+) => {
   try {
-    const newTicket = await new TICKETS({
-      ...nuevoTicket,
-      Historia_ticket: [
-        {
-          Nombre: userId,
-          Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
-          Fecha: new Date(),
-        },
-      ],
-      Files: [nuevoTicket.Files],
-    });
-    const savedTicket = await newTicket.save();
+    console.log("Guardando Ticket...", nuevoTicket);
+    const newTicket = await new TICKETS(
+      {
+        ...nuevoTicket,
+        Historia_ticket: [
+          {
+            Nombre: userId,
+            Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
+            Fecha: new Date(),
+          },
+        ],
+        Files: [nuevoTicket.Files],
+      }
+    );
+    const savedTicket = await newTicket.save({ sessionDB });
     if (!savedTicket) {
+      console.log("Ocurrio un error al guardar el ticket en el respositorio.");
       return false;
     }
+    console.log("El ticket se guardo de manera correcta");
     return savedTicket;
   } catch (error) {
-    console.log("Error", error);
+    console.log(
+      "Ocurrio un error al guardar el ticket en el respositorio. Transaccion abortada."
+    );
+    console.log(error);
     return false;
   }
 };

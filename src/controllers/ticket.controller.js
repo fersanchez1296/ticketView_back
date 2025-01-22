@@ -46,7 +46,6 @@ export const getTicketsAbiertos = async (req, res) => {
         .populate("Categoria", "Categoria -_id")
         .populate("Servicio", "Servicio -_id")
         .populate("Subcategoria", "Subcategoria -_id")
-        .populate("Secretaria", "Secretaria -_id")
         .populate("Direccion_general", "Direccion_General -_id")
         .populate("Direccion_area", "direccion_area -_id")
         .populate("Prioridad", "Prioridad Descripcion -_id")
@@ -94,7 +93,6 @@ export const getTicketsAbiertos = async (req, res) => {
         .populate("Categoria", "Categoria -_id")
         .populate("Servicio", "Servicio -_id")
         .populate("Subcategoria", "Subcategoria -_id")
-        .populate("Secretaria", "Secretaria -_id")
         .populate("Direccion_general", "Direccion_General -_id")
         .populate("Direccion_area", "direccion_area -_id")
         .populate("Prioridad", "Prioridad Descripcion -_id")
@@ -350,7 +348,6 @@ export const ticketsResueltos = async (req, res) => {
       { path: "Categoria", select: "Categoria -_id" },
       { path: "Servicio", select: "Servicio -_id" },
       { path: "Subcategoria", select: "Subcategoria -_id" },
-      { path: "Secretaria", select: "Secretaria -_id" },
       { path: "Direccion_general", select: "Direccion_General -_id" },
       { path: "Direccion_area", select: "direccion_area -_id" },
       { path: "Prioridad", select: "Prioridad Descripcion -_id" },
@@ -815,11 +812,9 @@ export const buscarTicket = async (req, res, next) => {
   try {
     const RES = await Gets.getTicketPorID(id);
     if (!RES) {
-      return res
-        .status(404)
-        .json({
-          desc: "No se encontro el numero de ticket en la base de datos",
-        });
+      return res.status(404).json({
+        desc: "No se encontro el numero de ticket en la base de datos",
+      });
     }
     req.tickets = RES;
     next();
@@ -852,7 +847,6 @@ export const editTicket = async (req, res) => {
     Categoria: ticketState.Categoria,
     Subcategoria: ticketState.Subcategoria,
     Descripcion: ticketState.Descripcion,
-    Secretaria: ticketState.Secretaria,
     Direccion_general: ticketState.Direccion_general,
     Direccion_area: ticketState.Direccion_area,
     Nombre_cliente: ticketState.Nombre_cliente,
@@ -882,11 +876,15 @@ export const editTicket = async (req, res) => {
 };
 
 export const createTicket = async (req, res, next) => {
-  if (!req.body.ticketState)
+  let ticketState = req.ticketState;
+  const sessionDB = req.sessionDB;
+  if (!ticketState) {
+    await sessionDB.abortTransaction();
+    sessionDB.endSession();
     return res.status(400).json({ desc: "No se envio informacion" });
+  }
   const fechaActual = new Date();
   const { userId, nombre, rol, correo } = req.session.user;
-  let ticketState = JSON.parse(req.body.ticketState);
   const Asignado_a = ticketState.Asignado_a;
   ticketState = {
     ...ticketState,
@@ -907,13 +905,24 @@ export const createTicket = async (req, res, next) => {
     Files: req.dataArchivo ? req.dataArchivo : "",
   };
   try {
-    const RES = await postCrearTicket(ticketState, userId, nombre, rol);
+    const RES = await postCrearTicket(
+      ticketState,
+      userId,
+      nombre,
+      rol,
+      sessionDB
+    );
     if (!RES) {
+      console.log("Ocurrio un error al guardar el ticket. Transaccion abortada.");
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
       return res.status(500).json({ desc: "Error al guardar el ticket." });
     }
-    const correoAsignado = await USUARIO.findOne({
-      _id: RES.Asignado_a,
-    });
+    const correoAsignado = await USUARIO.findOne(
+      {
+        _id: RES.Asignado_a,
+      }
+    );
     const correoData = {
       correo,
       idTicket: RES.Id,
@@ -926,6 +935,9 @@ export const createTicket = async (req, res, next) => {
     };
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
+    console.log("Transaccion finalizada, todo correcto");
+    await sessionDB.commitTransaction();
+    sessionDB.endSession();
     next();
   } catch (error) {
     console.error(error);

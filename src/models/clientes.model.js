@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const clienteModel = mongoose.Schema(
+const clientesModel = mongoose.Schema(
   {
     Nombre: {
       type: String,
@@ -12,27 +12,35 @@ const clienteModel = mongoose.Schema(
       trim: true,
       required: true,
     },
-    Telefono: {
-      type: Number,
-      trim: true,
-      required: true,
-    },
-    Fecha_creacion: {
-      type: Date,
-      trim: true,
-      required: true,
-    },
-    Fecha_baja: {
-      type: Date,
-      trim: true,
-      required: true,
-    },
     Dependencia: {
+      type: Schema.Types.ObjectId,
+      ref: "Dependencia",
+      trim: true,
+      required: true,
+    },
+    Direccion_General: {
+      type: Schema.Types.ObjectId,
+      ref: "Direccion_general",
+      trim: true,
+      required: true,
+    },
+    direccion_area: {
+      type: Schema.Types.ObjectId,
+      ref: "Direccion_area",
+      trim: true,
+      required: true,
+    },
+    Telefono: {
       type: String,
       trim: true,
       required: true,
     },
-    Direccion_general: {
+    Extension: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+    Ubicacion: {
       type: String,
       trim: true,
       required: true,
@@ -43,4 +51,4 @@ const clienteModel = mongoose.Schema(
   }
 );
 
-export default mongoose.model("CLIENTES", clienteModel, "Clientes");
+export default mongoose.model("Clientes", clientesModel, "Clientes");

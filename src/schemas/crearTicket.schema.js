@@ -8,7 +8,6 @@ const crearSchema = Joi.object({
   Servicio: Joi.string().alphanum().required(),
   Subcategoria: Joi.string().alphanum().required(),
   Nombre_cliente: Joi.string().required(),
-  Secretaria: Joi.string().alphanum().required(),
   Direccion_general: Joi.string().alphanum().required(),
   Direccion_area: Joi.string().alphanum().required(),
   Descripcion: Joi.string().required(),
