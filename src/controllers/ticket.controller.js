@@ -886,27 +886,10 @@ export const createTicket = async (req, res, next) => {
     return res.status(400).json({ desc: "No se envio informacion" });
   const fechaActual = new Date();
   const { userId, nombre, rol, correo } = req.session.user;
-  const ticketState = JSON.parse(req.body.ticketState);
+  let ticketState = JSON.parse(req.body.ticketState);
   const Asignado_a = ticketState.Asignado_a;
-  //Se eliminan las propiedades que no se necesitan del objeto recibido
-  let {
-    _id: unused1,
-    Id: unused2,
-    Descripcion_mandar_a_Escritorio: unused3,
-    Descripcion_cierre: unused4,
-    Causa: unused5,
-    Resuelto_por: unused6,
-    Cerrado_por: unused7,
-    Fecha_hora_cierre: unused8,
-    Reasignado_a: unused9,
-    Area_reasignado_a: unused10,
-    Descripcion_resolucion: unused11,
-    id: unused12,
-    ...nuevoTicket
-  } = ticketState;
-  //Se agregan las propiedades necesarias al objeto
-  nuevoTicket = {
-    ...nuevoTicket,
+  ticketState = {
+    ...ticketState,
     Fecha_hora_creacion: fechaActual,
     Fecha_limite_resolucion_SLA: addHours(
       fechaActual,
@@ -923,9 +906,8 @@ export const createTicket = async (req, res, next) => {
     Area_asignado: new ObjectId("67350936aa438f58c6228fee"),
     Files: req.dataArchivo ? req.dataArchivo : "",
   };
-  console.log(nuevoTicket);
   try {
-    const RES = await postCrearTicket(nuevoTicket, userId, nombre, rol);
+    const RES = await postCrearTicket(ticketState, userId, nombre, rol);
     if (!RES) {
       return res.status(500).json({ desc: "Error al guardar el ticket." });
     }
