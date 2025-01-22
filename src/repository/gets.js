@@ -415,6 +415,7 @@ export const getInfoSelectsCrearTicket = async () => {
       DIRECCIONESAREAS_,
       USUARIOS_,
       DIRECCIONESGENERALES_,
+      ROL_,
     ] = await Promise.all([
       ESTADOS.find({
         $or: [{ Estado: "NUEVO" }, { Estado: "PENDIENTE" }],
