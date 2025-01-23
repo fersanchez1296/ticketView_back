@@ -98,10 +98,12 @@ router.get("/tickets/reasignar/areas",
   areasReasignacion);
   
 router.put(
-  "/tickets/resolver",
+  "/tickets/resolver/:id",
+  uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador", "Usuario"]),
   validateData("resolver"),
+  guardarArchivo,
   resolverTicket
 );
 router.get(

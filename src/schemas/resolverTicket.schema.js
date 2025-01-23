@@ -1,7 +1,8 @@
 import Joi from "joi";
 const resolverSchema = Joi.object({
-  _id: Joi.string().alphanum().required(),
-  Descripcion_resolucion: Joi.string().required(),
+  Respuesta_cierre_reasignado: Joi.string().required(),
+  Files: Joi.object().allow(),
+  vistoBueno: Joi.boolean(),
 });
 
 export default resolverSchema;

@@ -395,51 +395,81 @@ export const ticketsResueltos = async (req, res) => {
 };
 
 export const resolverTicket = async (req, res) => {
-  const { _id, Descripcion_resolucion } = req.body;
+  const sessionDB = await mongoose.startSession();
+  sessionDB.startTransaction();
+  const ticketId = req.params.id;
+  const resolverTicketStore = req.resolverTicketStore;
   const { userId, rol, nombre } = req.session.user;
   let estado;
   try {
-    if (rol != "Usuario") {
-      [estado] = await ESTADOS.find({ Estado: "RESUELTO" });
-    } else {
+    if (rol === "Usuario" && resolverTicketStore.vistoBueno) {
       [estado] = await ESTADOS.find({ Estado: "REVISIÓN" });
+    } else {
+      [estado] = await ESTADOS.find({ Estado: "RESUELTO" });
     }
     if (!estado) {
       return res
         .status(404)
         .json({ desc: "No se encontro el estado del ticket" });
     }
-    const result = await TICKETS.findOneAndUpdate(
-      { _id },
-      {
-        $set: {
-          Estado: estado._id,
-          Resuelto_por: userId,
-          Respuesta_cierre_reasignado: Descripcion_resolucion,
+
+    const update = {
+      $set: {
+        Estado: estado._id,
+        Resuelto_por: userId,
+        Respuesta_cierre_reasignado:
+          resolverTicketStore.Respuesta_cierre_reasignado,
+      },
+      $push: {
+        Historia_ticket: {
+          Nombre: userId,
+          Mensaje:
+            rol === "Usuario"
+              ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${resolverTicketStore.Respuesta_cierre_reasignado}`
+              : `El ticket ha sido resuelto por ${nombre}(${rol}).`,
+          Fecha: new Date(),
         },
-        $push: {
-          Historia_ticket: {
-            Nombre: userId,
-            Mensaje:
-              rol === "Usuario"
-                ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${Descripcion_resolucion}`
-                : `El ticket ha sido resuelto por ${nombre}(${rol}).`,
-            Fecha: new Date(),
-          },
-        },
-      }
-    );
+      },
+    };
+
+    if (req.dataArchivo) {
+      update.$push.Files = {
+        ...req.dataArchivo,
+      };
+    }
+    console.log("Resolviendo ticket");
+    const result = await TICKETS.findOneAndUpdate({ _id: ticketId }, update, {
+      returnDocument: "after",
+      new: true,
+      session: sessionDB,
+    });
+    await sessionDB.commitTransaction();
+    sessionDB.endSession();
     if (result) {
+      console.log("Transaccion realizada con exito. Ticket resuelto.");
       return res.status(200).json({
         desc: "El estado del ticket ha sido modificado exitosamente.",
       });
     } else {
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+      console.log(
+        "Ocurrio un erro al actualizar el ticket. Transaccion abortada."
+      );
       return res
         .status(500)
         .json({ desc: "Error al acutualizar el estado del ticket." });
     }
   } catch (error) {
-    console.log(error);
+    await sessionDB.abortTransaction();
+    sessionDB.endSession();
+    console.log(
+      "Ocurrio un erro al actualizar el ticket. Error interno en el servidor",
+      error
+    );
+    res.status(500).json({
+      desc: "Ocurrio un error al reasignar el ticket. Error interno en el servidor",
+    });
   }
 };
 
@@ -505,11 +535,13 @@ export const reasignarTicket = async (req, res, next) => {
     ? deleteCamposTiempo(req.body)
     : tiempoResolucion(req.body);
   try {
+    const Estado = await ESTADOS.find({ Estado: "EN CURSO" });
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
       {
         $set: {
           ...reasignado,
+          Estado,
           vistoBueno: reasignado.vistoBueno,
         },
         $push: {
