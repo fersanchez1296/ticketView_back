@@ -86,7 +86,7 @@ router.get(
   populateTickets
 );
 router.put(
-  "/tickets/reasignar",
+  "/tickets/reasignar/:id",
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),
   validateData("reasignar"),

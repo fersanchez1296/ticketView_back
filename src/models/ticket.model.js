@@ -166,6 +166,11 @@ const ticketModel = mongoose.Schema(
       type: [fileSchema] || String,
       trim: true,
     },
+    vistoBueno: {
+      type: Boolean,
+      trim: true,
+      default: false,
+    },
   },
   {
     timesStampes: true,

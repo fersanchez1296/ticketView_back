@@ -448,7 +448,6 @@ export const areasReasignacion = async (req, res) => {
   try {
     const AREAS = await Gets.getAreasParaReasignacion(areas);
     const prioridades = await Gets.getPrioridades();
-    console.log(prioridades);
     if (!AREAS) {
       return res.status(404).json({ desc: "No se encontraron áreas" });
     }
@@ -475,37 +474,58 @@ export const areasReasignacion = async (req, res) => {
 //TODO revisar
 //agregar un middleware para buscar al usuario en el microservicio de usuarios
 export const reasignarTicket = async (req, res, next) => {
-  const { id_usuario_reasignar, id_ticket } = req.body;
+  const sessionDB = await mongoose.startSession();
+  sessionDB.startTransaction();
+  const ticketId = req.params.id;
+  const fechaActual = new Date();
   const { userId, nombre, rol, correo } = req.session.user;
+  function deleteCamposTiempo(body) {
+    const {
+      Prioridad,
+      Fecha_limite_respuesta_SLA,
+      Fecha_limite_resolucion_SLA,
+      ...rest
+    } = body;
+    return rest;
+  }
+  function tiempoResolucion(body) {
+    return {
+      ...body,
+      Fecha_limite_respuesta_SLA: addHours(
+        fechaActual,
+        body.Fecha_limite_respuesta_SLA
+      ),
+      Fecha_limite_resolucion_SLA: addHours(
+        fechaActual,
+        body.Fecha_limite_resolucion_SLA
+      ),
+    };
+  }
+  const reasignado = !req.body.Prioridad
+    ? deleteCamposTiempo(req.body)
+    : tiempoResolucion(req.body);
   try {
-    const user = await USUARIO.findOne({ _id: id_usuario_reasignar });
-    if (!user) {
-      return res
-        .status(404)
-        .json({ desc: "El usuario no fue encontrado en la BD." });
-    }
-    const Nombre_resolutor = user.Nombre; // a quien se va a reasignar
     const result = await TICKETS.findOneAndUpdate(
-      { _id: id_ticket },
+      { _id: ticketId },
       {
         $set: {
-          Area_reasignado_a: user.Area,
-          Reasignado_a: id_usuario_reasignar,
+          ...reasignado,
+          vistoBueno: reasignado.vistoBueno,
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
-            Mensaje: `El ticket ha sido reasignado a ${Nombre_resolutor} por ${nombre} - ${rol}`,
+            Mensaje: `El ticket ha sido reasignado a ${reasignado.Nombre} por ${nombre} - ${rol}`,
             Fecha: new Date(),
           },
         },
       },
-      { returnDocument: "after", new: true }
+      { returnDocument: "after", new: true, sessionDB }
     );
     if (result) {
       const correoData = {
         correo,
-        correoResol: user.Correo,
+        correoResol: reasignado.Correo,
         idTicket: result.Id,
         descripcionTicket: result.Descripcion,
         nombreCliente: result.Nombre_cliente,
@@ -514,16 +534,22 @@ export const reasignarTicket = async (req, res, next) => {
       };
       req.channel = "channel_reasignarTicket";
       req.correoData = correoData;
+      await sessionDB.commitTransaction();
+      sessionDB.endSession();
       next();
     } else {
-      res
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+      return res
         .status(500)
         .json({ desc: "Ocurrio un error al reasignar el ticket." });
     }
-    next();
   } catch (error) {
-    res.status(500).json({ desc: "Error en el servidor" });
-    console.log(error);
+    await sessionDB.abortTransaction();
+    sessionDB.endSession();
+    return res.status(500).json({
+      desc: "Ocurrio un error al reasignar el ticket. Error interno en el servidor.",
+    });
   }
 };
 
