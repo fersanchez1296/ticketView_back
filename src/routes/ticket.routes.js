@@ -96,6 +96,7 @@ router.put(
 router.get("/tickets/reasignar/areas", 
   verifyToken, 
   areasReasignacion);
+  
 router.put(
   "/tickets/resolver",
   verifyToken,

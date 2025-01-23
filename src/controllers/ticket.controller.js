@@ -458,7 +458,7 @@ export const areasReasignacion = async (req, res) => {
           area._id
         );
         return {
-          area: area.Area,
+          area: { area: area.Area, _id: area._id },
           resolutores: RESOLUTOR,
         };
       })
@@ -913,16 +913,16 @@ export const createTicket = async (req, res, next) => {
       sessionDB
     );
     if (!RES) {
-      console.log("Ocurrio un error al guardar el ticket. Transaccion abortada.");
+      console.log(
+        "Ocurrio un error al guardar el ticket. Transaccion abortada."
+      );
       await sessionDB.abortTransaction();
       sessionDB.endSession();
       return res.status(500).json({ desc: "Error al guardar el ticket." });
     }
-    const correoAsignado = await USUARIO.findOne(
-      {
-        _id: RES.Asignado_a,
-      }
-    );
+    const correoAsignado = await USUARIO.findOne({
+      _id: RES.Asignado_a,
+    });
     const correoData = {
       correo,
       idTicket: RES.Id,
