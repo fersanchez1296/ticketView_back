@@ -130,12 +130,14 @@ router.put(
   "/tickets/resolver/aceptar/:id",
   verifyToken,
   verifyRole(["Moderador"]),
+  validateData("aceptarResolucion"),
   aceptarResolucion
 );
 router.put(
   "/tickets/resolver/rechazar/:id",
   verifyToken,
   verifyRole(["Moderador"]),
+  validateData("rechazarResolucion"),
   rechazarResolucion
 );
 router.get(
