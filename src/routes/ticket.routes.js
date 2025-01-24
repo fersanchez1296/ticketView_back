@@ -96,16 +96,6 @@ router.put(
 router.get("/tickets/reasignar/areas", 
   verifyToken, 
   areasReasignacion);
-  
-router.put(
-  "/tickets/resolver/:id",
-  uploadMiddleware,
-  verifyToken,
-  verifyRole(["Root", "Administrador", "Moderador", "Usuario"]),
-  validateData("resolver"),
-  guardarArchivo,
-  resolverTicket
-);
 router.get(
   "/tickets/crear/getInfoSelects",
   verifyToken,
@@ -128,17 +118,24 @@ router.put(
   reabrirTicket
 );
 router.put(
-  "/tickets/resolver/aceptar",
+  "/tickets/resolver/:id",
+  uploadMiddleware,
+  verifyToken,
+  verifyRole(["Root", "Administrador", "Moderador", "Usuario"]),
+  validateData("resolver"),
+  guardarArchivo,
+  resolverTicket
+);
+router.put(
+  "/tickets/resolver/aceptar/:id",
   verifyToken,
   verifyRole(["Moderador"]),
-  validateData("aceptarResolucion"),
   aceptarResolucion
 );
 router.put(
-  "/tickets/resolver/rechazar",
+  "/tickets/resolver/rechazar/:id",
   verifyToken,
   verifyRole(["Moderador"]),
-  validateData("rechazarResolucion"),
   rechazarResolucion
 );
 router.get(

@@ -8,19 +8,17 @@ export const postCrearTicket = async (
 ) => {
   try {
     console.log("Guardando Ticket...", nuevoTicket);
-    const newTicket = await new TICKETS(
-      {
-        ...nuevoTicket,
-        Historia_ticket: [
-          {
-            Nombre: userId,
-            Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
-            Fecha: new Date(),
-          },
-        ],
-        Files: [nuevoTicket.Files],
-      }
-    );
+    const newTicket = await new TICKETS({
+      ...nuevoTicket,
+      Historia_ticket: [
+        {
+          Nombre: userId,
+          Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
+          Fecha: new Date(),
+        },
+      ],
+      ...(nuevoTicket.Files ? { Files: [nuevoTicket.Files] } : null),
+    });
     const savedTicket = await newTicket.save({ sessionDB });
     if (!savedTicket) {
       console.log("Ocurrio un error al guardar el ticket en el respositorio.");

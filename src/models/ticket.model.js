@@ -162,8 +162,18 @@ const ticketModel = mongoose.Schema(
       type: String,
       trim: true,
     },
+    NumeroRec_Oficio: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    Numero_Oficio: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     Files: {
-      type: [fileSchema] || String,
+      type: [fileSchema] || null,
       trim: true,
     },
     vistoBueno: {

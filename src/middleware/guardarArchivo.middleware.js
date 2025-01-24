@@ -69,14 +69,14 @@ const guardarArchivo = async (req, res, next) => {
       }
       req.dataArchivo = response.data;
       console.log("Archivo guardado, saliendo del middleware");
-      next();
+      return next();
     } catch (error) {
       console.log("No se pudo guardar el archivo");
       res.status(500).json({ desc: "Error interno en el servidor." });
     }
   }
   console.log("No se proporciono archivo...");
-  next();
+  return next();
 };
 
 export default guardarArchivo;

@@ -398,11 +398,12 @@ export const resolverTicket = async (req, res) => {
   const sessionDB = await mongoose.startSession();
   sessionDB.startTransaction();
   const ticketId = req.params.id;
-  const resolverTicketStore = req.resolverTicketStore;
+  const ticketData = req.ticketData;
+  console.log(ticketData);
   const { userId, rol, nombre } = req.session.user;
   let estado;
   try {
-    if (rol === "Usuario" && resolverTicketStore.vistoBueno) {
+    if (rol === "Usuario" && ticketData.vistoBueno) {
       [estado] = await ESTADOS.find({ Estado: "REVISIÓN" });
     } else {
       [estado] = await ESTADOS.find({ Estado: "RESUELTO" });
@@ -417,15 +418,14 @@ export const resolverTicket = async (req, res) => {
       $set: {
         Estado: estado._id,
         Resuelto_por: userId,
-        Respuesta_cierre_reasignado:
-          resolverTicketStore.Respuesta_cierre_reasignado,
+        Respuesta_cierre_reasignado: ticketData.Respuesta_cierre_reasignado,
       },
       $push: {
         Historia_ticket: {
           Nombre: userId,
           Mensaje:
-            rol === "Usuario"
-              ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${resolverTicketStore.Respuesta_cierre_reasignado}`
+            rol === "Usuario" && ticketData.vistoBueno
+              ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`
               : `El ticket ha sido resuelto por ${nombre}(${rol}).`,
           Fecha: new Date(),
         },
@@ -468,7 +468,7 @@ export const resolverTicket = async (req, res) => {
       error
     );
     res.status(500).json({
-      desc: "Ocurrio un error al reasignar el ticket. Error interno en el servidor",
+      desc: "Ocurrio un error al resolver el ticket. Error interno en el servidor",
     });
   }
 };
@@ -535,7 +535,8 @@ export const reasignarTicket = async (req, res, next) => {
     ? deleteCamposTiempo(req.body)
     : tiempoResolucion(req.body);
   try {
-    const Estado = await ESTADOS.find({ Estado: "EN CURSO" });
+    const Estado = await ESTADOS.findOne({ Estado: "EN CURSO" });
+    console.log("Este es el estado:", Estado);
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
       {
@@ -579,6 +580,7 @@ export const reasignarTicket = async (req, res, next) => {
   } catch (error) {
     await sessionDB.abortTransaction();
     sessionDB.endSession();
+    console.log(error);
     return res.status(500).json({
       desc: "Ocurrio un error al reasignar el ticket. Error interno en el servidor.",
     });
@@ -732,21 +734,21 @@ export const reabrirTicket = async (req, res) => {
 };
 
 export const aceptarResolucion = async (req, res) => {
-  const { _id } = req.body;
+  const ticketId = req.params.id;
   const { userId, nombre, rol } = req.session.user;
   try {
-    const [estado] = await ESTADOS.find({ Estado: "RESUELTO" });
+    const [estado] = await ESTADOS.findOne({ Estado: "RESUELTO" });
     if (!estado) {
       return res.status(404).json({ desc: "No se encontro el estado." });
     }
     const result = await TICKETS.updateOne(
-      { _id },
+      { _id: ticketId },
       {
         $set: { Estado: estado._id },
         $push: {
           Historia_ticket: {
             Nombre: userId,
-            Mensaje: `${nombre}(${rol}) ha aceptado la solucion del Resolutor. El estado del ticket es cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
+            Mensaje: `${nombre}(${rol}) ha aceptado la solución del Resolutor. El estado del ticket es cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
             Fecha: new Date(),
           },
         },
@@ -960,7 +962,7 @@ export const createTicket = async (req, res, next) => {
     Creado_por: userId,
     Asignado_a,
     Area_asignado: new ObjectId("67350936aa438f58c6228fee"),
-    Files: req.dataArchivo ? req.dataArchivo : "",
+    ...(req.dataArchivo && { Files: req.dataArchivo }),
   };
   try {
     const RES = await postCrearTicket(
