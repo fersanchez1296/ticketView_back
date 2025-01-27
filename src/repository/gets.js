@@ -413,6 +413,7 @@ export const getInfoSelectsCrearTicket = async () => {
       DIRECCIONESAREAS_,
       USUARIOS_,
       DIRECCIONESGENERALES_,
+      ROL_,
       DEPENDENCIAS_
     ] = await Promise.all([
       ESTADOS.find({
