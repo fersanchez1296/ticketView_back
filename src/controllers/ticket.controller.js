@@ -230,14 +230,12 @@ export const ticketsRevision = async (req, res, next) => {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
     const RES = await Gets.getTicketsRevision(ESTADO._id, areas);
-    console.log(RES);
     if (RES === false) {
       return res.status(500).json({ desc: "Error al obtener los tickets" });
     }
     req.tickets = RES;
     next();
   } catch (error) {
-    console.error("Error al obtener los tickets:", error);
     return res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
@@ -399,8 +397,7 @@ export const resolverTicket = async (req, res) => {
   sessionDB.startTransaction();
   const ticketId = req.params.id;
   const ticketData = req.ticketData;
-  console.log(ticketData);
-  const { userId, rol, nombre } = req.session.user;
+  const { userId, rol, nombre, areas } = req.session.user;
   let estado;
   try {
     if (rol === "Usuario" && ticketData.vistoBueno) {
@@ -437,7 +434,14 @@ export const resolverTicket = async (req, res) => {
         ...req.dataArchivo,
       };
     }
-    console.log("Resolviendo ticket");
+
+    if (rol != "Usuario") {
+      update.$set = {
+        ...update.$set,
+        Reasignado_a: userId,
+        Area_reasignado_a: ticketData.Area_reasignado_a,
+      };
+    }
     const result = await TICKETS.findOneAndUpdate({ _id: ticketId }, update, {
       returnDocument: "after",
       new: true,
@@ -446,27 +450,20 @@ export const resolverTicket = async (req, res) => {
     await sessionDB.commitTransaction();
     sessionDB.endSession();
     if (result) {
-      console.log("Transaccion realizada con exito. Ticket resuelto.");
       return res.status(200).json({
         desc: "El estado del ticket ha sido modificado exitosamente.",
       });
     } else {
       await sessionDB.abortTransaction();
       sessionDB.endSession();
-      console.log(
-        "Ocurrio un erro al actualizar el ticket. Transaccion abortada."
-      );
       return res
         .status(500)
         .json({ desc: "Error al acutualizar el estado del ticket." });
     }
   } catch (error) {
+    console.log(error);
     await sessionDB.abortTransaction();
     sessionDB.endSession();
-    console.log(
-      "Ocurrio un erro al actualizar el ticket. Error interno en el servidor",
-      error
-    );
     res.status(500).json({
       desc: "Ocurrio un error al resolver el ticket. Error interno en el servidor",
     });
@@ -556,14 +553,24 @@ export const reasignarTicket = async (req, res, next) => {
       { returnDocument: "after", new: true, sessionDB }
     );
     if (result) {
+      const formatedTickets = await TICKETS.populate(result, [
+        { path: "Dependencia_cliente", select: "Dependencia _id" },
+        { path: "Direccion_general", select: "Direccion_General _id" },
+        { path: "Direccion_area", select: "direccion_area _id" },
+      ]);
       const correoData = {
         correo,
         correoResol: reasignado.Correo,
-        idTicket: result.Id,
-        descripcionTicket: result.Descripcion,
-        nombreCliente: result.Nombre_cliente,
-        telefonoCliente: result.Telefono_cliente,
-        dependenciaCliente: result.Dependencia_cliente,
+        idTicket: formatedTickets.Id,
+        descripcionTicket: formatedTickets.Descripcion,
+        correoCliente: formatedTickets.Correo_cliente,
+        nombreCliente: formatedTickets.Nombre_cliente,
+        telefonoCliente: formatedTickets.Telefono_cliente,
+        extensionCliente: formatedTickets.Extension_cliente,
+        dependenciaCliente: formatedTickets.Dependencia_cliente.Dependencia,
+        direccionGeneral: formatedTickets.Direccion_general.Direccion_General,
+        area: formatedTickets.Direccion_area.direccion_area,
+        ubicacion: formatedTickets.Ubicacion_cliente,
       };
       req.channel = "channel_reasignarTicket";
       req.correoData = correoData;
@@ -601,47 +608,64 @@ export const getInfoSelects = async (req, res) => {
 };
 
 export const cerrarTicket = async (req, res, next) => {
-  const { _id, Descripcion_cierre, Causa } = req.body;
+  const sessionDB = await mongoose.startSession();
+  sessionDB.startTransaction();
+  const ticketId = req.params.id;
+  const { Descripcion_cierre, Numero_Oficio, Causa } = req.ticketData;
   const { userId, nombre, rol, correo } = req.session.user;
-
+  const fechaActual = new Date();
   try {
     const estado = await ESTADOS.findOneAndUpdate({ Estado: "CERRADO" });
-    const result = await TICKETS.findOneAndUpdate(
-      { _id },
-      {
-        $set: {
-          Estado: estado._id,
-          Cerrado_por: userId,
-          Descripcion_cierre,
-          Causa,
-          Fecha_hora_cierre: new Date(),
-        },
-        $push: {
-          Historia_ticket: {
-            Nombre: userId,
-            Mensaje: `El ticket fue cerrado por ${nombre}(${rol})`,
-            Fecha: new Date(),
-          },
+    const update = {
+      $set: {
+        Descripcion_cierre,
+        Numero_Oficio,
+        Causa,
+        Estado: estado._id,
+        Cerrado_por: userId,
+        Fecha_hora_cierre: fechaActual,
+      },
+      $push: {
+        Historia_ticket: {
+          Nombre: userId,
+          Mensaje: `El ticket fue cerrado por ${nombre}(${rol})`,
+          Fecha: fechaActual,
         },
       },
-      { returnDocument: "after", new: true }
-    );
-    if (result) {
-      const correoData = {
-        correo,
-        idTicket: result.Id,
-        descripcionTicket: result.Descripcion_cierre,
-        correoCliente: result.Correo_cliente,
+    };
+
+    if (req.dataArchivo) {
+      update.$push.Files = {
+        ...req.dataArchivo,
       };
-      req.channel = "channel_cerrarTicket";
-      req.correoData = correoData;
-      next();
-    } else {
+    }
+    const result = await TICKETS.findOneAndUpdate({ _id: ticketId }, update, {
+      returnDocument: "after",
+      new: true,
+      sessionDB,
+    });
+    if (!result) {
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
       return res.status(500).json({ desc: "Error al cerrar el ticket." });
     }
+    await sessionDB.commitTransaction();
+    sessionDB.endSession();
+    const correoData = {
+      correo,
+      idTicket: result.Id,
+      descripcionTicket: result.Respuesta_cierre_reasignado,
+      correoCliente: result.Correo_cliente,
+    };
+    req.channel = "channel_cerrarTicket";
+    req.correoData = correoData;
+    next();
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ desc: "Error interno en el servidor" });
+    await sessionDB.abortTransaction();
+    sessionDB.endSession();
+    return res.status(500).json({
+      desc: "Ocurrió un error al cerrar el ticket. Error interno en el servidor.",
+    });
   }
 };
 //FALTA AGREGAR AL REPOSITORIO (puts)
@@ -734,12 +758,15 @@ export const reabrirTicket = async (req, res) => {
 };
 
 export const aceptarResolucion = async (req, res) => {
+  const sessionDB = await mongoose.startSession();
+  sessionDB.startTransaction();
   const ticketId = req.params.id;
+  const { Nombre } = req.body;
   const { userId, nombre, rol } = req.session.user;
   try {
-    const [estado] = await ESTADOS.findOne({ Estado: "RESUELTO" });
+    const estado = await ESTADOS.findOne({ Estado: "RESUELTO" });
     if (!estado) {
-      return res.status(404).json({ desc: "No se encontro el estado." });
+      return res.status(404).json({ desc: "No se encontró el estado." });
     }
     const result = await TICKETS.updateOne(
       { _id: ticketId },
@@ -748,35 +775,45 @@ export const aceptarResolucion = async (req, res) => {
         $push: {
           Historia_ticket: {
             Nombre: userId,
-            Mensaje: `${nombre}(${rol}) ha aceptado la solución del Resolutor. El estado del ticket es cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
+            Mensaje: `${nombre}(${rol}) ha aceptado la solución ${Nombre}(Resolutor). El estado del ticket a cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
             Fecha: new Date(),
           },
         },
       }
     );
+    await sessionDB.commitTransaction();
+    sessionDB.endSession();
     if (result) {
       return res
         .status(200)
         .json({ desc: "El estado del ticket fue cambiado a Resuelto." });
     } else {
-      return res.status(500).json({ desc: "Error al procesar la solicitud." });
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrió un error al procesar la solicitud." });
     }
   } catch (error) {
     console.log(error);
+    await sessionDB.commitTransaction();
+    sessionDB.endSession();
     return res.status(500).json({ desc: "Error interno en el servidor." });
   }
 };
 
 export const rechazarResolucion = async (req, res) => {
-  const { _id, motivo_rechazo } = req.body;
+  const ticketId = req.params.id;
+  const { Nombre, feedback } = req.body;
   const { userId, nombre, rol } = req.session.user;
   try {
-    const [estado] = await ESTADOS.find({ Estado: "EN CURSO" });
+    const estado = await ESTADOS.findOne({ Estado: "EN CURSO" });
+    console.log(estado._id);
     if (!estado) {
-      return res.status(404).json({ desc: "No se encontro el estado." });
+      return res.status(404).json({ desc: "No se encontró el estado." });
     }
     const result = await TICKETS.updateOne(
-      { _id },
+      { _id: ticketId },
       {
         $set: {
           Estado: estado._id,
@@ -788,7 +825,7 @@ export const rechazarResolucion = async (req, res) => {
         $push: {
           Historia_ticket: {
             Nombre: userId,
-            Mensaje: `${nombre}(${rol}) ha rechazado la solucion del Resolutor. El estado del ticket es cambiado a "Abierto". \nMotivo:\n${motivo_rechazo}`,
+            Mensaje: `${nombre}(${rol}) ha rechazado la solucion de ${Nombre}(Resolutor). El estado del ticket es cambiado a "Abierto". \nMotivo:\n${feedback}`,
             Fecha: new Date(),
           },
         },
@@ -796,7 +833,7 @@ export const rechazarResolucion = async (req, res) => {
     );
     if (result) {
       return res.status(200).json({
-        desc: 'Se cambio el estado del ticket a "Abierto" y fue enviado al Resolutor.',
+        desc: `Se cambio el estado del ticket a "Abierto" y fue enviado al Resolutor ${Nombre}.`,
       });
     } else {
       return res
@@ -973,9 +1010,6 @@ export const createTicket = async (req, res, next) => {
       sessionDB
     );
     if (!RES) {
-      console.log(
-        "Ocurrio un error al guardar el ticket. Transaccion abortada."
-      );
       await sessionDB.abortTransaction();
       sessionDB.endSession();
       return res.status(500).json({ desc: "Error al guardar el ticket." });
@@ -991,11 +1025,14 @@ export const createTicket = async (req, res, next) => {
       correoUsuario: correoAsignado.Correo,
       nombreCliente: RES.Nombre_cliente,
       telefonoCliente: RES.Telefono_cliente,
-      dependenciaCliente: RES.Dependencia_cliente,
+      extensionCliente: RES.Extension_cliente,
+      dependenciaCliente: RES.Dependencia_cliente.Dependencia,
+      direccionGeneral: RES.Direccion_general.Direccion_General,
+      area: RES.Direccion_area.direccion_area,
+      ubicacion: RES.Ubicacion_cliente,
     };
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
-    console.log("Transaccion finalizada, todo correcto");
     await sessionDB.commitTransaction();
     sessionDB.endSession();
     next();

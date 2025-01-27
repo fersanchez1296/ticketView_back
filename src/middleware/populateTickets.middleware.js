@@ -19,6 +19,7 @@ export const populateTickets = async (req, res, next) => {
       { path: "Area_reasignado_a", select: "Area _id" },
       { path: "Cerrado_por", select: "Nombre Coordinacion Area _id" },
       { path: "Asignado_final_a", select: "Nombre Coordinacion" },
+      { path: "Dependencia_cliente", select: "Dependencia _id" },
       {
         path: "Historia_ticket",
         populate: { path: "Nombre", select: "Nombre -_id" },

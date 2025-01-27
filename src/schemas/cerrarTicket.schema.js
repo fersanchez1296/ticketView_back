@@ -1,7 +1,8 @@
 import Joi from "joi";
 const cerrarSchema = Joi.object({
-  _id: Joi.string().alphanum().required(),
+  Files: Joi.object().allow(null, ""),
   Descripcion_cierre: Joi.string().required(),
+  Numero_Oficio: Joi.string().allow("").required(),
   Causa: Joi.string().required(),
 });
 

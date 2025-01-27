@@ -9,11 +9,8 @@ export const guardarCliente = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   req.sessionDB = session;
-  console.log("Transaccion Iniciada:");
-  console.log(req.body);
   if (!req.body.nuevoCliente) {
     req.ticketState = JSON.parse(req.body.ticketState);
-    console.log("No se proporciono un nuevo cliente, siguiendo al controlador principal.")
     return next();
   }
   const nuevoCliente = JSON.parse(req.body.nuevoCliente);
@@ -63,16 +60,13 @@ export const guardarCliente = async (req, res, next) => {
       ticketState.Direccion_general = nuevoDGeneral[0]._id;
       nuevoCliente.Direccion_General = nuevoDGeneral[0]._id;
     }
-    console.log("Guardando Cliente...",nuevoCliente);
     const guardarCliente = await Clientes.create([{ ...nuevoCliente }], { session });
     if(!guardarCliente) {
-        console.log("Error al guardar al Cliente...");
         await session.abortTransaction();
         session.endSession();
         return res.status(500).json({desc: "Error al guardar el cliente"});
     }
     req.ticketState = ticketState;
-    console.log("Se agrego el nuevo cliente, continuando al controladro principal");
     next();
   } catch (error) {
     console.log(error);

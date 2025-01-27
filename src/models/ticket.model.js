@@ -112,10 +112,6 @@ const ticketModel = mongoose.Schema(
       ref: "AREA",
     },
     Respuesta_cierre_reasignado: {
-      type: Schema.Types.ObjectId,
-      trim: true,
-    },
-    Respuesta_cierre_reasignado: {
       type: String,
       trim: true,
     },
@@ -158,9 +154,18 @@ const ticketModel = mongoose.Schema(
       type: String,
       trim: true,
     },
-    Dependencia_cliente: {
+    Extension_cliente: {
       type: String,
       trim: true,
+    },
+    Ubicacion_cliente: {
+      type: String,
+      trim: true,
+    },
+    Dependencia_cliente: {
+      type: Schema.Types.ObjectId,
+      trim: true,
+      ref: "Dependencia",
     },
     NumeroRec_Oficio: {
       type: String,
@@ -173,8 +178,9 @@ const ticketModel = mongoose.Schema(
       default: "",
     },
     Files: {
-      type: [fileSchema] || null,
+      type: [fileSchema],
       trim: true,
+      default: [],
     },
     vistoBueno: {
       type: Boolean,

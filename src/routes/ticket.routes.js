@@ -103,10 +103,12 @@ router.get(
   getInfoSelects
 );
 router.put(
-  "/tickets/cerrar",
+  "/tickets/cerrar/:id",
+  uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   validateData("cerrar"),
+  guardarArchivo,
   cerrarTicket,
   enviarCorreo
 );
@@ -167,6 +169,7 @@ router.post(
   formatearCamposFecha,
   populateTickets
 );
+//TODO agregar la validacion de la informacion por schema
 router.post(
   "/tickets/crear/ticket",
   uploadMiddleware,

@@ -111,7 +111,6 @@ export const getTicketsRevision = async (estado, Area) => {
         },
       ],
     }).lean();
-    console.log(RES);
     return RES;
   } catch (error) {
     return false;
