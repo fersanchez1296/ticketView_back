@@ -1,4 +1,5 @@
 import { USUARIO } from "../models/index.js";
+import * as Gets from "../repository/gets.js";
 import encryptPassword from "../functions/encryptPassword.function.js";
 import multer from "multer";
 import axios from "axios";
@@ -49,7 +50,19 @@ export const getUsuariosPorCoordinacion = async (req, res) => {
     console.log(error);
   }
 };
-
+export const getRoles = async (req, res) => {
+  console.log("Obteniendo roles");
+  try {
+    const rolesData = await Gets.getInfoSelectRoles();
+    if (!rolesData) {
+      return res.status(404).json({ desc: "No se encontró información" });
+    }
+    return res.status(200).json(rolesData);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).json({ error: "Error fetching data" });
+  }
+};
 const upload = multer({ dest: "temp/" });
 
 export const pruebaemail = async (req, res) => {

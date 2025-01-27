@@ -38,16 +38,6 @@ const usuarioModel = mongoose.Schema(
       trim: true,
       required: true,
     },
-    Fecha_creacion: {
-      type: Date,
-      trim: true,
-      required: true,
-    },
-    Fecha_baja: {
-      type: Date,
-      trim: true,
-      required: true,
-    },
     Dependencia: {
       type: String,
       trim: true,

@@ -4,10 +4,10 @@ import {
 import mongoose from 'mongoose';
 
 export const verifyUserExists = async (req, res, next) => {
-    const {username} = req.body;
+    const {correo} = req.body;
     try {
         const result = await USUARIO.find({
-            username : username
+            correo : correo
         })
         if(result.length === 0){
             next()
@@ -21,7 +21,7 @@ export const verifyUserExists = async (req, res, next) => {
 };
 
 
-  
+  //Se va a verificar que el usuario no exista en la colección mediante su correo ya que el correo es un dato único
   
   
   
