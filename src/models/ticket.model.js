@@ -196,7 +196,7 @@ const ticketModel = mongoose.Schema(
 ticketModel.plugin(AutoIncrement, {
   Id: "ticket_id_seq",
   inc_field: "Id",
-  start_seq: 0,
+  start_seq: 1,
 });
 
 export default mongoose.model("TICKETS", ticketModel, "Tickets");
