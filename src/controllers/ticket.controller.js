@@ -1026,9 +1026,6 @@ export const createTicket = async (req, res, next) => {
       nombreCliente: RES.Nombre_cliente,
       telefonoCliente: RES.Telefono_cliente,
       extensionCliente: RES.Extension_cliente,
-      dependenciaCliente: RES.Dependencia_cliente.Dependencia,
-      direccionGeneral: RES.Direccion_general.Direccion_General,
-      area: RES.Direccion_area.direccion_area,
       ubicacion: RES.Ubicacion_cliente,
     };
     req.correoData = correoData;
