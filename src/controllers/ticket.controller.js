@@ -473,7 +473,7 @@ export const resolverTicket = async (req, res) => {
 export const areasReasignacion = async (req, res) => {
   const { areas } = req.session.user;
   try {
-    const moderador = await ROLES.findOned({ Rol: "Moderador" });
+    const moderador = await ROLES.findOne({ Rol: "Moderador" });
     const administrador = await ROLES.findOned({ Rol: "Administrador" });
     const AREAS = await Gets.getAreasParaReasignacion(areas);
     const prioridades = await Gets.getPrioridades();
