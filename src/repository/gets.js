@@ -398,7 +398,7 @@ export const getResolutoresParaReasignacionPorArea = async (Area) => {
   }
 };
 
-export const getInfoSelectsCrearTicket = async () => {
+export const getInfoSelectsCrearTicket = async (moderador, root) => {
   // Se agrego un gion bajo (_) al final del nombre de las constantes para evitar tener errores
   // con el nombre de los modelos
   try {
@@ -439,9 +439,9 @@ export const getInfoSelectsCrearTicket = async () => {
     const AREASRESOLUTORES = await Promise.all(
       AREAS_.map(async (area) => {
         const resolutor = await USUARIO.find({
-          Area: area._id,
+          Area: new ObjectId(area._id),
           isActive: true,
-          Rol: "672bc1c20467f98349b6101c",
+          $or: [{ Rol: new ObjectId(moderador) }, { Rol: new ObjectId(root) }],
         }).select("Nombre Correo");
         return {
           area: { area: area.Area, _id: area._id },

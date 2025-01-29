@@ -1,4 +1,4 @@
-import { TICKETS, ESTADOS, USUARIO } from "../models/index.js";
+import { TICKETS, ESTADOS, USUARIO, ROLES } from "../models/index.js";
 import { redisClient } from "../config/redis_connection.js";
 import formateDate from "../functions/dateFormat.functions.js";
 import mongoose from "mongoose";
@@ -596,7 +596,9 @@ export const reasignarTicket = async (req, res, next) => {
 
 export const getInfoSelects = async (req, res) => {
   try {
-    const RES = await Gets.getInfoSelectsCrearTicket();
+    const moderador = await ROLES.findOne({Rol: "Moderador"})
+    const root = await ROLES.findOne({Rol: "Root"})
+    const RES = await Gets.getInfoSelectsCrearTicket(moderador._id, root._id);
     if (!RES) {
       return res.status(404).json({ desc: "No se encontró información" });
     }
