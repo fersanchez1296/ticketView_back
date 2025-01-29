@@ -10,7 +10,7 @@ import {
   PRIORIDADES,
   DIRECCION_AREA,
   DIRECCION_GENERAL,
-  DEPENDENCIAS
+  DEPENDENCIAS,
 } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
@@ -413,10 +413,10 @@ export const getInfoSelectsCrearTicket = async () => {
       DIRECCIONESAREAS_,
       USUARIOS_,
       DIRECCIONESGENERALES_,
-      DEPENDENCIAS_
+      DEPENDENCIAS_,
     ] = await Promise.all([
       ESTADOS.find({
-        $or: [{ Estado: "NUEVO" }, { Estado: "PENDIENTE" }],
+        Estado: "NUEVO",
       }),
       TIPO_TICKET.find(),
       CATEGORIAS.find(),
@@ -426,7 +426,10 @@ export const getInfoSelectsCrearTicket = async () => {
       AREA.find(),
       DIRECCION_AREA.find(),
       USUARIO.find(
-        { isActive: { $ne: false }, Rol: "Moderador" },
+        {
+          isActive: { $ne: false },
+          Rol: new ObjectId("672bc1c20467f98349b6101c"),
+        },
         { Nombre: 1, Correo: 1, Area: 1 }
       ),
       DIRECCION_GENERAL.find(),
@@ -438,10 +441,10 @@ export const getInfoSelectsCrearTicket = async () => {
         const resolutor = await USUARIO.find({
           Area: area._id,
           isActive: true,
-          Rol: "Moderador",
+          Rol: "672bc1c20467f98349b6101c",
         }).select("Nombre Correo");
         return {
-          area: area.Area,
+          area: { area: area.Area, _id: area._id },
           resolutores: resolutor,
         };
       })
@@ -457,7 +460,7 @@ export const getInfoSelectsCrearTicket = async () => {
       direccion_areas: DIRECCIONESAREAS_,
       direccion_generales: DIRECCIONESGENERALES_,
       areasResolutores: AREASRESOLUTORES,
-      dependencias: DEPENDENCIAS_
+      dependencias: DEPENDENCIAS_,
     };
   } catch (error) {
     return false;

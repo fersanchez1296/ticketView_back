@@ -18,7 +18,7 @@ const usuarioModel = mongoose.Schema(
       required: true,
     },
     Rol: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       trim: true,
       required: true,
     },

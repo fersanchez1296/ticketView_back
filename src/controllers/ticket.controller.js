@@ -998,7 +998,6 @@ export const createTicket = async (req, res, next) => {
     Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
     Creado_por: userId,
     Asignado_a,
-    Area_asignado: new ObjectId("67350936aa438f58c6228fee"),
     ...(req.dataArchivo && { Files: req.dataArchivo }),
   };
   try {
