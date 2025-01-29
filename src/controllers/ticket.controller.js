@@ -473,6 +473,8 @@ export const resolverTicket = async (req, res) => {
 export const areasReasignacion = async (req, res) => {
   const { areas } = req.session.user;
   try {
+    const moderador = await ROLES.findOned({ Rol: "Moderador" });
+    const administrador = await ROLES.findOned({ Rol: "Administrador" });
     const AREAS = await Gets.getAreasParaReasignacion(areas);
     const prioridades = await Gets.getPrioridades();
     if (!AREAS) {
@@ -481,7 +483,9 @@ export const areasReasignacion = async (req, res) => {
     const AREASRESOLUTORES = await Promise.all(
       AREAS.map(async (area) => {
         const RESOLUTOR = await Gets.getResolutoresParaReasignacionPorArea(
-          area._id
+          area._id,
+          moderador._id,
+          administrador._id
         );
         return {
           area: { area: area.Area, _id: area._id },
@@ -596,9 +600,14 @@ export const reasignarTicket = async (req, res, next) => {
 
 export const getInfoSelects = async (req, res) => {
   try {
-    const moderador = await ROLES.findOne({Rol: "Moderador"})
-    const root = await ROLES.findOne({Rol: "Root"})
-    const RES = await Gets.getInfoSelectsCrearTicket(moderador._id, root._id);
+    const moderador = await ROLES.findOne({ Rol: "Moderador" });
+    const root = await ROLES.findOne({ Rol: "Root" });
+    const administrador = await ROLES.findOne({ Rol: "Administrador" });
+    const RES = await Gets.getInfoSelectsCrearTicket(
+      moderador._id,
+      root._id,
+      administrador._id
+    );
     if (!RES) {
       return res.status(404).json({ desc: "No se encontró información" });
     }

@@ -89,10 +89,6 @@ const ticketModel = mongoose.Schema(
       trim: true,
       ref: "PRIORIDADES",
     },
-    Incidencia_grave: {
-      type: String,
-      trim: true,
-    },
     Fecha_limite_respuesta_SLA: {
       type: Date,
       trim: true,
@@ -103,12 +99,10 @@ const ticketModel = mongoose.Schema(
     },
     Reasignado_a: {
       type: Schema.Types.ObjectId,
-      trim: true,
       ref: "USUARIOS",
     },
     Area_reasignado_a: {
-      type: Schema.Types.ObjectId || [],
-      trim: true,
+      type: Schema.Types.ObjectId,
       ref: "AREA",
     },
     Respuesta_cierre_reasignado: {

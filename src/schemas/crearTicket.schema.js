@@ -11,7 +11,6 @@ const crearSchema = Joi.object({
   Direccion_general: Joi.string().alphanum().required(),
   Direccion_area: Joi.string().alphanum().required(),
   Descripcion: Joi.string().required(),
-  Incidencia_grave: Joi.string().required(),
   Prioridad: Joi.string().alphanum().required(),
   NumeroRec_Oficio: Joi.string().allow(null, ''),
   Numero_Oficio: Joi.string().allow(null, ''),

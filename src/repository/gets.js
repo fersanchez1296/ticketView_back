@@ -386,11 +386,14 @@ export const getAreasParaReasignacion = async (Area) => {
   }
 };
 
-export const getResolutoresParaReasignacionPorArea = async (Area) => {
+export const getResolutoresParaReasignacionPorArea = async (Area, moderador, administrador) => {
   try {
-    const RES = await USUARIO.find({
-      Area: new ObjectId(Area),
+    const usuarios = await USUARIO.find({
       isActive: true,
+      $or: [
+        { Area: new ObjectId(Area) },
+        { Rol: { $in: [new ObjectId(moderador), new ObjectId(administrador)] } },
+      ],
     }).select("Nombre Correo");
     return RES;
   } catch (error) {
@@ -398,7 +401,7 @@ export const getResolutoresParaReasignacionPorArea = async (Area) => {
   }
 };
 
-export const getInfoSelectsCrearTicket = async (moderador, root) => {
+export const getInfoSelectsCrearTicket = async (moderador, root, administrador) => {
   // Se agrego un gion bajo (_) al final del nombre de las constantes para evitar tener errores
   // con el nombre de los modelos
   try {
@@ -441,7 +444,7 @@ export const getInfoSelectsCrearTicket = async (moderador, root) => {
         const resolutor = await USUARIO.find({
           Area: new ObjectId(area._id),
           isActive: true,
-          $or: [{ Rol: new ObjectId(moderador) }, { Rol: new ObjectId(root) }],
+          $or: [{ Rol: new ObjectId(moderador) }, { Rol: new ObjectId(root) }, { Rol: new ObjectId(administrador) }],
         }).select("Nombre Correo");
         return {
           area: { area: area.Area, _id: area._id },
