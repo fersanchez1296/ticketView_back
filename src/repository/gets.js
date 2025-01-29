@@ -395,7 +395,7 @@ export const getResolutoresParaReasignacionPorArea = async (Area, moderador, adm
         { Rol: { $in: [new ObjectId(moderador), new ObjectId(administrador)] } },
       ],
     }).select("Nombre Correo");
-    return RES;
+    return usuarios;
   } catch (error) {
     return false;
   }
