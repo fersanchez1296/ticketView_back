@@ -30,7 +30,7 @@ import { validateData } from "../middleware/validateData.middleware.js";
 import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 import { uploadMiddleware } from "../middleware/upload.middleware.js";
-import { guardarCliente } from "../middleware/guardarCliente.middleware.js"
+import { guardarCliente } from "../middleware/guardarCliente.middleware.js";
 import multer from "multer";
 import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
@@ -93,9 +93,7 @@ router.put(
   reasignarTicket,
   enviarCorreo
 );
-router.get("/tickets/reasignar/areas", 
-  verifyToken, 
-  areasReasignacion);
+router.get("/tickets/reasignar/areas", verifyToken, areasReasignacion);
 router.get(
   "/tickets/crear/getInfoSelects",
   verifyToken,
@@ -145,13 +143,13 @@ router.put(
 router.get(
   "/tickets/historico",
   verifyToken,
-  verifyRole(["Root"]),
+  verifyRole(["Root", "Administrador"]),
   obtenerAreas
 );
 router.get(
   "/tickets/historico/area",
   verifyToken,
-  verifyRole(["Root", "Moderador"]),
+  verifyRole(["Root","Administrador", "Moderador"]),
   obtenerTicketsPorArea,
   formatearCamposFecha,
   populateTickets
@@ -174,7 +172,7 @@ router.post(
   "/tickets/crear/ticket",
   uploadMiddleware,
   verifyToken,
-  verifyRole(["Root"]),
+  verifyRole(["Root", "Administrador"]),
   guardarCliente,
   guardarArchivo,
   createTicket,
@@ -183,7 +181,7 @@ router.post(
 router.put(
   "/tickets/editar", //agregar id como parametro
   verifyToken,
-  verifyRole(["Root"]),
+  verifyRole(["Root", "Administrador"]),
   editTicket
 );
 
