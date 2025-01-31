@@ -1038,6 +1038,7 @@ export const createTicket = async (req, res, next) => {
       extensionCliente: RES.Extension_cliente,
       ubicacion: RES.Ubicacion_cliente,
     };
+    req.ticketId = RES.Id;
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
     await sessionDB.commitTransaction();
