@@ -991,11 +991,13 @@ export const createTicket = async (req, res, next) => {
     sessionDB.endSession();
     return res.status(400).json({ desc: "No se envio informacion" });
   }
+  const Estado = await ESTADOS.findOne({Estado: "EN CURSO"});
   const fechaActual = new Date();
   const { userId, nombre, rol, correo } = req.session.user;
   const Asignado_a = ticketState.Asignado_a;
   ticketState = {
     ...ticketState,
+    Estado: Estado._id,
     Fecha_hora_creacion: fechaActual,
     Fecha_limite_resolucion_SLA: addHours(
       fechaActual,
