@@ -7,6 +7,7 @@ import { postCrearTicket } from "../repository/posts.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 import { putEditarTicket } from "../repository/puts.js";
 import { addHours } from "date-fns";
+import usuarioModel from "../models/usuario.model.js";
 const ObjectId = mongoose.Types.ObjectId;
 export const getTickets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -991,10 +992,17 @@ export const createTicket = async (req, res, next) => {
     sessionDB.endSession();
     return res.status(400).json({ desc: "No se envio informacion" });
   }
-  const Estado = await ESTADOS.findOne({Estado: "EN CURSO"});
   const fechaActual = new Date();
   const { userId, nombre, rol, correo } = req.session.user;
-  const Asignado_a = ticketState.Asignado_a;
+  let Asignado_a = {};
+  let Estado = {};
+  if (ticketState.standby) {
+    Estado = await ESTADOS.findOne({ Estado: "STANDBY" });
+    Asignado_a = USUARIO.findOne({ username: "standby" });
+  } else {
+    Asignado_a = ticketState.Asignado_a;
+    Estado = await ESTADOS.findOne({ Estado: "EN CURSO" });
+  }
   ticketState = {
     ...ticketState,
     Estado: Estado._id,
@@ -1010,7 +1018,10 @@ export const createTicket = async (req, res, next) => {
     Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
     Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
     Creado_por: userId,
-    Asignado_a,
+    Asignado_a: ticketState.standby ? Asignado_a._id : ticketState.Asignado_a,
+    Area_asignado: ticketState.standby
+      ? Asignado_a.Area[0]
+      : ticketState.Area_asignado,
     ...(req.dataArchivo && { Files: req.dataArchivo }),
   };
   try {
