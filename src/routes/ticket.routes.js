@@ -23,6 +23,7 @@ import {
   obtenerAreasModerador,
   buscarTicket,
   editTicket,
+  ticketsStandby
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -40,6 +41,21 @@ router.get(
   "/tickets/nuevos",
   verifyToken,
   ticketsNuevos,
+  formatearCamposFecha,
+  populateTickets
+);
+//pendiente de usar
+// router.get(
+//   "/tickets/estado/:estado",
+//   verifyToken,
+//   ticketsStandby,
+//   formatearCamposFecha,
+//   populateTickets
+// );
+router.get(
+  "/tickets/standby",
+  verifyToken,
+  ticketsStandby,
   formatearCamposFecha,
   populateTickets
 );

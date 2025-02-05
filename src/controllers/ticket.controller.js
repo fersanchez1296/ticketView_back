@@ -996,35 +996,35 @@ export const createTicket = async (req, res, next) => {
   const { userId, nombre, rol, correo } = req.session.user;
   let Asignado_a = {};
   let Estado = {};
-  if (ticketState.standby) {
-    Estado = await ESTADOS.findOne({ Estado: "STANDBY" });
-    Asignado_a = USUARIO.findOne({ username: "standby" });
-  } else {
-    Asignado_a = ticketState.Asignado_a;
-    Estado = await ESTADOS.findOne({ Estado: "EN CURSO" });
-  }
-  ticketState = {
-    ...ticketState,
-    Estado: Estado._id,
-    Fecha_hora_creacion: fechaActual,
-    Fecha_limite_resolucion_SLA: addHours(
-      fechaActual,
-      ticketState.Fecha_limite_resolucion_SLA
-    ),
-    Fecha_limite_respuesta_SLA: addHours(
-      fechaActual,
-      ticketState.Fecha_limite_respuesta_SLA
-    ),
-    Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
-    Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
-    Creado_por: userId,
-    Asignado_a: ticketState.standby ? Asignado_a._id : ticketState.Asignado_a,
-    Area_asignado: ticketState.standby
-      ? Asignado_a.Area[0]
-      : ticketState.Area_asignado,
-    ...(req.dataArchivo && { Files: req.dataArchivo }),
-  };
   try {
+    if (ticketState.standby) {
+      Estado = await ESTADOS.findOne({ Estado: "STANDBY" }).lean();
+      Asignado_a = await USUARIO.findOne({ Username: "standby" }).lean();
+    } else {
+      Asignado_a = ticketState.Asignado_a;
+      Estado = await ESTADOS.findOne({ Estado: "EN CURSO" }).lean();
+    }
+    ticketState = {
+      ...ticketState,
+      Estado: Estado._id,
+      Fecha_hora_creacion: fechaActual,
+      Fecha_limite_resolucion_SLA: addHours(
+        fechaActual,
+        ticketState.Fecha_limite_resolucion_SLA
+      ),
+      Fecha_limite_respuesta_SLA: addHours(
+        fechaActual,
+        ticketState.Fecha_limite_respuesta_SLA
+      ),
+      Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
+      Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
+      Creado_por: userId,
+      Asignado_a: ticketState.standby ? Asignado_a._id : ticketState.Asignado_a,
+      Area_asignado: ticketState.standby
+        ? Asignado_a.Area[0]
+        : ticketState.Area_asignado,
+      ...(req.dataArchivo && { Files: req.dataArchivo }),
+    };
     const RES = await postCrearTicket(
       ticketState,
       userId,
@@ -1062,3 +1062,34 @@ export const createTicket = async (req, res, next) => {
     res.status(500).json({ error: "Error al guardar el ticket" });
   }
 };
+
+// export const ticketsStandby = async (req, res, next) => {
+//   try {
+//     const Estado = req.params.estado;
+//     const result = await TICKETS.find(Estado);
+//     if(!result){
+//       return res.status(404).json({desc: "No se encontraron tickets para este estado"});
+//     }
+//     req.tickets = result;
+//     next();
+//   } catch (error) {
+//     return res.status(500).json({desc: "Ocurrio un error al obtener los ticket. Error interno en el servidor....."})
+//   }
+// }
+
+export const ticketsStandby = async (req, res, next) => {
+  try {
+    const Estado = await Gets.getEstadoTicket("STANDBY");
+    if (!Estado) {
+      return res.status(404).json({ message: "Estado no encontrado" });
+    }
+    const result = await TICKETS.find({Estado: Estado._id}).lean();
+    if(!result){
+      return res.status(404).json({desc: "No se encontraron tickets para este estado"});
+    }
+    req.tickets = result;
+    next();
+  } catch (error) {
+    return res.status(500).json({desc: "Ocurrio un error al obtener los ticket. Error interno en el servidor."})
+  }
+}
