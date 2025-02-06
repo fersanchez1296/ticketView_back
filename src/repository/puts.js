@@ -162,7 +162,7 @@ export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
       },
       { new: true } // Retorna el documento actualizado
     );
-    console.log(respuesta);
+    console.log("respuesta", respuesta);
     if (!respuesta) {
       return false;
     }

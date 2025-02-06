@@ -179,7 +179,7 @@ router.post(
   enviarCorreo
 );
 router.put(
-  "/tickets/editar", //agregar id como parametro
+  "/tickets/editar/:id", //agregar id como parametro
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   editTicket

@@ -935,7 +935,8 @@ export const buscarTicket = async (req, res, next) => {
 //TODO falta de agregar al repositorio (puts)
 export const editTicket = async (req, res) => {
   const { userId, nombre, rol } = req.session.user; // Datos del usuario que edita
-  const { ticketState } = req.body; // Datos actualizados del ticket
+  const  ticketState  = req.body; // Datos actualizados del ticket
+  console.log("Esto llega", ticketState);
   if (!ticketState || !ticketState._id) {
     return res.status(400).json({
       error: "No se proporcionó el ID del ticket o el estado del ticket",
