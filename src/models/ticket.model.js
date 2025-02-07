@@ -66,8 +66,8 @@ const ticketModel = mongoose.Schema(
       trim: true,
       ref: "SUBCATEGORIA",
     },
-    Nombre_cliente: {
-      type: String,
+    Cliente: {
+      type: Schema.Types.ObjectId,
       trim: true,
     },
     Direccion_general: {

@@ -963,13 +963,12 @@ export const buscarTicket = async (req, res, next) => {
 export const editTicket = async (req, res) => {
   const { userId, nombre, rol } = req.session.user; // Datos del usuario que edita
   const ticketState = req.body; // Datos actualizados del ticket
-  console.log("Esto llega", ticketState);
+  //console.log("Esto llega", ticketState);
   if (!ticketState || !ticketState._id) {
     return res.status(400).json({
       error: "No se proporcionó el ID del ticket o el estado del ticket",
     });
   }
-  const fechaActual = new Date();
   const ticketEditado = {
     _id: ticketState._id,
     Id: ticketState.Id,
@@ -977,17 +976,11 @@ export const editTicket = async (req, res) => {
     Estado: ticketState.Estado,
     Tipo_de_incidencia: ticketState.Tipo_de_incidencia,
     NumeroRec_Oficio: ticketState.NumeroRec_Oficio,
-    Numero_Oficio: ticketState.Numero_Oficio,
-    PendingReason: ticketState.PendingReason,
     Servicio: ticketState.Servicio,
     Categoria: ticketState.Categoria,
     Subcategoria: ticketState.Subcategoria,
     Descripcion: ticketState.Descripcion,
-    Direccion_general: ticketState.Direccion_general,
-    Direccion_area: ticketState.Direccion_area,
-    Nombre_cliente: ticketState.Nombre_cliente,
-    Telefono_cliente: ticketState.Telefono_cliente,
-    Correo_cliente: ticketState.Correo_cliente,
+    Cliente: ticketState.Cliente,
   };
   try {
     // Buscar y actualizar el ticket
