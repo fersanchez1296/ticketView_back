@@ -23,6 +23,7 @@ import {
   obtenerAreasModerador,
   buscarTicket,
   editTicket,
+  dependenciasClientes,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -183,6 +184,12 @@ router.put(
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   editTicket
+);
+
+router.get(
+  "/tickets/clientes/dependencias",
+  verifyToken, 
+  dependenciasClientes
 );
 
 export default router;

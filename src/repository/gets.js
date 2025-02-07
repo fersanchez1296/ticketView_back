@@ -11,6 +11,7 @@ import {
   DIRECCION_AREA,
   DIRECCION_GENERAL,
   DEPENDENCIAS,
+  CLIENTES,
 } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
@@ -483,6 +484,26 @@ export const getAreas = async () => {
   try {
     const RES = await AREA.find();
     return RES;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getDependencias = async () => {
+  try {
+    const RES = await DEPENDENCIAS.find();
+    return RES;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getClientesPorDependencia = async (Dependencia) => {
+  try {
+    const clientes = await CLIENTES.find({
+      Dependencia: new ObjectId(Dependencia)
+    });
+    return clientes;
   } catch (error) {
     return false;
   }

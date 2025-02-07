@@ -378,10 +378,10 @@ export const ticketsResueltos = async (req, res) => {
         ),
         Historia_ticket: ticket.Historia_ticket
           ? ticket.Historia_ticket.map((historia) => ({
-              Nombre: historia.Nombre,
-              Mensaje: historia.Mensaje,
-              Fecha: formateDate(historia.Fecha),
-            }))
+            Nombre: historia.Nombre,
+            Mensaje: historia.Mensaje,
+            Fecha: formateDate(historia.Fecha),
+          }))
           : [],
       };
     });
@@ -496,10 +496,37 @@ export const areasReasignacion = async (req, res) => {
     if (!AREASRESOLUTORES) {
       return res.status(404).json({ desc: "No se encontraron resolutores" });
     }
+    console.log("Areas resolutores", AREASRESOLUTORES);
     res.status(200).json({ AREASRESOLUTORES, prioridades });
   } catch (error) {
     console.error("Error al obtener áreas y resolutores:", error);
     res.status(500).json({ message: "Error al obtener áreas y resolutores" });
+  }
+};
+
+//Controlador para traer los clientes por dependencia
+export const dependenciasClientes = async (req, res) => {
+  try {
+    const DEPENDENCIAS = await Gets.getDependencias();
+    if (!DEPENDENCIAS) {
+      return res.status(404).json({ desc: "No se encontraron dependencias" });
+    }
+    const DEPENDENCIASCLIENTES = await Promise.all(
+      DEPENDENCIAS.map(async (Dependencia) => {
+        const CLIENTES = await Gets.getClientesPorDependencia(
+          Dependencia._id
+        );
+        return {
+          Dependencia: { Dependencia: Dependencia.Dependencia, _id: Dependencia._id},
+          clientes: CLIENTES,
+        };
+      })
+    );
+    console.log("DEPENDENCIAS DE LOS CLIENTES", DEPENDENCIASCLIENTES);
+    res.status(200).json(DEPENDENCIASCLIENTES);
+  } catch (error) {
+    console.error("Error al obtener clientes agrupados por dependencia:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
   }
 };
 //TODO revisar
@@ -935,7 +962,7 @@ export const buscarTicket = async (req, res, next) => {
 //TODO falta de agregar al repositorio (puts)
 export const editTicket = async (req, res) => {
   const { userId, nombre, rol } = req.session.user; // Datos del usuario que edita
-  const  ticketState  = req.body; // Datos actualizados del ticket
+  const ticketState = req.body; // Datos actualizados del ticket
   console.log("Esto llega", ticketState);
   if (!ticketState || !ticketState._id) {
     return res.status(400).json({
@@ -992,7 +1019,7 @@ export const createTicket = async (req, res, next) => {
     sessionDB.endSession();
     return res.status(400).json({ desc: "No se envio informacion" });
   }
-  const Estado = await ESTADOS.findOne({Estado: "EN CURSO"});
+  const Estado = await ESTADOS.findOne({ Estado: "EN CURSO" });
   const fechaActual = new Date();
   const { userId, nombre, rol, correo } = req.session.user;
   const Asignado_a = ticketState.Asignado_a;
