@@ -8,6 +8,7 @@ import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 import { putEditarTicket } from "../repository/puts.js";
 import { addHours } from "date-fns";
 import usuarioModel from "../models/usuario.model.js";
+import { toZonedTime } from "date-fns-tz";
 const ObjectId = mongoose.Types.ObjectId;
 export const getTickets = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -425,7 +426,7 @@ export const resolverTicket = async (req, res) => {
             rol === "Usuario" && ticketData.vistoBueno
               ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`
               : `El ticket ha sido resuelto por ${nombre}(${rol}).`,
-          Fecha: new Date(),
+          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       },
     };
@@ -484,9 +485,7 @@ export const areasReasignacion = async (req, res) => {
     const AREASRESOLUTORES = await Promise.all(
       AREAS.map(async (area) => {
         const RESOLUTOR = await Gets.getResolutoresParaReasignacionPorArea(
-          area._id,
-          moderador._id,
-          administrador._id
+          area._id
         );
         return {
           area: { area: area.Area, _id: area._id },
@@ -509,7 +508,7 @@ export const reasignarTicket = async (req, res, next) => {
   const sessionDB = await mongoose.startSession();
   sessionDB.startTransaction();
   const ticketId = req.params.id;
-  const fechaActual = new Date();
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   const { userId, nombre, rol, correo } = req.session.user;
   function deleteCamposTiempo(body) {
     const {
@@ -551,7 +550,7 @@ export const reasignarTicket = async (req, res, next) => {
           Historia_ticket: {
             Nombre: userId,
             Mensaje: `El ticket ha sido reasignado a ${reasignado.Nombre} por ${nombre} - ${rol}`,
-            Fecha: new Date(),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       },
@@ -625,7 +624,7 @@ export const cerrarTicket = async (req, res, next) => {
   const ticketId = req.params.id;
   const { Descripcion_cierre, Numero_Oficio, Causa } = req.ticketData;
   const { userId, nombre, rol, correo } = req.session.user;
-  const fechaActual = new Date();
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   try {
     const estado = await ESTADOS.findOneAndUpdate({ Estado: "CERRADO" });
     const update = {
@@ -750,7 +749,7 @@ export const reabrirTicket = async (req, res) => {
                 Respuesta cierre reasignado anterior: ${Respuesta_cierre_reasignado_anterior},\n
                 Resuelto por anterior: ${Resuelto_por_anterior}
                 `,
-            Fecha: new Date(),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       }
@@ -788,7 +787,7 @@ export const aceptarResolucion = async (req, res) => {
           Historia_ticket: {
             Nombre: userId,
             Mensaje: `${nombre}(${rol}) ha aceptado la solución ${Nombre}(Resolutor). El estado del ticket a cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
-            Fecha: new Date(),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       }
@@ -838,7 +837,7 @@ export const rechazarResolucion = async (req, res) => {
           Historia_ticket: {
             Nombre: userId,
             Mensaje: `${nombre}(${rol}) ha rechazado la solucion de ${Nombre}(Resolutor). El estado del ticket es cambiado a "Abierto". \nMotivo:\n${feedback}`,
-            Fecha: new Date(),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       }
@@ -942,7 +941,7 @@ export const editTicket = async (req, res) => {
       error: "No se proporcionó el ID del ticket o el estado del ticket",
     });
   }
-  const fechaActual = new Date();
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   const ticketEditado = {
     _id: ticketState._id,
     Id: ticketState.Id,
@@ -992,7 +991,7 @@ export const createTicket = async (req, res, next) => {
     sessionDB.endSession();
     return res.status(400).json({ desc: "No se envio informacion" });
   }
-  const fechaActual = new Date();
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   const { userId, nombre, rol, correo } = req.session.user;
   let Asignado_a = {};
   let Estado = {};
@@ -1051,6 +1050,7 @@ export const createTicket = async (req, res, next) => {
       extensionCliente: RES.Extension_cliente,
       ubicacion: RES.Ubicacion_cliente,
     };
+    req.standby = ticketState.standby;
     req.ticketId = RES.Id;
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
@@ -1083,13 +1083,106 @@ export const ticketsStandby = async (req, res, next) => {
     if (!Estado) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
-    const result = await TICKETS.find({Estado: Estado._id}).lean();
-    if(!result){
-      return res.status(404).json({desc: "No se encontraron tickets para este estado"});
+    const result = await TICKETS.find({ Estado: Estado._id }).lean();
+    if (!result) {
+      return res
+        .status(404)
+        .json({ desc: "No se encontraron tickets para este estado" });
     }
     req.tickets = result;
     next();
   } catch (error) {
-    return res.status(500).json({desc: "Ocurrio un error al obtener los ticket. Error interno en el servidor."})
+    return res.status(500).json({
+      desc: "Ocurrio un error al obtener los ticket. Error interno en el servidor.",
+    });
   }
-}
+};
+
+export const asignarTicket = async (req, res, next) => {
+  const sessionDB = await mongoose.startSession();
+  sessionDB.startTransaction();
+  const ticketId = req.params.id;
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
+  const { userId, nombre, rol, correo } = req.session.user;
+  function deleteCamposTiempo(body) {
+    const {
+      Prioridad,
+      Fecha_limite_respuesta_SLA,
+      Fecha_limite_resolucion_SLA,
+      ...rest
+    } = body;
+    return rest;
+  }
+  function tiempoResolucion(body) {
+    return {
+      ...body,
+      Fecha_limite_respuesta_SLA: addHours(
+        fechaActual,
+        body.Fecha_limite_respuesta_SLA
+      ),
+      Fecha_limite_resolucion_SLA: addHours(
+        fechaActual,
+        body.Fecha_limite_resolucion_SLA
+      ),
+    };
+  }
+  const reasignado = !req.body.Prioridad
+    ? deleteCamposTiempo(req.body)
+    : tiempoResolucion(req.body);
+  try {
+    const Estado = await ESTADOS.findOne({ Estado: "NUEVO" });
+    const result = await TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      {
+        $set: {
+          ...reasignado,
+          Estado,
+          vistoBueno: reasignado.vistoBueno,
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `El ticket ha sido asignado a ${reasignado.Nombre} por ${nombre}(${rol})`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
+        },
+      },
+      { returnDocument: "after", new: true, sessionDB }
+    );
+    if (result) {
+      const correoAsignado = await USUARIO.findOne({
+        _id: result.Asignado_a,
+      });
+      const correoData = {
+        correo,
+        idTicket: result.Id,
+        descripcionTicket: result.Descripcion,
+        correoCliente: result.Correo_cliente,
+        correoUsuario: correoAsignado.Correo,
+        nombreCliente: result.Nombre_cliente,
+        telefonoCliente: result.Telefono_cliente,
+        extensionCliente: result.Extension_cliente,
+        ubicacion: result.Ubicacion_cliente,
+      };
+      req.standby = ticketState.standby;
+      req.channel = "channel_crearTicket";
+      req.correoData = correoData;
+      await sessionDB.commitTransaction();
+      sessionDB.endSession();
+      next();
+    } else {
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrio un error al reasignar el ticket." });
+    }
+  } catch (error) {
+    await sessionDB.abortTransaction();
+    sessionDB.endSession();
+    console.log(error);
+    return res.status(500).json({
+      desc: "Ocurrio un error al reasignar el ticket. Error interno en el servidor.",
+    });
+  }
+};

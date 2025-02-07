@@ -428,13 +428,13 @@ export const getAreasParaReasignacion = async (Area) => {
   }
 };
 
-export const getResolutoresParaReasignacionPorArea = async (Area, moderador, administrador) => {
+export const getResolutoresParaReasignacionPorArea = async (Area) => {
   try {
     const usuarios = await USUARIO.find({
       isActive: true,
       $or: [
         { Area: new ObjectId(Area) },
-        { Rol: { $in: [new ObjectId(moderador), new ObjectId(administrador)] } },
+        //{ Rol: { $in: [new ObjectId(moderador), new ObjectId(administrador)] } },
       ],
     }).select("Nombre Correo");
     return usuarios;

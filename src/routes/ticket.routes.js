@@ -23,7 +23,8 @@ import {
   obtenerAreasModerador,
   buscarTicket,
   editTicket,
-  ticketsStandby
+  ticketsStandby,
+  asignarTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -107,6 +108,13 @@ router.put(
   verifyRole(["Root", "Administrador", "Moderador"]),
   validateData("reasignar"),
   reasignarTicket,
+  enviarCorreo
+);
+router.put(
+  "/tickets/asignar/:id",
+  verifyToken,
+  verifyRole(["Root", "Administrador"]),
+  asignarTicket,
   enviarCorreo
 );
 router.get("/tickets/reasignar/areas", verifyToken, areasReasignacion);
