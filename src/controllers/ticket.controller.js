@@ -1001,7 +1001,7 @@ export const createTicket = async (req, res, next) => {
       Asignado_a = await USUARIO.findOne({ Username: "standby" }).lean();
     } else {
       Asignado_a = ticketState.Asignado_a;
-      Estado = await ESTADOS.findOne({ Estado: "EN CURSO" }).lean();
+      Estado = await ESTADOS.findOne({ Estado: "NUEVO" }).lean();
     }
     ticketState = {
       ...ticketState,
