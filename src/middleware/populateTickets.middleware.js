@@ -1,6 +1,6 @@
 import { TICKETS } from "../models/index.js";
 
-export const populateTickets = async (req, res, next) => {
+export const populateTickets = async (req, res) => {
   try {
     const POPULATE = await TICKETS.populate(req.ticketsFormateados, [
       { path: "Tipo_incidencia", select: "Tipo_de_incidencia _id" },
@@ -8,8 +8,6 @@ export const populateTickets = async (req, res, next) => {
       { path: "Categoria", select: "Categoria _id" },
       { path: "Servicio", select: "Servicio _id" },
       { path: "Subcategoria", select: "Subcategoria _id" },
-      { path: "Direccion_general", select: "Direccion_General _id" },
-      { path: "Direccion_area", select: "direccion_area _id" },
       { path: "Prioridad", select: "Prioridad Descripcion _id" },
       { path: "Estado" },
       { path: "Asignado_a", select: "Nombre Coordinacion Area _id" },
@@ -18,8 +16,7 @@ export const populateTickets = async (req, res, next) => {
       { path: "Creado_por", select: "Nombre Area _id" },
       { path: "Area_reasignado_a", select: "Area _id" },
       { path: "Cerrado_por", select: "Nombre Coordinacion Area _id" },
-      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
-      { path: "Dependencia_cliente", select: "Dependencia _id" },
+      { path: "Cliente"},
       {
         path: "Historia_ticket",
         populate: { path: "Nombre", select: "Nombre -_id" },

@@ -66,19 +66,10 @@ const ticketModel = mongoose.Schema(
       trim: true,
       ref: "SUBCATEGORIA",
     },
-    Nombre_cliente: {
-      type: String,
-      trim: true,
-    },
-    Direccion_general: {
+    Cliente: {
       type: Schema.Types.ObjectId,
       trim: true,
-      ref: "DIRECCION_GENERAL",
-    },
-    Direccion_area: {
-      type: Schema.Types.ObjectId,
-      trim: true,
-      ref: "DIRECCION_AREA",
+      ref: "Clientes",
     },
     Descripcion: {
       type: String,
@@ -118,11 +109,6 @@ const ticketModel = mongoose.Schema(
       trim: true,
       ref: "USUARIOS",
     },
-    Asignado_final_a: {
-      type: Schema.Types.ObjectId,
-      trim: true,
-      ref: "USUARIOS",
-    },
     Cerrado_por: {
       type: Schema.Types.ObjectId,
       trim: true,
@@ -132,34 +118,9 @@ const ticketModel = mongoose.Schema(
       type: [HistoriaTicketSchema],
       default: [],
     },
-    Causa: {
-      type: String,
-      trim: true,
-    },
     Descripcion_cierre: {
       type: String,
       trim: true,
-    },
-    Correo_cliente: {
-      type: String,
-      trim: true,
-    },
-    Telefono_cliente: {
-      type: String,
-      trim: true,
-    },
-    Extension_cliente: {
-      type: String,
-      trim: true,
-    },
-    Ubicacion_cliente: {
-      type: String,
-      trim: true,
-    },
-    Dependencia_cliente: {
-      type: Schema.Types.ObjectId,
-      trim: true,
-      ref: "Dependencia",
     },
     NumeroRec_Oficio: {
       type: String,

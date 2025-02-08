@@ -1005,6 +1005,7 @@ export const createTicket = async (req, res, next) => {
     }
     ticketState = {
       ...ticketState,
+      Cliente: req.cliente ? req.cliente : ticketState.Cliente,
       Estado: Estado._id,
       Fecha_hora_creacion: fechaActual,
       Fecha_limite_resolucion_SLA: addHours(
