@@ -1,4 +1,4 @@
-import { TICKETS, ESTADOS, USUARIO, ROLES } from "../models/index.js";
+import { TICKETS, ESTADOS, USUARIO, ROLES, CLIENTES } from "../models/index.js";
 import { redisClient } from "../config/redis_connection.js";
 import formateDate from "../functions/dateFormat.functions.js";
 import mongoose from "mongoose";
@@ -1102,19 +1102,26 @@ export const asignarTicket = async (req, res, next) => {
     );
     console.log("Este es el resultado despues de asignar el ticket", result);
     if (result) {
-      const correoAsignado = await USUARIO.findOne({
-        _id: result.Asignado_a,
-      });
+      const populateResult = await TICKETS.populate(result, [
+        { path: "Asignado_a", select: "Nombre Coordinacion Area _id" },
+        {
+          path: "Cliente",
+          select: "Nombre Correo Telefono Extension Ubicacion _id",
+        },
+      ]);
+      console.log(
+        "Este es el resultado despues de asignar el ticket",
+        populateResult
+      );
       const correoData = {
-        correo,
-        idTicket: result.Id,
-        descripcionTicket: result.Descripcion,
-        correoCliente: result.Correo_cliente,
-        correoUsuario: correoAsignado.Correo,
-        nombreCliente: result.Nombre_cliente,
-        telefonoCliente: result.Telefono_cliente,
-        extensionCliente: result.Extension_cliente,
-        ubicacion: result.Ubicacion_cliente,
+        idTicket: populateResult.Id,
+        descripcionTicket: populateResult.Descripcion,
+        correoUsuario: populateResult.Asignado_a.Correo,
+        nombreCliente: populateResult.Cliente.Nombre,
+        correoCliente: populateResult.Cliente.Correo,
+        telefonoCliente: populateResult.Cliente.Telefono,
+        extensionCliente: populateResult.Cliente.Extension,
+        ubicacion: populateResult.Cliente.Ubicacion,
       };
       console.log("Datos del correo", correoData);
       req.standby = req.body.standby;
