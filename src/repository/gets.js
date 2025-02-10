@@ -566,9 +566,7 @@ export const getInfoSelectsCrearTicket = async (
       DIRECCIONESGENERALES_,
       DEPENDENCIAS_,
     ] = await Promise.all([
-      ESTADOS.find({
-        Estado: "NUEVO",
-      }),
+      ESTADOS.find(),
       TIPO_TICKET.find(),
       CATEGORIAS.find(),
       SERVICIOS.find(),

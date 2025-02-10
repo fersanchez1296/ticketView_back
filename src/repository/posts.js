@@ -8,6 +8,7 @@ export const postCrearTicket = async (
   sessionDB
 ) => {
   try {
+    console.log("Revisar arega asignado", nuevoTicket);
     console.log("Guardando Ticket...", nuevoTicket);
     const newTicket = await new TICKETS({
       ...nuevoTicket,

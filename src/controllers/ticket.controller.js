@@ -1005,6 +1005,7 @@ export const createTicket = async (req, res, next) => {
         : ticketState.Area_asignado,
       ...(req.dataArchivo && { Files: req.dataArchivo }),
     };
+    console.log(ticketState);
     const RES = await postCrearTicket(
       ticketState,
       userId,
