@@ -1,7 +1,6 @@
 import { Router } from "express";
 import {
   getTickets,
-  getTicketsAbiertos,
   resolverTicket,
   ticketsCerrados,
   ticketsResueltos,
@@ -11,6 +10,7 @@ import {
   ticketsRevision,
   ticketsNuevos,
   areasReasignacion,
+  areasAsignacion,
   reasignarTicket,
   getInfoSelects,
   cerrarTicket,
@@ -37,68 +37,67 @@ import multer from "multer";
 import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 const router = Router();
-router.get("/tickets", verifyToken, getTicketsAbiertos);
+//router.get("/tickets", verifyToken, getTicketsAbiertos);
 router.get(
   "/tickets/nuevos",
   verifyToken,
-  ticketsNuevos,
+  getTickets,
   formatearCamposFecha,
   populateTickets
 );
-//pendiente de usar
-// router.get(
-//   "/tickets/estado/:estado",
-//   verifyToken,
-//   ticketsStandby,
-//   formatearCamposFecha,
-//   populateTickets
-// );
+router.get(
+  "/tickets/estado/:estado",
+  verifyToken,
+  getTickets,
+  formatearCamposFecha,
+  populateTickets
+);
 router.get(
   "/tickets/standby",
   verifyToken,
-  ticketsStandby,
+  getTickets,
   formatearCamposFecha,
   populateTickets
 );
 router.get(
   "/tickets/en%20curso",
   verifyToken,
-  ticketsEnCurso,
+  getTickets,
   formatearCamposFecha,
   populateTickets
 );
 router.get(
   "/tickets/reabiertos",
   verifyToken,
-  ticketsReabiertos,
+  getTickets,
   formatearCamposFecha,
   populateTickets
 );
 router.get(
   "/tickets/pendientes",
   verifyToken,
-  ticketsPendientes,
+  getTickets,
   formatearCamposFecha,
   populateTickets
 );
 router.get(
   "/tickets/cerrados",
   verifyToken,
-  ticketsCerrados,
+  getTickets,
   formatearCamposFecha,
   populateTickets
 );
 router.get(
   "/tickets/resueltos",
   verifyToken,
-  ticketsResueltos,
+  getTickets,
   formatearCamposFecha,
   populateTickets
 );
 router.get(
   "/tickets/revision",
   verifyToken,
-  ticketsRevision,
+  getTickets,
   formatearCamposFecha,
   populateTickets
 );
@@ -117,6 +116,7 @@ router.put(
   asignarTicket,
   enviarCorreo
 );
+router.get("/tickets/asignar/areas", verifyToken, areasAsignacion);
 router.get("/tickets/reasignar/areas", verifyToken, areasReasignacion);
 router.get(
   "/tickets/crear/getInfoSelects",
