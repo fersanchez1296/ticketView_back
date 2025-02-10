@@ -31,13 +31,15 @@ export const getTickets = async (req, res, next) => {
   try {
     let result = [];
     const paramEstado = req.params.estado;
-    const { rol, userId } = req.session.user;
+    const { rol, userId, areas } = req.session.user;
     const Estado = await Gets.getEstadoTicket(paramEstado);
     if (rol === "Usuario") {
       result = await Gets.getTicketsUsuario(userId, Estado);
     } else if (rol === "Moderador") {
       if (paramEstado === "NUEVOS") {
         result = await Gets.getTicketsNuevosModerador(userId, Estado);
+      } else if(paramEstado === "REVISION"){
+        result = await Gets.getTicketsRevision(areas, Estado);
       } else {
         result = await Gets.getTicketsModerador(userId, Estado);
       }
@@ -79,7 +81,7 @@ export const ticketsNuevos = async (req, res, next) => {
 export const ticketsEnCurso = async (req, res, next) => {
   const { userId } = req.session.user;
   try {
-    const ESTADO = await Gets.getEstadoTicket("EN CURSO");
+    const ESTADO = await Gets.getEstadoTicket("ABIERTOS");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
@@ -98,7 +100,7 @@ export const ticketsEnCurso = async (req, res, next) => {
 export const ticketsReabiertos = async (req, res, next) => {
   const { userId } = req.session.user;
   try {
-    const ESTADO = await Gets.getEstadoTicket("REABIERTO");
+    const ESTADO = await Gets.getEstadoTicket("REABIERTOS");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
@@ -117,7 +119,7 @@ export const ticketsReabiertos = async (req, res, next) => {
 export const ticketsPendientes = async (req, res, next) => {
   const { userId } = req.session.user;
   try {
-    const ESTADO = await Gets.getEstadoTicket("PENDIENTE");
+    const ESTADO = await Gets.getEstadoTicket("PENDIENTES");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
@@ -136,7 +138,7 @@ export const ticketsPendientes = async (req, res, next) => {
 export const ticketsRevision = async (req, res, next) => {
   const { areas } = req.session.user;
   try {
-    const ESTADO = await Gets.getEstadoTicket("REVISIÓN");
+    const ESTADO = await Gets.getEstadoTicket("REVISION");
     if (!ESTADO) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
@@ -155,7 +157,7 @@ export const ticketsCerrados = async (req, res, next) => {
   const { userId, rol } = req.session.user;
   let resp;
   try {
-    const ESTADO = await Gets.getEstadoTicket("CERRADO");
+    const ESTADO = await Gets.getEstadoTicket("CERRADOS");
     if (!ESTADO) {
       return resp.status(404).json({ message: "Estado no encontrado" });
     }
@@ -184,7 +186,7 @@ export const ticketsResueltos = async (req, res) => {
   const { userId, rol } = req.session.user;
   let resultado;
   try {
-    const resuelto = await ESTADOS.findOne({ Estado: "RESUELTO" });
+    const resuelto = await ESTADOS.findOne({ Estado: "RESUELTOS" });
     if (!resuelto) {
       return res.status(404).json({ message: "Estado no encontrado" });
     }
@@ -312,9 +314,9 @@ export const resolverTicket = async (req, res) => {
   let estado;
   try {
     if (rol === "Usuario" && ticketData.vistoBueno) {
-      [estado] = await ESTADOS.find({ Estado: "REVISIÓN" });
+      [estado] = await ESTADOS.find({ Estado: "REVISION" });
     } else {
-      [estado] = await ESTADOS.find({ Estado: "RESUELTO" });
+      [estado] = await ESTADOS.find({ Estado: "RESUELTOS" });
     }
     if (!estado) {
       return res
@@ -604,7 +606,7 @@ export const cerrarTicket = async (req, res, next) => {
   const { userId, nombre, rol, correo } = req.session.user;
   const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   try {
-    const estado = await ESTADOS.findOneAndUpdate({ Estado: "CERRADO" });
+    const estado = await ESTADOS.findOneAndUpdate({ Estado: "CERRADOS" });
     const update = {
       $set: {
         Descripcion_cierre,
@@ -640,11 +642,16 @@ export const cerrarTicket = async (req, res, next) => {
     }
     await sessionDB.commitTransaction();
     sessionDB.endSession();
+    const populateResult = await TICKETS.populate(result, [
+      {
+        path: "Cliente",
+        select: "Correo _id",
+      },
+    ]);
     const correoData = {
-      correo,
-      idTicket: result.Id,
-      descripcionTicket: result.Respuesta_cierre_reasignado,
-      correoCliente: result.Correo_cliente,
+      idTicket: populateResult.Id,
+      descripcionTicket: populateResult.Respuesta_cierre_reasignado,
+      correoCliente: populateResult.Cliente.Correo,
     };
     req.channel = "channel_cerrarTicket";
     req.correoData = correoData;
@@ -683,11 +690,11 @@ export const reabrirTicket = async (req, res) => {
       Resuelto_por: Resuelto_por_anterior,
     } = ticketAnterior;
 
-    const estado = await ESTADOS.findOne({ Estado: "REABIERTO" });
+    const estado = await ESTADOS.findOne({ Estado: "REABIERTOS" });
     if (!estado) {
       return res
         .status(404)
-        .json({ desc: "No se encontró el estado REABIERTO" });
+        .json({ desc: "No se encontró el estado REABIERTOS" });
     }
 
     const result = await TICKETS.updateOne(
@@ -753,7 +760,7 @@ export const aceptarResolucion = async (req, res) => {
   const { Nombre } = req.body;
   const { userId, nombre, rol } = req.session.user;
   try {
-    const estado = await ESTADOS.findOne({ Estado: "RESUELTO" });
+    const estado = await ESTADOS.findOne({ Estado: "RESUELTOS" });
     if (!estado) {
       return res.status(404).json({ desc: "No se encontró el estado." });
     }
@@ -796,7 +803,7 @@ export const rechazarResolucion = async (req, res) => {
   const { Nombre, feedback } = req.body;
   const { userId, nombre, rol } = req.session.user;
   try {
-    const estado = await ESTADOS.findOne({ Estado: "EN CURSO" });
+    const estado = await ESTADOS.findOne({ Estado: "ABIERTOS" });
     console.log(estado._id);
     if (!estado) {
       return res.status(404).json({ desc: "No se encontró el estado." });
@@ -1104,6 +1111,7 @@ export const asignarTicket = async (req, res, next) => {
     ? deleteCamposTiempo(req.body)
     : tiempoResolucion(req.body);
   try {
+    delete asignado.Files; //TODO acomodar esto
     const Estado = await Gets.getEstadoTicket("NUEVOS");
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
