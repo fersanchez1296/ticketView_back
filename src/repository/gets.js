@@ -43,6 +43,20 @@ export const getTicketsModerador = async (userId, Estado) => {
   }
 };
 
+export const getTicketsRevision = async (area, Estado) => {
+  try {
+    const result = await TICKETS.find({
+      $and: [{ Estado }, { Area_reasignado_a: { $in: area } }],
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const getTicketsNuevosModerador = async (userId, Estado) => {
   try {
     const result = await TICKETS.find({
@@ -198,24 +212,24 @@ export const getTicketsEnCurso = async (userId, estado) => {
   }
 };
 
-export const getTicketsRevision = async (estado, Area) => {
-  try {
-    const RES = await TICKETS.find({
-      $and: [
-        { Estado: new ObjectId(estado) },
-        {
-          $or: [
-            { Area_reasignado_a: { $in: Area } },
-            { Area_asignado: { $in: Area } },
-          ],
-        },
-      ],
-    }).lean();
-    return RES;
-  } catch (error) {
-    return false;
-  }
-};
+// export const getTicketsRevision = async (estado, Area) => {
+//   try {
+//     const RES = await TICKETS.find({
+//       $and: [
+//         { Estado: new ObjectId(estado) },
+//         {
+//           $or: [
+//             { Area_reasignado_a: { $in: Area } },
+//             { Area_asignado: { $in: Area } },
+//           ],
+//         },
+//       ],
+//     }).lean();
+//     return RES;
+//   } catch (error) {
+//     return false;
+//   }
+// };
 
 export const getTicketsReabiertos = async (userId, estado) => {
   try {
