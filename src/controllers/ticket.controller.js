@@ -1103,7 +1103,7 @@ export const asignarTicket = async (req, res, next) => {
     console.log("Este es el resultado despues de asignar el ticket", result);
     if (result) {
       const populateResult = await TICKETS.populate(result, [
-        { path: "Asignado_a", select: "Nombre Coordinacion Area _id" },
+        { path: "Asignado_a", select: "Correo _id" },
         {
           path: "Cliente",
           select: "Nombre Correo Telefono Extension Ubicacion _id",
