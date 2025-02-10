@@ -13,7 +13,9 @@ const enviarCorreo = async (req, res) => {
     const message = JSON.stringify(correoData);
 
     // Publicar el mensaje en el canal
-    await redisClient.publish(channel, message);
+    if(!req.standby){
+      await redisClient.publish(channel, message);
+    }
     if (req.ticketId) {
       return res
         .status(200)

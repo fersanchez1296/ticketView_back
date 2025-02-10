@@ -42,10 +42,10 @@ export const formatearCamposFecha = (req, res, next) => {
           : [],
       };
     });
+    console.log("tickets en formatear fecha", DATA);
     req.ticketsFormateados = DATA;
-    next();
+    return next();
   } catch (error) {
-    console.log("Error al formatear los campos");
-    return res.send("Error al formatear los campos")
+    return res.send("Error al formatear los campos");
   }
 };

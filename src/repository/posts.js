@@ -1,4 +1,5 @@
 import { TICKETS, ESTADOS, USUARIO } from "../models/index.js";
+import { toZonedTime } from "date-fns-tz";
 export const postCrearTicket = async (
   nuevoTicket,
   userId,
@@ -14,7 +15,7 @@ export const postCrearTicket = async (
         {
           Nombre: userId,
           Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
-          Fecha: new Date(),
+          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       ],
       ...(nuevoTicket.Files ? { Files: [nuevoTicket.Files] } : { Files: [] }),

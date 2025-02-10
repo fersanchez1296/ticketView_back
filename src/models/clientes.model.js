@@ -15,19 +15,16 @@ const clientesModel = mongoose.Schema(
     Dependencia: {
       type: Schema.Types.ObjectId,
       ref: "Dependencia",
-      trim: true,
       required: true,
     },
     Direccion_General: {
       type: Schema.Types.ObjectId,
-      ref: "Direccion_general",
-      trim: true,
+      ref: "DIRECCION_GENERAL",
       required: true,
     },
     direccion_area: {
       type: Schema.Types.ObjectId,
-      ref: "Direccion_area",
-      trim: true,
+      ref: "DIRECCION_AREA",
       required: true,
     },
     Telefono: {

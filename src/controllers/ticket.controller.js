@@ -7,142 +7,53 @@ import { postCrearTicket } from "../repository/posts.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 import { putEditarTicket } from "../repository/puts.js";
 import { addHours } from "date-fns";
+import usuarioModel from "../models/usuario.model.js";
+import { toZonedTime } from "date-fns-tz";
 const ObjectId = mongoose.Types.ObjectId;
-export const getTickets = async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
+// export const getTickets = async (req, res) => {
+//   const page = parseInt(req.query.page) || 1;
+//   const limit = parseInt(req.query.limit) || 10;
+//   const skip = (page - 1) * limit;
+//   try {
+//     const results = await TICKETS.find().skip(skip).limit(limit);
+//     const total = await TICKETS.countDocuments();
+//     res.status(200).json({
+//       data: results,
+//       totalPages: Math.ceil(total / limit),
+//       currentPage: page,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Error al obtener los datos" });
+//   }
+// };
+
+export const getTickets = async (req, res, next) => {
   try {
-    const results = await TICKETS.find().skip(skip).limit(limit);
-    const total = await TICKETS.countDocuments();
-    res.status(200).json({
-      data: results,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error al obtener los datos" });
-  }
-};
-//PENDIENTE DE MODIFICAR EL QUERY
-//TODO no se usa
-export const getTicketsAbiertos = async (req, res) => {
-  const { collection } = req.query; // El nombre del estado enviado desde el cliente (ej. "abierto")
-  const { Id, Rol, Coordinacion } = req.session.user; // ID del usuario autenticado
-  try {
-    const estadoDoc = await ESTADOS.findOne({ Estado: collection }); // Colección de estados
-    if (!estadoDoc) {
-      return res.status(404).json({ message: "Estado no encontrado" });
-    }
-
-    const ticketsRolResolutor = async () => {
-      const tickets = await TICKETS.find({
-        Estado: estadoDoc._id,
-        Asignado_final: Id,
-        //$or: [{ Asignado_a: Id }, { Reasignado_a: Id }],
-      })
-        .populate("Tipo_incidencia", "Tipo_de_incidencia -_id")
-        .populate("Area_asignado", "Area _id")
-        .populate("Categoria", "Categoria -_id")
-        .populate("Servicio", "Servicio -_id")
-        .populate("Subcategoria", "Subcategoria -_id")
-        .populate("Direccion_general", "Direccion_General -_id")
-        .populate("Direccion_area", "direccion_area -_id")
-        .populate("Prioridad", "Prioridad Descripcion -_id")
-        .populate("Estado")
-        .populate("Asignado_a", "Nombre Coordinacion")
-        .populate("Reasignado_a", "Nombre Coordinacion")
-        .populate("Resuelto_por", "Nombre Coordinacion")
-        .populate("Creado_por", "Nombre -_id")
-        .populate("Area_reasignado_a", "Area -_id")
-        .populate("Cerrado_por", "Nombre Coordinacion -_id")
-        .populate("Asignado_final", "Nombre Coordinacion");
-
-      // Procesamos los resultados para definir el campo Asignado_a_final
-      const data = tickets.map((ticket) => {
-        return {
-          ...ticket.toObject(),
-          // Asignado_a_final:
-          //   ticket.Asignado_a && ticket.Asignado_a._id === Id
-          //     ? ticket.Asignado_a
-          //     : ticket.Reasignado_a,
-          Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-          Fecha_limite_resolucion_SLA: formateDate(
-            ticket.Fecha_limite_resolucion_SLA
-          ),
-          Fecha_hora_ultima_modificacion: formateDate(
-            ticket.Fecha_hora_ultima_modificacion
-          ),
-          Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-          Fecha_limite_respuesta_SLA: formateDate(
-            ticket.Fecha_limite_respuesta_SLA
-          ),
-        };
-      });
-
-      return data;
-    };
-
-    const ticketsRolModerador = async () => {
-      const tickets = await TICKETS.find({
-        Estado: estadoDoc._id,
-        Equipo_asignado: Coordinacion,
-      })
-        .populate("Tipo_incidencia", "Tipo_de_incidencia -_id")
-        .populate("Area_asignado", "Area _id")
-        .populate("Categoria", "Categoria -_id")
-        .populate("Servicio", "Servicio -_id")
-        .populate("Subcategoria", "Subcategoria -_id")
-        .populate("Direccion_general", "Direccion_General -_id")
-        .populate("Direccion_area", "direccion_area -_id")
-        .populate("Prioridad", "Prioridad Descripcion -_id")
-        .populate("Estado")
-        .populate("Asignado_a", "Nombre Coordinacion")
-        .populate("Reasignado_a", "Nombre Coordinacion")
-        .populate("Resuelto_por", "Nombre Coordinacion")
-        .populate("Creado_por", "Nombre -_id")
-        .populate("Area_reasignado_a", "Area -_id")
-        .populate("Cerrado_por", "Nombre Coordinacion -_id")
-        .populate("Asignado_final", "Nombre Coordinacion");
-
-      // Procesamos los resultados para definir el campo Asignado_a_final
-      const data = tickets.map((ticket) => {
-        return {
-          ...ticket.toObject(),
-          // Asignado_a_final:
-          //   ticket.Asignado_a && ticket.Asignado_a._id === Id
-          //     ? ticket.Asignado_a
-          //     : ticket.Reasignado_a,
-          Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-          Fecha_limite_resolucion_SLA: formateDate(
-            ticket.Fecha_limite_resolucion_SLA
-          ),
-          Fecha_hora_ultima_modificacion: formateDate(
-            ticket.Fecha_hora_ultima_modificacion
-          ),
-          Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-          Fecha_limite_respuesta_SLA: formateDate(
-            ticket.Fecha_limite_respuesta_SLA
-          ),
-        };
-      });
-      return data;
-    };
-
-    let data;
-    if (Rol === "Moderador") {
-      data = await ticketsRolModerador();
-    } else if (Rol === "Resolutor") {
-      data = await ticketsRolResolutor();
+    let result = [];
+    const paramEstado = req.params.estado;
+    const { rol, userId } = req.session.user;
+    const Estado = await Gets.getEstadoTicket(paramEstado);
+    if (rol === "Usuario") {
+      result = await Gets.getTicketsUsuario(userId, Estado);
+    } else if (rol === "Moderador") {
+      if (paramEstado === "NUEVOS") {
+        result = await Gets.getTicketsNuevosModerador(userId, Estado);
+      } else {
+        result = await Gets.getTicketsModerador(userId, Estado);
+      }
     } else {
-      return res.status(403).json({ message: "Rol no autorizado" });
+      result = await Gets.getTicketsAdmin(Estado);
     }
-
-    // Enviamos la respuesta
-    res.status(200).json(data);
+    req.tickets = result;
+    return result
+      ? next()
+      : res
+          .status(500)
+          .json({ desc: "Ocurrió un error al obtener los tickets." });
   } catch (error) {
-    console.error("Error al obtener los tickets:", error);
-    res.status(500).json({ message: "Error al obtener los datos" });
+    return res
+      .status(500)
+      .json({ desc: "Ocurrió un Error al obtener los tickets." });
   }
 };
 
@@ -424,7 +335,7 @@ export const resolverTicket = async (req, res) => {
             rol === "Usuario" && ticketData.vistoBueno
               ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`
               : `El ticket ha sido resuelto por ${nombre}(${rol}).`,
-          Fecha: new Date(),
+          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       },
     };
@@ -470,6 +381,38 @@ export const resolverTicket = async (req, res) => {
   }
 };
 
+export const areasAsignacion = async (req, res) => {
+  try {
+    const moderador = await ROLES.findOne({ Rol: "Moderador" });
+    const administrador = await ROLES.findOne({ Rol: "Administrador" });
+    const AREAS = await Gets.getAreasParaAsignacion();
+    const prioridades = await Gets.getPrioridades();
+    if (!AREAS) {
+      return res.status(404).json({ desc: "No se encontraron áreas" });
+    }
+    const AREASRESOLUTORES = await Promise.all(
+      AREAS.map(async (area) => {
+        const RESOLUTOR = await Gets.getResolutoresParaAsignacionPorArea(
+          area._id,
+          moderador,
+          administrador
+        );
+        return {
+          area: { area: area.Area, _id: area._id },
+          resolutores: RESOLUTOR,
+        };
+      })
+    );
+    if (!AREASRESOLUTORES) {
+      return res.status(404).json({ desc: "No se encontraron resolutores" });
+    }
+    res.status(200).json({ AREASRESOLUTORES, prioridades });
+  } catch (error) {
+    console.error("Error al obtener áreas y resolutores:", error);
+    res.status(500).json({ message: "Error al obtener áreas y resolutores" });
+  }
+};
+
 export const areasReasignacion = async (req, res) => {
   const { areas } = req.session.user;
   try {
@@ -483,9 +426,7 @@ export const areasReasignacion = async (req, res) => {
     const AREASRESOLUTORES = await Promise.all(
       AREAS.map(async (area) => {
         const RESOLUTOR = await Gets.getResolutoresParaReasignacionPorArea(
-          area._id,
-          moderador._id,
-          administrador._id
+          area._id
         );
         return {
           area: { area: area.Area, _id: area._id },
@@ -535,7 +476,7 @@ export const reasignarTicket = async (req, res, next) => {
   const sessionDB = await mongoose.startSession();
   sessionDB.startTransaction();
   const ticketId = req.params.id;
-  const fechaActual = new Date();
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   const { userId, nombre, rol, correo } = req.session.user;
   function deleteCamposTiempo(body) {
     const {
@@ -563,8 +504,11 @@ export const reasignarTicket = async (req, res, next) => {
     ? deleteCamposTiempo(req.body)
     : tiempoResolucion(req.body);
   try {
-    const Estado = await ESTADOS.findOne({ Estado: "EN CURSO" });
-    console.log("Este es el estado:", Estado);
+    const Estado = await ESTADOS.findOne({ Estado: "ABIERTOS" });
+    if (!Estado) {
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+    }
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
       {
@@ -577,7 +521,7 @@ export const reasignarTicket = async (req, res, next) => {
           Historia_ticket: {
             Nombre: userId,
             Mensaje: `El ticket ha sido reasignado a ${reasignado.Nombre} por ${nombre} - ${rol}`,
-            Fecha: new Date(),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       },
@@ -585,22 +529,29 @@ export const reasignarTicket = async (req, res, next) => {
     );
     if (result) {
       const formatedTickets = await TICKETS.populate(result, [
-        { path: "Dependencia_cliente", select: "Dependencia _id" },
-        { path: "Direccion_general", select: "Direccion_General _id" },
-        { path: "Direccion_area", select: "direccion_area _id" },
+        {
+          path: "Cliente",
+          select: "Nombre Correo Telefono Ubicacion _id",
+          populate: [
+            { path: "Dependencia", select: "Dependencia _id" },
+            { path: "Direccion_General", select: "Direccion_General _id" },
+            { path: "direccion_area", select: "direccion_area _id" },
+          ],
+        },
       ]);
+      if (!formatedTickets) {
+        await sessionDB.abortTransaction();
+        sessionDB.endSession();
+      }
       const correoData = {
         correo,
         correoResol: reasignado.Correo,
         idTicket: formatedTickets.Id,
         descripcionTicket: formatedTickets.Descripcion,
-        correoCliente: formatedTickets.Correo_cliente,
-        nombreCliente: formatedTickets.Nombre_cliente,
-        telefonoCliente: formatedTickets.Telefono_cliente,
-        extensionCliente: formatedTickets.Extension_cliente,
-        dependenciaCliente: formatedTickets.Dependencia_cliente.Dependencia,
-        direccionGeneral: formatedTickets.Direccion_general.Direccion_General,
-        area: formatedTickets.Direccion_area.direccion_area,
+        correoCliente: formatedTickets.Cliente.Correo,
+        nombreCliente: formatedTickets.Cliente.Nombre,
+        telefonoCliente: formatedTickets.Cliente.Telefono,
+        extensionCliente: formatedTickets.Cliente.Extension,
         ubicacion: formatedTickets.Ubicacion_cliente,
       };
       req.channel = "channel_reasignarTicket";
@@ -651,7 +602,7 @@ export const cerrarTicket = async (req, res, next) => {
   const ticketId = req.params.id;
   const { Descripcion_cierre, Numero_Oficio, Causa } = req.ticketData;
   const { userId, nombre, rol, correo } = req.session.user;
-  const fechaActual = new Date();
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   try {
     const estado = await ESTADOS.findOneAndUpdate({ Estado: "CERRADO" });
     const update = {
@@ -776,7 +727,7 @@ export const reabrirTicket = async (req, res) => {
                 Respuesta cierre reasignado anterior: ${Respuesta_cierre_reasignado_anterior},\n
                 Resuelto por anterior: ${Resuelto_por_anterior}
                 `,
-            Fecha: new Date(),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       }
@@ -814,7 +765,7 @@ export const aceptarResolucion = async (req, res) => {
           Historia_ticket: {
             Nombre: userId,
             Mensaje: `${nombre}(${rol}) ha aceptado la solución ${Nombre}(Resolutor). El estado del ticket a cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
-            Fecha: new Date(),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       }
@@ -864,7 +815,7 @@ export const rechazarResolucion = async (req, res) => {
           Historia_ticket: {
             Nombre: userId,
             Mensaje: `${nombre}(${rol}) ha rechazado la solucion de ${Nombre}(Resolutor). El estado del ticket es cambiado a "Abierto". \nMotivo:\n${feedback}`,
-            Fecha: new Date(),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       }
@@ -969,6 +920,7 @@ export const editTicket = async (req, res) => {
       error: "No se proporcionó el ID del ticket o el estado del ticket",
     });
   }
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   const ticketEditado = {
     _id: ticketState._id,
     Id: ticketState.Id,
@@ -1012,29 +964,40 @@ export const createTicket = async (req, res, next) => {
     sessionDB.endSession();
     return res.status(400).json({ desc: "No se envio informacion" });
   }
-  const Estado = await ESTADOS.findOne({ Estado: "EN CURSO" });
-  const fechaActual = new Date();
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   const { userId, nombre, rol, correo } = req.session.user;
-  const Asignado_a = ticketState.Asignado_a;
-  ticketState = {
-    ...ticketState,
-    Estado: Estado._id,
-    Fecha_hora_creacion: fechaActual,
-    Fecha_limite_resolucion_SLA: addHours(
-      fechaActual,
-      ticketState.Fecha_limite_resolucion_SLA
-    ),
-    Fecha_limite_respuesta_SLA: addHours(
-      fechaActual,
-      ticketState.Fecha_limite_respuesta_SLA
-    ),
-    Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
-    Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
-    Creado_por: userId,
-    Asignado_a,
-    ...(req.dataArchivo && { Files: req.dataArchivo }),
-  };
+  let Asignado_a = {};
+  let Estado = {};
   try {
+    if (ticketState.standby) {
+      Estado = await Gets.getEstadoTicket("STANDBY");
+      Asignado_a = await USUARIO.findOne({ Username: "standby" }).lean();
+    } else {
+      Asignado_a = ticketState.Asignado_a;
+      Estado = await Gets.getEstadoTicket("NUEVOS");
+    }
+    ticketState = {
+      ...ticketState,
+      Cliente: req.cliente ? req.cliente : ticketState.Cliente,
+      Estado,
+      Fecha_hora_creacion: fechaActual,
+      Fecha_limite_resolucion_SLA: addHours(
+        fechaActual,
+        ticketState.Fecha_limite_resolucion_SLA
+      ),
+      Fecha_limite_respuesta_SLA: addHours(
+        fechaActual,
+        ticketState.Fecha_limite_respuesta_SLA
+      ),
+      Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
+      Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
+      Creado_por: userId,
+      Asignado_a: ticketState.standby ? Asignado_a._id : ticketState.Asignado_a,
+      Area_asignado: ticketState.standby
+        ? Asignado_a.Area[0]
+        : ticketState.Area_asignado,
+      ...(req.dataArchivo && { Files: req.dataArchivo }),
+    };
     const RES = await postCrearTicket(
       ticketState,
       userId,
@@ -1061,6 +1024,7 @@ export const createTicket = async (req, res, next) => {
       extensionCliente: RES.Extension_cliente,
       ubicacion: RES.Ubicacion_cliente,
     };
+    req.standby = ticketState.standby;
     req.ticketId = RES.Id;
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
@@ -1070,5 +1034,130 @@ export const createTicket = async (req, res, next) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al guardar el ticket" });
+  }
+};
+
+// export const ticketsStandby = async (req, res, next) => {
+//   try {
+//     const Estado = req.params.estado;
+//     const result = await TICKETS.find(Estado);
+//     if(!result){
+//       return res.status(404).json({desc: "No se encontraron tickets para este estado"});
+//     }
+//     req.tickets = result;
+//     next();
+//   } catch (error) {
+//     return res.status(500).json({desc: "Ocurrio un error al obtener los ticket. Error interno en el servidor....."})
+//   }
+// }
+
+export const ticketsStandby = async (req, res, next) => {
+  try {
+    const Estado = await Gets.getEstadoTicket("STANDBY");
+    if (!Estado) {
+      return res.status(404).json({ message: "Estado no encontrado" });
+    }
+    const result = await TICKETS.find({ Estado: Estado._id }).lean();
+    if (!result) {
+      return res
+        .status(404)
+        .json({ desc: "No se encontraron tickets para este estado" });
+    }
+    req.tickets = result;
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      desc: "Ocurrio un error al obtener los ticket. Error interno en el servidor.",
+    });
+  }
+};
+
+export const asignarTicket = async (req, res, next) => {
+  const sessionDB = await mongoose.startSession();
+  sessionDB.startTransaction();
+  const ticketId = req.params.id;
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
+  const { userId, nombre, rol, correo } = req.session.user;
+  function deleteCamposTiempo(body) {
+    const {
+      Prioridad,
+      Fecha_limite_respuesta_SLA,
+      Fecha_limite_resolucion_SLA,
+      ...rest
+    } = body;
+    return rest;
+  }
+  function tiempoResolucion(body) {
+    return {
+      ...body,
+      Fecha_limite_respuesta_SLA: addHours(
+        fechaActual,
+        body.Fecha_limite_respuesta_SLA
+      ),
+      Fecha_limite_resolucion_SLA: addHours(
+        fechaActual,
+        body.Fecha_limite_resolucion_SLA
+      ),
+    };
+  }
+  const asignado = !req.body.Prioridad
+    ? deleteCamposTiempo(req.body)
+    : tiempoResolucion(req.body);
+  try {
+    const Estado = await Gets.getEstadoTicket("NUEVOS");
+    const result = await TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      {
+        $set: {
+          ...asignado,
+          Estado,
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `El ticket ha sido asignado a ${asignado.Nombre} por ${nombre}(${rol})`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
+        },
+      },
+      { returnDocument: "after", new: true, sessionDB }
+    );
+    console.log("Este es el resultado despues de asignar el ticket", result);
+    if (result) {
+      const correoAsignado = await USUARIO.findOne({
+        _id: result.Asignado_a,
+      });
+      const correoData = {
+        correo,
+        idTicket: result.Id,
+        descripcionTicket: result.Descripcion,
+        correoCliente: result.Correo_cliente,
+        correoUsuario: correoAsignado.Correo,
+        nombreCliente: result.Nombre_cliente,
+        telefonoCliente: result.Telefono_cliente,
+        extensionCliente: result.Extension_cliente,
+        ubicacion: result.Ubicacion_cliente,
+      };
+      console.log("Datos del correo", correoData);
+      req.standby = req.body.standby;
+      req.channel = "channel_crearTicket";
+      req.correoData = correoData;
+      await sessionDB.commitTransaction();
+      sessionDB.endSession();
+      next();
+    } else {
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrio un error al reasignar el ticket." });
+    }
+  } catch (error) {
+    await sessionDB.abortTransaction();
+    sessionDB.endSession();
+    console.log(error);
+    return res.status(500).json({
+      desc: "Ocurrio un error al reasignar el ticket. Error interno en el servidor.",
+    });
   }
 };

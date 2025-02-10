@@ -1,5 +1,5 @@
 import { TICKETS } from "../models/index.js";
-
+import { toZonedTime } from "date-fns-tz";
 export const putResolverTicket = async (
   _id,
   estado,
@@ -23,7 +23,7 @@ export const putResolverTicket = async (
             rol === "Usuario"
               ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${descripcionResolucion}`
               : `El ticket ha sido resuelto por ${nombre}(${rol}).`,
-          Fecha: new Date(),
+          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       },
     }
@@ -51,7 +51,7 @@ export const putReasignarTicket = async (
         Historia_ticket: {
           Nombre: Id,
           Mensaje: `El ticket ha sido reasignado a ${nombreReasignado} por ${NombreReasignador}(${rol})`,
-          Fecha: new Date(),
+          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       },
     },
@@ -78,13 +78,13 @@ export const putCerrarTicket = async (
         Cerrado_por: idCerradoPor,
         Descripcion_cierre: descripcionCierre,
         Causa: causaCierre,
-        Fecha_hora_cierre: new Date(),
+        Fecha_hora_cierre: toZonedTime(new Date(), "America/Mexico_City"),
       },
       $push: {
         Historia_ticket: {
           Nombre: id,
           Mensaje: `El ticket fue cerrado por ${nombreCerrador}(${rol})`,
-          Fecha: new Date(),
+          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       },
     }
@@ -103,7 +103,7 @@ export const putAceptarResolucion = async (_id, estado, id, nombre, rol) => {
         Historia_ticket: {
           Nombre: id,
           Mensaje: `${nombre}(${rol}) ha aceptado la solucion del Resolutor. El estado del ticket es cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
-          Fecha: new Date(),
+          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       },
     }
@@ -134,7 +134,7 @@ export const putRechazarResolucion = async (
         Historia_ticket: {
           Nombre: id,
           Mensaje: `${nombre}(${rol}) ha rechazado la solucion del Resolutor. El estado del ticket es cambiado a "Abierto". \nMotivo:\n${motivoRechazo}`,
-          Fecha: new Date(),
+          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       },
     }
@@ -150,13 +150,13 @@ export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
       {
         $set: {
           ...ticketEditado,
-          Fecha_hora_ultima_modificacion: new Date(),
+          Fecha_hora_ultima_modificacion: toZonedTime(new Date(), "America/Mexico_City"),
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
             Mensaje: `El ticket ha sido editado por ${nombre} (${rol}).`,
-            Fecha: new Date(),
+            Fecha:toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       },

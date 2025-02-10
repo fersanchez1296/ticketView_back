@@ -15,7 +15,107 @@ import {
 } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
+
+export const getTicketsUsuario = async (userId, Estado) => {
+  try {
+    const result = await TICKETS.find({
+      $and: [{ Estado }, { Reasignado_a: userId }],
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getTicketsModerador = async (userId, Estado) => {
+  try {
+    const result = await TICKETS.find({
+      $and: [{ Estado }, { Asignado_a: userId }, { Reasignado_a: userId }],
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getTicketsNuevosModerador = async (userId, Estado) => {
+  try {
+    const result = await TICKETS.find({
+      $and: [
+        { Estado: new ObjectId(Estado) },
+        { Asignado_a: new ObjectId(userId) },
+      ],
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getTicketsAdmin = async (Estado) => {
+  try {
+    const result = await TICKETS.find({ Estado }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const getTicketsNuevos = async (userId, estado) => {
+  try {
+    const RES = await TICKETS.aggregate([
+      {
+        $match: {
+          $and: [
+            {
+              $or: [
+                { Asignado_a: new ObjectId(userId) },
+                { Reasignado_a: new ObjectId(userId) },
+              ],
+            },
+            { Estado: estado },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          Asignado_final_a: {
+            $cond: [
+              {
+                $eq: ["$Asignado_a", new ObjectId(userId)],
+              },
+              "$Asignado_a",
+              "$Reasignado_a",
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          Asignado_final: 0,
+        },
+      },
+    ]);
+
+    return RES;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getTicketsStandby = async (userId, estado) => {
   try {
     const RES = await TICKETS.aggregate([
       {
@@ -387,13 +487,27 @@ export const getAreasParaReasignacion = async (Area) => {
   }
 };
 
-export const getResolutoresParaReasignacionPorArea = async (Area, moderador, administrador) => {
+export const getAreasParaAsignacion = async () => {
+  try {
+    const RES = await AREA.find();
+    return RES;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getResolutoresParaAsignacionPorArea = async (
+  Area,
+  moderador,
+  administrador
+) => {
   try {
     const usuarios = await USUARIO.find({
       isActive: true,
+      Area: new ObjectId(Area),
       $or: [
-        { Area: new ObjectId(Area) },
-        { Rol: { $in: [new ObjectId(moderador), new ObjectId(administrador)] } },
+        { Rol: new ObjectId(moderador) },
+        { Rol: new ObjectId(administrador) },
       ],
     }).select("Nombre Correo");
     return usuarios;
@@ -402,7 +516,26 @@ export const getResolutoresParaReasignacionPorArea = async (Area, moderador, adm
   }
 };
 
-export const getInfoSelectsCrearTicket = async (moderador, root, administrador) => {
+export const getResolutoresParaReasignacionPorArea = async (Area) => {
+  try {
+    const usuarios = await USUARIO.find({
+      isActive: true,
+      $or: [
+        { Area: new ObjectId(Area) },
+        //{ Rol: { $in: [new ObjectId(moderador), new ObjectId(administrador)] } },
+      ],
+    }).select("Nombre Correo");
+    return usuarios;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getInfoSelectsCrearTicket = async (
+  moderador,
+  root,
+  administrador
+) => {
   // Se agrego un gion bajo (_) al final del nombre de las constantes para evitar tener errores
   // con el nombre de los modelos
   try {
@@ -445,7 +578,11 @@ export const getInfoSelectsCrearTicket = async (moderador, root, administrador) 
         const resolutor = await USUARIO.find({
           Area: new ObjectId(area._id),
           isActive: true,
-          $or: [{ Rol: new ObjectId(moderador) }, { Rol: new ObjectId(root) }, { Rol: new ObjectId(administrador) }],
+          $or: [
+            { Rol: new ObjectId(moderador) },
+            { Rol: new ObjectId(root) },
+            { Rol: new ObjectId(administrador) },
+          ],
         }).select("Nombre Correo");
         return {
           area: { area: area.Area, _id: area._id },
@@ -474,7 +611,7 @@ export const getInfoSelectsCrearTicket = async (moderador, root, administrador) 
 export const getEstadoTicket = async (Estado) => {
   try {
     const RES = await ESTADOS.findOne({ Estado });
-    return RES;
+    return RES._id;
   } catch (error) {
     return false;
   }
