@@ -1082,6 +1082,7 @@ export const asignarTicket = async (req, res, next) => {
     ? deleteCamposTiempo(req.body)
     : tiempoResolucion(req.body);
   try {
+    delete asignado.Files; //TODO acomodar esto
     const Estado = await Gets.getEstadoTicket("NUEVOS");
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
