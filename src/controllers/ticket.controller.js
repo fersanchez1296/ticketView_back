@@ -615,11 +615,16 @@ export const cerrarTicket = async (req, res, next) => {
     }
     await sessionDB.commitTransaction();
     sessionDB.endSession();
+    const populateResult = await TICKETS.populate(result, [
+      {
+        path: "Cliente",
+        select: "Correo _id",
+      },
+    ]);
     const correoData = {
-      correo,
-      idTicket: result.Id,
-      descripcionTicket: result.Respuesta_cierre_reasignado,
-      correoCliente: result.Correo_cliente,
+      idTicket: populateResult.Id,
+      descripcionTicket: populateResult.Respuesta_cierre_reasignado,
+      correoCliente: populateResult.Cliente.Correo,
     };
     req.channel = "channel_cerrarTicket";
     req.correoData = correoData;
