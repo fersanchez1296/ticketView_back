@@ -506,12 +506,7 @@ export const reasignarTicket = async (req, res, next) => {
       const formatedTickets = await TICKETS.populate(result, [
         {
           path: "Cliente",
-          select: "Nombre Correo Telefono Ubicacion _id",
-          populate: [
-            { path: "Dependencia", select: "Dependencia _id" },
-            { path: "Direccion_General", select: "Direccion_General _id" },
-            { path: "direccion_area", select: "direccion_area _id" },
-          ],
+          select: "Nombre Correo Telefono Ubicacion Extension _id",
         },
       ]);
       if (!formatedTickets) {
@@ -527,7 +522,7 @@ export const reasignarTicket = async (req, res, next) => {
         nombreCliente: formatedTickets.Cliente.Nombre,
         telefonoCliente: formatedTickets.Cliente.Telefono,
         extensionCliente: formatedTickets.Cliente.Extension,
-        ubicacion: formatedTickets.Ubicacion_cliente,
+        ubicacion: formatedTickets.Ubicacion,
       };
       req.channel = "channel_reasignarTicket";
       req.correoData = correoData;
