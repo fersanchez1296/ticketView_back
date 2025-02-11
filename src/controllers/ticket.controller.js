@@ -522,7 +522,7 @@ export const reasignarTicket = async (req, res, next) => {
         nombreCliente: formatedTickets.Cliente.Nombre,
         telefonoCliente: formatedTickets.Cliente.Telefono,
         extensionCliente: formatedTickets.Cliente.Extension,
-        ubicacion: formatedTickets.Ubicacion,
+        ubicacion: formatedTickets.Cliente.Ubicacion,
       };
       req.channel = "channel_reasignarTicket";
       req.correoData = correoData;
