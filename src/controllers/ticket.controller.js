@@ -618,7 +618,7 @@ export const cerrarTicket = async (req, res, next) => {
     ]);
     const correoData = {
       idTicket: populateResult.Id,
-      descripcionTicket: populateResult.Respuesta_cierre_reasignado,
+      descripcionTicket: populateResult.Descripcion_cierre,
       correoCliente: populateResult.Cliente.Correo,
     };
     req.channel = "channel_cerrarTicket";
