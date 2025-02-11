@@ -533,12 +533,7 @@ export const reasignarTicket = async (req, res, next) => {
       const formatedTickets = await TICKETS.populate(result, [
         {
           path: "Cliente",
-          select: "Nombre Correo Telefono Ubicacion _id",
-          populate: [
-            { path: "Dependencia", select: "Dependencia _id" },
-            { path: "Direccion_General", select: "Direccion_General _id" },
-            { path: "direccion_area", select: "direccion_area _id" },
-          ],
+          select: "Nombre Correo Telefono Ubicacion Extension _id",
         },
       ]);
       if (!formatedTickets) {
@@ -554,7 +549,7 @@ export const reasignarTicket = async (req, res, next) => {
         nombreCliente: formatedTickets.Cliente.Nombre,
         telefonoCliente: formatedTickets.Cliente.Telefono,
         extensionCliente: formatedTickets.Cliente.Extension,
-        ubicacion: formatedTickets.Ubicacion_cliente,
+        ubicacion: formatedTickets.Cliente.Ubicacion,
       };
       req.channel = "channel_reasignarTicket";
       req.correoData = correoData;
@@ -650,7 +645,7 @@ export const cerrarTicket = async (req, res, next) => {
     ]);
     const correoData = {
       idTicket: populateResult.Id,
-      descripcionTicket: populateResult.Respuesta_cierre_reasignado,
+      descripcionTicket: populateResult.Descripcion_cierre,
       correoCliente: populateResult.Cliente.Correo,
     };
     req.channel = "channel_cerrarTicket";
@@ -1018,22 +1013,26 @@ export const createTicket = async (req, res, next) => {
       sessionDB.endSession();
       return res.status(500).json({ desc: "Error al guardar el ticket." });
     }
-    const correoAsignado = await USUARIO.findOne({
-      _id: RES.Asignado_a,
-    });
+    const populateResult = await TICKETS.populate(RES, [
+      { path: "Asignado_a", select: "Correo _id" },
+      {
+        path: "Cliente",
+        select: "Nombre Correo Telefono Extension Ubicacion _id",
+      },
+    ]);
     const correoData = {
-      correo,
-      idTicket: RES.Id,
-      descripcionTicket: RES.Descripcion,
-      correoCliente: RES.Correo_cliente,
-      correoUsuario: correoAsignado.Correo,
-      nombreCliente: RES.Nombre_cliente,
-      telefonoCliente: RES.Telefono_cliente,
-      extensionCliente: RES.Extension_cliente,
-      ubicacion: RES.Ubicacion_cliente,
+      idTicket: populateResult.Id,
+      descripcionTicket: populateResult.Descripcion,
+      correoUsuario: populateResult.Asignado_a.Correo,
+      nombreCliente: populateResult.Cliente.Nombre,
+      correoCliente: populateResult.Cliente.Correo,
+      telefonoCliente: populateResult.Cliente.Telefono,
+      extensionCliente: populateResult.Cliente.Extension,
+      ubicacion: populateResult.Cliente.Ubicacion,
+      standby:ticketState.standby,
     };
     req.standby = ticketState.standby;
-    req.ticketId = RES.Id;
+    req.ticketId = populateResult.Id;
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
     await sessionDB.commitTransaction();
@@ -1153,9 +1152,9 @@ export const asignarTicket = async (req, res, next) => {
         telefonoCliente: populateResult.Cliente.Telefono,
         extensionCliente: populateResult.Cliente.Extension,
         ubicacion: populateResult.Cliente.Ubicacion,
+        standby: req.body.standby,
       };
       console.log("Datos del correo", correoData);
-      req.standby = req.body.standby;
       req.channel = "channel_crearTicket";
       req.correoData = correoData;
       await sessionDB.commitTransaction();
@@ -1166,14 +1165,14 @@ export const asignarTicket = async (req, res, next) => {
       sessionDB.endSession();
       return res
         .status(500)
-        .json({ desc: "Ocurrio un error al reasignar el ticket." });
+        .json({ desc: "Ocurrio un error al asignar el ticket." });
     }
   } catch (error) {
     await sessionDB.abortTransaction();
     sessionDB.endSession();
     console.log(error);
     return res.status(500).json({
-      desc: "Ocurrio un error al reasignar el ticket. Error interno en el servidor.",
+      desc: "Ocurrio un error al asignar el ticket. Error interno en el servidor.",
     });
   }
 };
