@@ -995,22 +995,25 @@ export const createTicket = async (req, res, next) => {
       sessionDB.endSession();
       return res.status(500).json({ desc: "Error al guardar el ticket." });
     }
-    const correoAsignado = await USUARIO.findOne({
-      _id: RES.Asignado_a,
-    });
+    const populateResult = await TICKETS.populate(RES, [
+      { path: "Asignado_a", select: "Correo _id" },
+      {
+        path: "Cliente",
+        select: "Nombre Correo Telefono Extension Ubicacion _id",
+      },
+    ]);
     const correoData = {
-      correo,
-      idTicket: RES.Id,
-      descripcionTicket: RES.Descripcion,
-      correoCliente: RES.Correo_cliente,
-      correoUsuario: correoAsignado.Correo,
-      nombreCliente: RES.Nombre_cliente,
-      telefonoCliente: RES.Telefono_cliente,
-      extensionCliente: RES.Extension_cliente,
-      ubicacion: RES.Ubicacion_cliente,
+      idTicket: populateResult.Id,
+      descripcionTicket: populateResult.Descripcion,
+      correoUsuario: populateResult.Asignado_a.Correo,
+      nombreCliente: populateResult.Cliente.Nombre,
+      correoCliente: populateResult.Cliente.Correo,
+      telefonoCliente: populateResult.Cliente.Telefono,
+      extensionCliente: populateResult.Cliente.Extension,
+      ubicacion: populateResult.Cliente.Ubicacion,
     };
     req.standby = ticketState.standby;
-    req.ticketId = RES.Id;
+    req.ticketId = populateResult.Id;
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
     await sessionDB.commitTransaction();
