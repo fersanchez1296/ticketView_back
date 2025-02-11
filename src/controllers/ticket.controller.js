@@ -1011,6 +1011,7 @@ export const createTicket = async (req, res, next) => {
       telefonoCliente: populateResult.Cliente.Telefono,
       extensionCliente: populateResult.Cliente.Extension,
       ubicacion: populateResult.Cliente.Ubicacion,
+      standby:ticketState.standby,
     };
     req.standby = ticketState.standby;
     req.ticketId = populateResult.Id;
@@ -1133,9 +1134,9 @@ export const asignarTicket = async (req, res, next) => {
         telefonoCliente: populateResult.Cliente.Telefono,
         extensionCliente: populateResult.Cliente.Extension,
         ubicacion: populateResult.Cliente.Ubicacion,
+        standby: req.body.standby,
       };
       console.log("Datos del correo", correoData);
-      req.standby = req.body.standby;
       req.channel = "channel_crearTicket";
       req.correoData = correoData;
       await sessionDB.commitTransaction();
@@ -1146,14 +1147,14 @@ export const asignarTicket = async (req, res, next) => {
       sessionDB.endSession();
       return res
         .status(500)
-        .json({ desc: "Ocurrio un error al reasignar el ticket." });
+        .json({ desc: "Ocurrio un error al asignar el ticket." });
     }
   } catch (error) {
     await sessionDB.abortTransaction();
     sessionDB.endSession();
     console.log(error);
     return res.status(500).json({
-      desc: "Ocurrio un error al reasignar el ticket. Error interno en el servidor.",
+      desc: "Ocurrio un error al asignar el ticket. Error interno en el servidor.",
     });
   }
 };
