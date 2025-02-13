@@ -23,6 +23,7 @@ import {
   obtenerAreasModerador,
   buscarTicket,
   editTicket,
+  pendienteTicket,
   ticketsStandby,
   asignarTicket,
   dependenciasClientes,
@@ -209,7 +210,12 @@ router.put(
   verifyRole(["Root", "Administrador"]),
   editTicket
 );
-
+router.put(
+  "/tickets/pendiente/:id", //agregar id como parametro
+  verifyToken,
+  verifyRole(["Usuario"]),
+  pendienteTicket
+);
 router.get(
   "/tickets/clientes/dependencias",
   verifyToken, 

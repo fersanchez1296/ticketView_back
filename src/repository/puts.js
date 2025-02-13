@@ -92,7 +92,7 @@ export const putCerrarTicket = async (
   return RES;
 };
 
-export const putReabrirTicket = async () => {};
+export const putReabrirTicket = async () => { };
 
 export const putAceptarResolucion = async (_id, estado, id, nombre, rol) => {
   const RES = await TICKETS.findOneAndUpdate(
@@ -156,7 +156,7 @@ export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
           Historia_ticket: {
             Nombre: userId,
             Mensaje: `El ticket ha sido editado por ${nombre} (${rol}).`,
-            Fecha:toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       },
@@ -169,5 +169,36 @@ export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
     return respuesta;
   } catch (error) {
     return false;
+  }
+};
+
+export const putTicketPendiente = async (ticketEstadopendiente, userId, nombre, rol) => {
+  console.log("Estado pendiente", ticketEstadopendiente);
+  try {
+    const respuesta = await TICKETS.findOneAndUpdate(
+      { _id: ticketEstadopendiente._id },
+      {
+        $set: {
+          ...ticketEstadopendiente,
+          Fecha_hora_ultima_modificacion: toZonedTime(new Date(), "America/Mexico_City"),
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `El ticket ha sido enviado a Mesa ${nombre} (${rol}).`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
+        },
+      },
+      { new: true } // Retorna el documento actualizado
+    );
+    if (!respuesta) {
+      console.warn(`No se encontró el ticket con ID: ${ticketEstadopendiente._id}`);
+      return null;
+    }
+    return respuesta;
+  } catch (error) {
+    console.error(`Error al actualizar el ticket ${ticketEstadopendiente._id}:`, error.message);
+    throw new Error("Error al actualizar el ticket");
   }
 };

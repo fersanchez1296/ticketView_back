@@ -75,6 +75,10 @@ const ticketModel = mongoose.Schema(
       type: String,
       trim: true,
     },
+    Descripcion_pendiente: {
+      type: String,
+      trim: true,
+    },
     Prioridad: {
       type: Schema.Types.ObjectId,
       trim: true,

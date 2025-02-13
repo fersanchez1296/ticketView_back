@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
 import { postCrearTicket } from "../repository/posts.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
-import { putEditarTicket } from "../repository/puts.js";
+import { putEditarTicket, putTicketPendiente } from "../repository/puts.js";
 import { addHours } from "date-fns";
 import usuarioModel from "../models/usuario.model.js";
 import { toZonedTime } from "date-fns-tz";
@@ -38,7 +38,7 @@ export const getTickets = async (req, res, next) => {
     } else if (rol === "Moderador") {
       if (paramEstado === "NUEVOS") {
         result = await Gets.getTicketsNuevosModerador(userId, Estado);
-      } else if(paramEstado === "REVISION"){
+      } else if (paramEstado === "REVISION") {
         result = await Gets.getTicketsRevision(areas, Estado);
       } else {
         result = await Gets.getTicketsModerador(userId, Estado);
@@ -50,8 +50,8 @@ export const getTickets = async (req, res, next) => {
     return result
       ? next()
       : res
-          .status(500)
-          .json({ desc: "Ocurrió un error al obtener los tickets." });
+        .status(500)
+        .json({ desc: "Ocurrió un error al obtener los tickets." });
   } catch (error) {
     return res
       .status(500)
@@ -460,7 +460,7 @@ export const dependenciasClientes = async (req, res) => {
           Dependencia._id
         );
         return {
-          Dependencia: { Dependencia: Dependencia.Dependencia, _id: Dependencia._id},
+          Dependencia: { Dependencia: Dependencia.Dependencia, _id: Dependencia._id },
           clientes: CLIENTES,
         };
       })
@@ -1029,7 +1029,7 @@ export const createTicket = async (req, res, next) => {
       telefonoCliente: populateResult.Cliente.Telefono,
       extensionCliente: populateResult.Cliente.Extension,
       ubicacion: populateResult.Cliente.Ubicacion,
-      standby:ticketState.standby,
+      standby: ticketState.standby,
     };
     req.standby = ticketState.standby;
     req.ticketId = populateResult.Id;
@@ -1176,3 +1176,44 @@ export const asignarTicket = async (req, res, next) => {
     });
   }
 };
+
+export const pendienteTicket = async (req, res) => {
+  const { userId, nombre, rol } = req.session.user; // Datos del usuario que edita
+  const ticketState = req.body; // Datos actualizados del ticket
+  const _id = req.params;
+  const paramEstado = "PENDIENTES";
+  const Estado = await Gets.getEstadoTicket(paramEstado);
+  if (!ticketState || !_id) {
+    return res.status(400).json({
+      error: "No se proporcionó el ID del ticket o el estado del ticket",
+    });
+  }
+  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
+  const ticketEstadopendiente = {
+    _id: _id.id,
+    Descripcion_pendiente: ticketState.Descripcion_pendiente,
+    Estado: Estado,
+  };
+  try {
+    // Buscar y actualizar el ticket
+    const updatedTicket = await putTicketPendiente(
+      ticketEstadopendiente,
+      userId,
+      nombre,
+      rol
+    );
+  
+    if (!updatedTicket) {
+      return res.status(404).json({ error: "No se encontró el ticket para actualizar" });
+    }
+  
+    res.status(200).json({
+      desc: "Ticket enviado a Mesa",
+    });
+  } catch (error) {
+    console.error("Error al enviar el ticket a Mesa:", error.message);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+
+
