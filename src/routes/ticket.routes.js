@@ -27,6 +27,8 @@ import {
   ticketsStandby,
   asignarTicket,
   dependenciasClientes,
+  regresarcorreos,
+  encontartTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -35,6 +37,7 @@ import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 import { uploadMiddleware } from "../middleware/upload.middleware.js";
 import { guardarCliente } from "../middleware/guardarCliente.middleware.js";
+import  {populateCorreos } from "../middleware/populateCorreos.middleware.js";
 import multer from "multer";
 import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
@@ -220,6 +223,13 @@ router.get(
   "/tickets/clientes/dependencias",
   verifyToken, 
   dependenciasClientes
+);
+router.get(
+  "/tickets/correos/:id",
+  verifyToken,
+  encontartTicket,
+  populateCorreos,
+  regresarcorreos
 );
 
 export default router;

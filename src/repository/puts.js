@@ -185,7 +185,7 @@ export const putTicketPendiente = async (ticketEstadopendiente, userId, nombre, 
         $push: {
           Historia_ticket: {
             Nombre: userId,
-            Mensaje: `El ticket ha sido enviado a Mesa ${nombre} (${rol}).`,
+            Mensaje: `El ticket ha sido enviado a Mesa por ${nombre} (${rol}). Con la descripción (${ticketEstadopendiente.Descripcion_pendiente})`,
             Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },

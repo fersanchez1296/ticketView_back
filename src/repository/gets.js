@@ -850,6 +850,42 @@ export const getTicketPorID = async (id) => {
   }
 };
 
+export const getCorreosPorIDTicket = async (id) => {
+  try {
+    const RES = await TICKETS.findOne({ _id: id }).lean();
+    if (!RES) {
+      return false;
+    }
+    console.log("TICKET", RES);
+    const Correo_moderador = RES.Asignado_a;
+    const Correo_cliente = RES.Cliente;
+    console.log("correos cliente y moderador", Correo_cliente, Correo_moderador);
+    return {
+      Correo_cliente,
+      Correo_moderador,
+    };
+  } catch (error) {
+    console.error("Error al obtener los correos:", error);
+    return false;
+  }
+};
+export const getTicketpor_id = async (id) => {
+  try {
+    const RES = await TICKETS.findOne({ _id: id }).lean();
+    if (!RES) {
+      return false;
+    }
+    if (!RES) {
+      return false;
+    }
+    return RES;
+  } catch (error) {
+    console.error("Error al obtener los correos:", error);
+    return false;
+  }
+};
+
+
 export const getPrioridades = async () => {
   try {
     const RES = await PRIORIDADES.find();

@@ -904,6 +904,25 @@ export const buscarTicket = async (req, res, next) => {
         desc: "No se encontro el numero de ticket en la base de datos",
       });
     }
+    console.log("RES", RES);
+    req.tickets = RES;
+    next();
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};
+export const encontartTicket = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const RES = await Gets.getTicketpor_id(id);
+    if (!RES) {
+      return res.status(404).json({
+        desc: "No se encontro el numero de ticket en la base de datos",
+      });
+    }
+    console.log("Ticket que se va poner como pendiente", RES);
     req.tickets = RES;
     next();
   } catch (error) {
@@ -1216,4 +1235,29 @@ export const pendienteTicket = async (req, res) => {
   }
 };
 
+export const regresarcorreos = async (req, res) => {
+  const Datos = req.tickets;
+  console.log("DATOS", Datos);
+  try {
+    // const correoCliente = Datos.Cliente.Correo;
+    // const correoModerador = Datos.Asignado_a.Correo;
+    // const correoMesa = process.env.SMTP_USERNAME;
+    // console.log(correoMesa);
+    if (!Datos) {
+      return res.status(404).json({
+        desc: "No se encontro el numero de ticket en la base de datos",
+      });
+    }
+    const CORREOS = {
+      correoCliente: Datos.Cliente.Correo,
+      correoModerador: Datos.Asignado_a.Correo,
+      correoMesa: process.env.SMTP_USERNAME,
+    };
+    console.log("CORREOS", CORREOS);
+    return res.status(200).json(CORREOS);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};
 
