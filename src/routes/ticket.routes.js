@@ -25,6 +25,7 @@ import {
   editTicket,
   ticketsStandby,
   asignarTicket,
+  ticketsPorResolutor
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -207,6 +208,15 @@ router.put(
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   editTicket
+);
+
+router.get(
+  "/tickets/resolutor/:userId",
+  verifyToken,
+  verifyRole(["Root", "Administrador", "Moderador"]),
+  ticketsPorResolutor,
+  formatearCamposFecha,
+  populateTickets
 );
 
 export default router;

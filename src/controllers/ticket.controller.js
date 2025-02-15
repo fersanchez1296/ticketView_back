@@ -38,7 +38,7 @@ export const getTickets = async (req, res, next) => {
     } else if (rol === "Moderador") {
       if (paramEstado === "NUEVOS") {
         result = await Gets.getTicketsNuevosModerador(userId, Estado);
-      } else if(paramEstado === "REVISION"){
+      } else if (paramEstado === "REVISION") {
         result = await Gets.getTicketsRevision(areas, Estado);
       } else {
         result = await Gets.getTicketsModerador(userId, Estado);
@@ -1006,7 +1006,7 @@ export const createTicket = async (req, res, next) => {
       telefonoCliente: populateResult.Cliente.Telefono,
       extensionCliente: populateResult.Cliente.Extension,
       ubicacion: populateResult.Cliente.Ubicacion,
-      standby:ticketState.standby,
+      standby: ticketState.standby,
     };
     req.standby = ticketState.standby;
     req.ticketId = populateResult.Id;
@@ -1153,3 +1153,19 @@ export const asignarTicket = async (req, res, next) => {
     });
   }
 };
+
+export const ticketsPorResolutor = async (req,res,next) => {
+  try {
+    const userId = req.params.userId;
+    const result = await Gets.getTicketsPorUsuario(userId);
+    console.log("ticket en controlador", result);
+    if(!result){
+      return res.status(404).json({desc: "No se encontraron tickets para este usuario"});
+    }
+    req.tickets = result;
+    return next();
+  } catch (error) {
+    console.log("error", error);
+    return res.status(500).json({desc: "Ocurrio un error al obtener los ticket del usuario. Error interno en el servidor."})
+  }
+  };

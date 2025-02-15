@@ -45,6 +45,7 @@ export const guardarCliente = async (req, res, next) => {
       nuevoCliente.Direccion_General = nuevoDGeneral[0]._id;
     }
     const [guardarCliente] = await Clientes.create([{ ...nuevoCliente }], { session });
+    console.log(guardarCliente);
     if(!guardarCliente) {
         await session.abortTransaction();
         session.endSession();
@@ -54,6 +55,7 @@ export const guardarCliente = async (req, res, next) => {
     req.ticketState = JSON.parse(req.body.ticketState);
     next();
   } catch (error) {
+    console.log(error);
     await session.abortTransaction();
     session.endSession();
     res.status(500).json({ desc: "Error al guardar el cliente" });
