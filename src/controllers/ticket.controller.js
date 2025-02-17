@@ -5,10 +5,11 @@ import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
 import { postCrearTicket } from "../repository/posts.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
-import { putEditarTicket, putTicketPendiente } from "../repository/puts.js";
+import { putEditarTicket, putTicketPendiente, putTicketAbierto } from "../repository/puts.js";
 import { addHours } from "date-fns";
 import usuarioModel from "../models/usuario.model.js";
 import { toZonedTime } from "date-fns-tz";
+import { ro } from "date-fns/locale";
 const ObjectId = mongoose.Types.ObjectId;
 // export const getTickets = async (req, res) => {
 //   const page = parseInt(req.query.page) || 1;
@@ -1221,11 +1222,11 @@ export const pendienteTicket = async (req, res) => {
       nombre,
       rol
     );
-  
+
     if (!updatedTicket) {
       return res.status(404).json({ error: "No se encontró el ticket para actualizar" });
     }
-  
+
     res.status(200).json({
       desc: "Ticket enviado a Mesa",
     });
@@ -1261,3 +1262,74 @@ export const regresarcorreos = async (req, res) => {
   }
 };
 
+export const regresarTicket = async (req, res, next) => {
+  const sessionDB = await mongoose.startSession();
+  sessionDB.startTransaction();
+  const { userId, nombre, rol } = req.session.user;
+  const ticketState = req.body;
+  const ticketID = req.params.id;
+  console.log("Esto llega al back", ticketState);
+  console.log("Id que se va actualizar", ticketID);
+  const paramEstado = "ABIERTOS";
+  const Estado = await Gets.getEstadoTicket(paramEstado);
+  if (!ticketState || !Estado) {
+    return res.status(400).json({
+      error: "No se proporcionó el ID del ticket o el estado del ticket",
+    });
+  }
+  const ticket = {
+    id: ticketID,
+    Descripcion_respuesta_cliente: ticketState.Descripcion_Rcliente,
+    Estado: Estado,
+  };
+  try {
+    // Buscar y actualizar el ticket
+    const updatedTicket = await putTicketAbierto(
+      ticket,
+      userId,
+      nombre,
+      rol
+    );
+    console.log("Ticket actualizado", updatedTicket);
+    if (!updatedTicket) {
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrio un error al regresar el ticket." });
+    } else {
+      const formatedTickets = await TICKETS.populate(updatedTicket, [
+        {
+          path: "Cliente",
+          select: "Nombre Correo Telefono Ubicacion Extension _id",
+        }, {
+          path: "Reasignado_a",
+          select: "Nombre Correo",
+        },
+      ]);
+      if (!formatedTickets) {
+        await sessionDB.abortTransaction();
+        sessionDB.endSession();
+      }
+      const correoData = {
+        correoResol: formatedTickets.Reasignado_a.Correo,
+        idTicket: formatedTickets.Id,
+        descripcionTicketRegresado: formatedTickets.Descripcion_respuesta_cliente,
+        correoCliente: formatedTickets.Cliente.Correo,
+        nombreCliente: formatedTickets.Cliente.Nombre,
+        telefonoCliente: formatedTickets.Cliente.Telefono,
+        extensionCliente: formatedTickets.Cliente.Extension,
+        ubicacion: formatedTickets.Cliente.Ubicacion,
+      };
+      console.log("Correo Data", correoData);
+      req.channel = "channel_regresarTicket";
+      req.correoData = correoData;
+      await sessionDB.commitTransaction();
+      sessionDB.endSession();
+      next();
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};

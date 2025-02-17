@@ -29,6 +29,7 @@ import {
   dependenciasClientes,
   regresarcorreos,
   encontartTicket,
+  regresarTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -230,6 +231,13 @@ router.get(
   encontartTicket,
   populateCorreos,
   regresarcorreos
+);
+router.put(
+  "/tickets/regresar/:id",
+  verifyToken,
+  verifyRole(["Root"]),
+  regresarTicket,
+  enviarCorreo
 );
 
 export default router;

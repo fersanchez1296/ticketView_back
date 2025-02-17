@@ -75,6 +75,10 @@ const ticketModel = mongoose.Schema(
       type: String,
       trim: true,
     },
+    Descripcion_respuesta_cliente:{
+    type: String,
+    trim: true,
+    },
     Descripcion_pendiente: {
       type: String,
       trim: true,
