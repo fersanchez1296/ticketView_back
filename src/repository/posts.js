@@ -18,7 +18,7 @@ export const postCrearTicket = async (
           Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       ],
-      ...(nuevoTicket.Files ? { Files: [nuevoTicket.Files] } : { Files: [] }),
+      //...(nuevoTicket.Files ? { Files: [nuevoTicket.Files] } : { Files: [] }),
     });
     const savedTicket = await newTicket.save({ sessionDB });
     if (!savedTicket) {

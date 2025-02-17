@@ -8,24 +8,28 @@ import * as Models from "../models/index.js";
 export const guardarCliente = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  req.sessionDB = session;
-  if (!req.body.nuevoCliente) {
-    req.ticketState = JSON.parse(req.body.ticketState);
-    return next();
-  }
-  const nuevoCliente = JSON.parse(req.body.nuevoCliente);
-  delete nuevoCliente._id;
-  delete nuevoCliente.isEdit;
-  const nuevaDependencia = nuevoCliente.nuevaDependencia;
-  const nuevaDArea = nuevoCliente.nuevaDArea;
-  const nuevaDGeneral = nuevoCliente.nuevaDGeneral;
-
   try {
+    //req.sessionDB = session;
+    req.ticketState = JSON.parse(req.body.ticketState);
+    if (!req.body.nuevoCliente) {
+      return next();
+    }
+    const nuevoCliente = JSON.parse(req.body.nuevoCliente);
+    console.log(nuevoCliente);
+    const nuevaDependencia = nuevoCliente.nuevaDependencia
+      ? nuevoCliente.nuevaDependencia
+      : null;
+    const nuevaDArea = nuevoCliente.nuevaDArea ? nuevoCliente.nuevaDArea : null;
+    const nuevaDGeneral = nuevoCliente.nuevaDGeneral
+      ? nuevoCliente.nuevaDGeneral
+      : null;
+
     if (nuevaDependencia) {
       const nuevoDependencia = await Dependencia.create(
         [{ Dependencia: nuevaDependencia }],
         { session }
       );
+      console.log("nueva dependencia", nuevoDependencia);
       nuevoCliente.Dependencia = nuevoDependencia[0]._id;
     }
 
@@ -34,6 +38,7 @@ export const guardarCliente = async (req, res, next) => {
         [{ direccion_area: nuevaDArea }],
         { session }
       );
+      console.log("nueva area", nuevoDArea);
       nuevoCliente.direccion_area = nuevoDArea[0]._id;
     }
 
@@ -42,20 +47,23 @@ export const guardarCliente = async (req, res, next) => {
         [{ Direccion_General: nuevaDGeneral }],
         { session }
       );
+      console.log("nueva general", nuevoDGeneral);
       nuevoCliente.Direccion_General = nuevoDGeneral[0]._id;
     }
-    const [guardarCliente] = await Clientes.create([{ ...nuevoCliente }], { session });
-    console.log(guardarCliente);
-    if(!guardarCliente) {
-        await session.abortTransaction();
-        session.endSession();
-        return res.status(500).json({desc: "Error al guardar el cliente"});
+    const [guardarCliente] = await Clientes.create([{ ...nuevoCliente }], {
+      session,
+    });
+    console.log("console de guardar cliente", guardarCliente);
+    if (!guardarCliente) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({ desc: "Error al guardar el cliente" });
     }
     req.cliente = guardarCliente._id;
-    req.ticketState = JSON.parse(req.body.ticketState);
-    next();
+    req.sessionDB = session;
+    return next();
   } catch (error) {
-    console.log(error);
+    console.log("error", error);
     await session.abortTransaction();
     session.endSession();
     res.status(500).json({ desc: "Error al guardar el cliente" });

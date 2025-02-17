@@ -199,8 +199,8 @@ router.post(
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   guardarCliente,
-  guardarArchivo,
   createTicket,
+  guardarArchivo,
   enviarCorreo
 );
 router.put(

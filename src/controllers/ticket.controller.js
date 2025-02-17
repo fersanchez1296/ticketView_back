@@ -937,18 +937,14 @@ export const editTicket = async (req, res) => {
 };
 
 export const createTicket = async (req, res, next) => {
-  let ticketState = req.ticketState;
   const sessionDB = req.sessionDB;
-  if (!ticketState) {
-    await sessionDB.abortTransaction();
-    sessionDB.endSession();
-    return res.status(400).json({ desc: "No se envio informacion" });
-  }
-  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
-  const { userId, nombre, rol, correo } = req.session.user;
-  let Asignado_a = {};
-  let Estado = {};
   try {
+    let ticketState = req.ticketState;
+    const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
+    const { userId, nombre, rol, correo } = req.session.user;
+    let Asignado_a = {};
+    let Estado = {};
+    console.log(ticketState.standby);
     if (ticketState.standby) {
       Estado = await Gets.getEstadoTicket("STANDBY");
       Asignado_a = await USUARIO.findOne({ Username: "standby" }).lean();
@@ -961,14 +957,8 @@ export const createTicket = async (req, res, next) => {
       Cliente: req.cliente ? req.cliente : ticketState.Cliente,
       Estado,
       Fecha_hora_creacion: fechaActual,
-      Fecha_limite_resolucion_SLA: addHours(
-        fechaActual,
-        ticketState.Fecha_limite_resolucion_SLA
-      ),
-      Fecha_limite_respuesta_SLA: addHours(
-        fechaActual,
-        ticketState.Fecha_limite_respuesta_SLA
-      ),
+      Fecha_limite_resolucion_SLA: addHours(fechaActual, ticketState.tiempo),
+      Fecha_limite_respuesta_SLA: addHours(fechaActual, ticketState.tiempo),
       Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
       Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
       Creado_por: userId,
@@ -976,7 +966,7 @@ export const createTicket = async (req, res, next) => {
       Area_asignado: ticketState.standby
         ? Asignado_a.Area[0]
         : ticketState.Area_asignado,
-      ...(req.dataArchivo && { Files: req.dataArchivo }),
+      //...(req.dataArchivo && { Files: req.dataArchivo }),
     };
     const RES = await postCrearTicket(
       ticketState,
@@ -990,13 +980,13 @@ export const createTicket = async (req, res, next) => {
       sessionDB.endSession();
       return res.status(500).json({ desc: "Error al guardar el ticket." });
     }
+    console.log("resultado de guardar el ticket", RES);
+    console.log("viendo el cliente", RES.Cliente);
     const populateResult = await TICKETS.populate(RES, [
       { path: "Asignado_a", select: "Correo _id" },
-      {
-        path: "Cliente",
-        select: "Nombre Correo Telefono Extension Ubicacion _id",
-      },
+      { path: "Cliente", select: "Nombre _id" },
     ]);
+    console.log("populate", populateResult);
     const correoData = {
       idTicket: populateResult.Id,
       descripcionTicket: populateResult.Descripcion,
@@ -1008,15 +998,19 @@ export const createTicket = async (req, res, next) => {
       ubicacion: populateResult.Cliente.Ubicacion,
       standby: ticketState.standby,
     };
+    console.log("correoData", correoData);
     req.standby = ticketState.standby;
     req.ticketId = populateResult.Id;
+    req.ticketIdDb = populateResult._id;
     req.correoData = correoData;
     req.channel = "channel_crearTicket";
-    await sessionDB.commitTransaction();
-    sessionDB.endSession();
-    next();
+    // await sessionDB.commitTransaction();
+    // sessionDB.endSession();
+    return next();
   } catch (error) {
     console.error(error);
+    await sessionDB.abortTransaction();
+    sessionDB.endSession();
     res.status(500).json({ error: "Error al guardar el ticket" });
   }
 };
@@ -1154,18 +1148,22 @@ export const asignarTicket = async (req, res, next) => {
   }
 };
 
-export const ticketsPorResolutor = async (req,res,next) => {
+export const ticketsPorResolutor = async (req, res, next) => {
   try {
     const userId = req.params.userId;
     const result = await Gets.getTicketsPorUsuario(userId);
     console.log("ticket en controlador", result);
-    if(!result){
-      return res.status(404).json({desc: "No se encontraron tickets para este usuario"});
+    if (!result) {
+      return res
+        .status(404)
+        .json({ desc: "No se encontraron tickets para este usuario" });
     }
     req.tickets = result;
     return next();
   } catch (error) {
     console.log("error", error);
-    return res.status(500).json({desc: "Ocurrio un error al obtener los ticket del usuario. Error interno en el servidor."})
+    return res.status(500).json({
+      desc: "Ocurrio un error al obtener los ticket del usuario. Error interno en el servidor.",
+    });
   }
-  };
+};
