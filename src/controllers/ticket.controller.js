@@ -939,10 +939,6 @@ export const editTicket = async (req, res) => {
 
 export const createTicket = async (req, res, next) => {
   const session = req.mongoSession;
-  console.log(
-    "Estado de la sesión al iniciar el controlador:",
-    session.inTransaction()
-  );
   if (!session) {
     return res
       .status(500)
@@ -979,10 +975,6 @@ export const createTicket = async (req, res, next) => {
         ? Asignado_a.Area[0]
         : ticketState.Area_asignado,
     };
-    console.log(
-      "Estado de la sesión antes de ir al repositorio:",
-      session.inTransaction()
-    );
     const RES = await postCrearTicket(
       ticketState,
       userId,
@@ -991,44 +983,27 @@ export const createTicket = async (req, res, next) => {
       session
     );
     if (!RES) {
-      console.log(
-        "Estado de la sesión si no se guardo el ticket:",
-        session.inTransaction()
-      );
+      console.log("Error al guardar ticket");
+      console.log("Transaccion abortada");
       await session.abortTransaction();
       session.endSession();
       return res.status(500).json({ desc: "Error al guardar el ticket." });
     }
     req.ticketIdDb = RES._id;
-    req.result = RES;
-    return next()
+    req.ticket = RES;
+    req.standby = ticketState.standby;
+    console.log("ticket guardado");
+    return next();
   } catch (error) {
     console.error(error);
     if (session) {
+      console.log("Transaccion abortada");
       await session.abortTransaction();
       session.endSession();
     }
-    console.log(
-      "Estado de la sesión al caer al catch del controlador principal:",
-      session.inTransaction()
-    );
     return res.status(500).json({ error: "Error al guardar el ticket" });
   }
 };
-
-// export const ticketsStandby = async (req, res, next) => {
-//   try {
-//     const Estado = req.params.estado;
-//     const result = await TICKETS.find(Estado);
-//     if(!result){
-//       return res.status(404).json({desc: "No se encontraron tickets para este estado"});
-//     }
-//     req.tickets = result;
-//     next();
-//   } catch (error) {
-//     return res.status(500).json({desc: "Ocurrio un error al obtener los ticket. Error interno en el servidor....."})
-//   }
-// }
 
 export const ticketsStandby = async (req, res, next) => {
   try {

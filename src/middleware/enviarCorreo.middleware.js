@@ -4,7 +4,6 @@ const enviarCorreo = async (req, res) => {
   try {
     const correoData = req.correoData;
     const channel = req.channel;
-    console.log("middleware", correoData, channel);
 
     // Asegúrate de que el canal y el mensaje sean cadenas
     if (typeof channel !== "string") {
@@ -15,10 +14,12 @@ const enviarCorreo = async (req, res) => {
     // Publicar el mensaje en el canal
     await redisClient.publish(channel, message);
     if (req.ticketId) {
+      console.log("Correo enviado");
       return res
         .status(200)
         .json({ desc: `Se creó el número de ticket ${req.ticketId}` });
     }
+    console.log("Correo enviado");
     return res
       .status(200)
       .json({ desc: "Transacción realizada correctamente" });

@@ -6,15 +6,14 @@ import Clientes from "../models/clientes.model.js";
 
 export const guardarCliente = async (req, res, next) => {
   const session = req.mongoSession;
-  console.log("Estado de la sesión al iniciar guardar cliente:", session.inTransaction());
   try {
+    console.log("no hay cliente");
     req.ticketState = JSON.parse(req.body.ticketState);
     if (!req.body.nuevoCliente) {
       return next();
     }
 
     const nuevoCliente = JSON.parse(req.body.nuevoCliente);
-    console.log(nuevoCliente);
 
     const nuevaDependencia = nuevoCliente.nuevaDependencia || null;
     const nuevaDArea = nuevoCliente.nuevaDArea || null;
@@ -46,23 +45,21 @@ export const guardarCliente = async (req, res, next) => {
     }
     const cliente = new Clientes({...nuevoCliente});
     await cliente.save({session});
-    console.log("Estado de la sesión al despues de guardar cliente:", session.inTransaction());
-    console.log("console de guardar cliente", cliente);
-
     if (!guardarCliente) {
-      console.log("Estado de la sesión si guardar cliente fallo:", session.inTransaction());
+      console.log("error al guardar el cliente");
       await session.abortTransaction();
       session.endSession();
       return res.status(500).json({ desc: "Error al guardar el cliente" });
     }
 
     req.cliente = cliente._id;
-    console.log("Estado de la sesión antes del next de guardar cliente:", session.inTransaction());
+    console.log("Cliente guardado");
     return next();
   } catch (error) {
     console.error("Error al guardar cliente:", error);
     console.log("Estado de la sesión al caer en el catch de guardar cliente:", session.inTransaction());
     if (session) {
+      console.log("Transaccion abortada");
       await session.abortTransaction();
       session.endSession();
     }

@@ -8,8 +8,7 @@ export const postCrearTicket = async (
   session
 ) => {
   try {
-    console.log("Estado de la sesión al iniciar el repositorio:", session.inTransaction());
-    console.log("Guardando Ticket...", nuevoTicket);
+    console.log("Guardando Ticket...");
     const newTicket = await new TICKETS({
       ...nuevoTicket,
       Historia_ticket: [
@@ -22,13 +21,9 @@ export const postCrearTicket = async (
       //...(nuevoTicket.Files ? { Files: [nuevoTicket.Files] } : { Files: [] }),
     });
     const savedTicket = await newTicket.save({ session });
-    console.log("Estado de la sesión despues de guardar el ticket:", session.inTransaction());
     if (!savedTicket) {
-      console.log("Estado de la sesión al si no se guardo el ticket:", session.inTransaction());
-      console.log("Ocurrio un error al guardar el ticket en el respositorio.");
       return false;
     }
-    console.log("Estado de la sesión antes de retornar el ticket guardado:", session.inTransaction());
     return savedTicket;
   } catch (error) {
     console.log("Estado de la sesión al caer al catch del repositorio:", session.inTransaction());

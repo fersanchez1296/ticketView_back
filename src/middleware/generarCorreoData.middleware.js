@@ -1,10 +1,11 @@
 import { TICKETS } from "../models/index.js";
 export const generarCorreoData = async (req, res, next) => {
   try {
-    const populateResult = await TICKETS.populate(req.result, [
+    const populateResult = await TICKETS.populate(req.ticket, [
       { path: "Asignado_a", select: "Correo _id" },
-      { path: "Cliente", select: "Nombre _id" },
+      { path: "Cliente", select: "Nombre Correo Telefono Extension Ubicacion _id" },
     ]);
+    
     const correoData = {
       idTicket: populateResult.Id,
       descripcionTicket: populateResult.Descripcion,
@@ -14,9 +15,8 @@ export const generarCorreoData = async (req, res, next) => {
       telefonoCliente: populateResult.Cliente.Telefono,
       extensionCliente: populateResult.Cliente.Extension,
       ubicacion: populateResult.Cliente.Ubicacion,
-      standby: populateResult.standby,
     };
-
+    console.log("Correo data generado");
     req.standby = populateResult.standby;
     req.ticketId = populateResult.Id;
     req.ticketIdDb = populateResult._id;
@@ -24,5 +24,7 @@ export const generarCorreoData = async (req, res, next) => {
     req.channel = "channel_crearTicket";
 
     return next();
-  } catch (error) {}
+  } catch (error) {
+    console.log("Error al generar correo data", error);
+  }
 };
