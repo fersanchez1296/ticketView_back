@@ -37,6 +37,9 @@ import { guardarCliente } from "../middleware/guardarCliente.middleware.js";
 import multer from "multer";
 import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
+import { startTransaction } from "../middleware/startTransaction.middleware.js";
+import { endTransaction } from "../middleware/endTransaction.middleware.js";
+import { generarCorreoData } from "../middleware/generarCorreoData.middleware.js";
 const router = Router();
 //router.get("/tickets", verifyToken, getTicketsAbiertos);
 router.get(
@@ -198,9 +201,12 @@ router.post(
   uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador"]),
+  startTransaction,
   guardarCliente,
   createTicket,
   guardarArchivo,
+  endTransaction,
+  generarCorreoData,
   enviarCorreo
 );
 router.put(

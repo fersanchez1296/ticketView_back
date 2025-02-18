@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
-import AutoIncrementFactory from "mongoose-sequence";
-const AutoIncrement = AutoIncrementFactory(mongoose.connection);
+import Counter from "../models/counter.model.js"; // Importar el modelo Counter
+
 const HistoriaTicketSchema = new Schema({
   Nombre: { type: Schema.Types.ObjectId, ref: "USUARIOS", required: true },
   Mensaje: { type: String, required: true, trim: true },
@@ -12,8 +12,9 @@ const fileSchema = new Schema({
   url: { type: String },
 });
 
-const ticketModel = mongoose.Schema(
+const ticketModel = new Schema(
   {
+    Id: { type: Number, unique: true },
     Tipo_incidencia: {
       type: Schema.Types.ObjectId,
       trim: true,
@@ -144,14 +145,40 @@ const ticketModel = mongoose.Schema(
     },
   },
   {
-    timesStampes: true,
+    timestamps: true,
   }
 );
 
-ticketModel.plugin(AutoIncrement, {
-  Id: "ticket_id_seq",
-  inc_field: "Id",
-  start_seq: 560,
+// Middleware para incrementar el campo `Id` antes de guardar el ticket
+ticketModel.pre("save", async function (next) {
+  if (!this.isNew) return next(); // Solo se ejecuta si es un nuevo documento
+
+  const session = await mongoose.startSession(); // Inicia la transacción
+  session.startTransaction();
+
+  try {
+    // Obtener el contador para el `Id` desde la colección "counters"
+    const counter = await Counter.findOneAndUpdate(
+      { id: "Id" }, // Buscamos por el campo `id` en la colección de contadores
+      { $inc: { seq: 1 } }, // Incrementamos el contador
+      { new: true, upsert: true, session } // Usamos la sesión de la transacción
+    );
+
+    // Asignamos el nuevo `Id` al ticket
+    this.Id = counter.seq;
+
+    // No necesitamos hacer un this.save() aquí. El guardado se realiza al final en el controlador.
+
+    // Completamos la transacción y cerramos la sesión
+    await session.commitTransaction();
+    session.endSession();
+
+    next(); // Continuamos con el guardado del ticket
+  } catch (error) {
+    await session.abortTransaction(); // Si hay error, revertimos la transacción
+    session.endSession(); // Cerramos la sesión
+    next(error); // Pasamos el error al siguiente middleware
+  }
 });
 
 export default mongoose.model("TICKETS", ticketModel, "Tickets");

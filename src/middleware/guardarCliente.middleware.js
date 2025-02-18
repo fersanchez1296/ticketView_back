@@ -3,26 +3,22 @@ import Dependencia from "../models/dependencia.model.js";
 import Direccion_area from "../models/direccion_area.model.js";
 import Direccion_general from "../models/direccion_general.model.js";
 import Clientes from "../models/clientes.model.js";
-import * as Models from "../models/index.js";
 
 export const guardarCliente = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const session = req.mongoSession;
+  console.log("Estado de la sesión al iniciar guardar cliente:", session.inTransaction());
   try {
-    //req.sessionDB = session;
     req.ticketState = JSON.parse(req.body.ticketState);
     if (!req.body.nuevoCliente) {
       return next();
     }
+
     const nuevoCliente = JSON.parse(req.body.nuevoCliente);
     console.log(nuevoCliente);
-    const nuevaDependencia = nuevoCliente.nuevaDependencia
-      ? nuevoCliente.nuevaDependencia
-      : null;
-    const nuevaDArea = nuevoCliente.nuevaDArea ? nuevoCliente.nuevaDArea : null;
-    const nuevaDGeneral = nuevoCliente.nuevaDGeneral
-      ? nuevoCliente.nuevaDGeneral
-      : null;
+
+    const nuevaDependencia = nuevoCliente.nuevaDependencia || null;
+    const nuevaDArea = nuevoCliente.nuevaDArea || null;
+    const nuevaDGeneral = nuevoCliente.nuevaDGeneral || null;
 
     if (nuevaDependencia) {
       const nuevoDependencia = await Dependencia.create(
@@ -34,12 +30,10 @@ export const guardarCliente = async (req, res, next) => {
     }
 
     if (nuevaDArea) {
-      const nuevoDArea = await Direccion_area.create(
-        [{ direccion_area: nuevaDArea }],
-        { session }
-      );
-      console.log("nueva area", nuevoDArea);
-      nuevoCliente.direccion_area = nuevoDArea[0]._id;
+      const nuevoDArea = new Direccion_area({ direccion_area: nuevaDArea });
+      await nuevoDArea.save({ session });
+      console.log("Área de dirección guardada manualmente:", nuevoDArea);
+      nuevoCliente.direccion_area = nuevoDArea._id;
     }
 
     if (nuevaDGeneral) {
@@ -50,22 +44,28 @@ export const guardarCliente = async (req, res, next) => {
       console.log("nueva general", nuevoDGeneral);
       nuevoCliente.Direccion_General = nuevoDGeneral[0]._id;
     }
-    const [guardarCliente] = await Clientes.create([{ ...nuevoCliente }], {
-      session,
-    });
-    console.log("console de guardar cliente", guardarCliente);
+    const cliente = new Clientes({...nuevoCliente});
+    await cliente.save({session});
+    console.log("Estado de la sesión al despues de guardar cliente:", session.inTransaction());
+    console.log("console de guardar cliente", cliente);
+
     if (!guardarCliente) {
+      console.log("Estado de la sesión si guardar cliente fallo:", session.inTransaction());
       await session.abortTransaction();
       session.endSession();
       return res.status(500).json({ desc: "Error al guardar el cliente" });
     }
-    req.cliente = guardarCliente._id;
-    req.sessionDB = session;
+
+    req.cliente = cliente._id;
+    console.log("Estado de la sesión antes del next de guardar cliente:", session.inTransaction());
     return next();
   } catch (error) {
-    console.log("error", error);
-    await session.abortTransaction();
-    session.endSession();
+    console.error("Error al guardar cliente:", error);
+    console.log("Estado de la sesión al caer en el catch de guardar cliente:", session.inTransaction());
+    if (session) {
+      await session.abortTransaction();
+      session.endSession();
+    }
     res.status(500).json({ desc: "Error al guardar el cliente" });
   }
 };

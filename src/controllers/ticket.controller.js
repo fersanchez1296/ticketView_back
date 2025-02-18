@@ -1,4 +1,5 @@
 import { TICKETS, ESTADOS, USUARIO, ROLES, CLIENTES } from "../models/index.js";
+import Clientes from "../models/clientes.model.js";
 import { redisClient } from "../config/redis_connection.js";
 import formateDate from "../functions/dateFormat.functions.js";
 import mongoose from "mongoose";
@@ -937,14 +938,24 @@ export const editTicket = async (req, res) => {
 };
 
 export const createTicket = async (req, res, next) => {
-  const sessionDB = req.sessionDB;
+  const session = req.mongoSession;
+  console.log(
+    "Estado de la sesión al iniciar el controlador:",
+    session.inTransaction()
+  );
+  if (!session) {
+    return res
+      .status(500)
+      .json({ error: "No hay sesión activa para la transacción." });
+  }
+
   try {
     let ticketState = req.ticketState;
     const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
     const { userId, nombre, rol, correo } = req.session.user;
     let Asignado_a = {};
     let Estado = {};
-    console.log(ticketState.standby);
+
     if (ticketState.standby) {
       Estado = await Gets.getEstadoTicket("STANDBY");
       Asignado_a = await USUARIO.findOne({ Username: "standby" }).lean();
@@ -952,6 +963,7 @@ export const createTicket = async (req, res, next) => {
       Asignado_a = ticketState.Asignado_a;
       Estado = await Gets.getEstadoTicket("NUEVOS");
     }
+
     ticketState = {
       ...ticketState,
       Cliente: req.cliente ? req.cliente : ticketState.Cliente,
@@ -966,52 +978,41 @@ export const createTicket = async (req, res, next) => {
       Area_asignado: ticketState.standby
         ? Asignado_a.Area[0]
         : ticketState.Area_asignado,
-      //...(req.dataArchivo && { Files: req.dataArchivo }),
     };
+    console.log(
+      "Estado de la sesión antes de ir al repositorio:",
+      session.inTransaction()
+    );
     const RES = await postCrearTicket(
       ticketState,
       userId,
       nombre,
       rol,
-      sessionDB
+      session
     );
     if (!RES) {
-      await sessionDB.abortTransaction();
-      sessionDB.endSession();
+      console.log(
+        "Estado de la sesión si no se guardo el ticket:",
+        session.inTransaction()
+      );
+      await session.abortTransaction();
+      session.endSession();
       return res.status(500).json({ desc: "Error al guardar el ticket." });
     }
-    console.log("resultado de guardar el ticket", RES);
-    console.log("viendo el cliente", RES.Cliente);
-    const populateResult = await TICKETS.populate(RES, [
-      { path: "Asignado_a", select: "Correo _id" },
-      { path: "Cliente", select: "Nombre _id" },
-    ]);
-    console.log("populate", populateResult);
-    const correoData = {
-      idTicket: populateResult.Id,
-      descripcionTicket: populateResult.Descripcion,
-      correoUsuario: populateResult.Asignado_a.Correo,
-      nombreCliente: populateResult.Cliente.Nombre,
-      correoCliente: populateResult.Cliente.Correo,
-      telefonoCliente: populateResult.Cliente.Telefono,
-      extensionCliente: populateResult.Cliente.Extension,
-      ubicacion: populateResult.Cliente.Ubicacion,
-      standby: ticketState.standby,
-    };
-    console.log("correoData", correoData);
-    req.standby = ticketState.standby;
-    req.ticketId = populateResult.Id;
-    req.ticketIdDb = populateResult._id;
-    req.correoData = correoData;
-    req.channel = "channel_crearTicket";
-    // await sessionDB.commitTransaction();
-    // sessionDB.endSession();
-    return next();
+    req.ticketIdDb = RES._id;
+    req.result = RES;
+    return next()
   } catch (error) {
     console.error(error);
-    await sessionDB.abortTransaction();
-    sessionDB.endSession();
-    res.status(500).json({ error: "Error al guardar el ticket" });
+    if (session) {
+      await session.abortTransaction();
+      session.endSession();
+    }
+    console.log(
+      "Estado de la sesión al caer al catch del controlador principal:",
+      session.inTransaction()
+    );
+    return res.status(500).json({ error: "Error al guardar el ticket" });
   }
 };
 

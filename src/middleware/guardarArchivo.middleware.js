@@ -46,25 +46,20 @@ const guardarArchivos = async (req, res, next) => {
     const result = await TICKETS.findOneAndUpdate(
       { _id: req.ticketIdDb },
       { $push: { Files: { $each: response.data } } },
-      { session: req.sessionDB }
+      { session: req.mongoSession }
     );
+    console.log(result);
 
     if (!result) {
-      await req.sessionDB.abortTransaction();
-      req.sessionDB.endSession();
-      return res
-        .status(500)
-        .json({ desc: "Error al guardar los archivos en la BD." });
+      throw new Error("Error al guardar los archivos en la BD.");
     }
 
-    await req.sessionDB.commitTransaction();
-    req.sessionDB.endSession();
     console.log("Archivos guardados exitosamente.");
     return next();
   } catch (error) {
-    console.error("Error al guardar los archivos:", error);
-    await req.sessionDB.abortTransaction();
-    req.sessionDB.endSession();
+    //console.error("Error al guardar los archivos:", error);
+    await req.mongoSession.abortTransaction();
+    req.mongoSession.endSession();
     return res.status(500).json({ desc: "Error interno en el servidor." });
   }
 };
