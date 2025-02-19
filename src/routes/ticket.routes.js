@@ -25,7 +25,8 @@ import {
   editTicket,
   ticketsStandby,
   asignarTicket,
-  ticketsPorResolutor
+  ticketsPorResolutor,
+  crearNota,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -40,6 +41,7 @@ import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 import { startTransaction } from "../middleware/startTransaction.middleware.js";
 import { endTransaction } from "../middleware/endTransaction.middleware.js";
 import { generarCorreoData } from "../middleware/generarCorreoData.middleware.js";
+import { responseNota } from "../middleware/respuestaNota.middleware.js";
 const router = Router();
 //router.get("/tickets", verifyToken, getTicketsAbiertos);
 router.get(
@@ -209,6 +211,18 @@ router.post(
   generarCorreoData,
   enviarCorreo
 );
+
+router.put(
+  "/tickets/nota/:id",
+  uploadMiddleware,
+  verifyToken,
+  startTransaction,
+  crearNota,
+  guardarArchivo,
+  endTransaction,
+  responseNota,
+);
+
 router.put(
   "/tickets/editar", //agregar id como parametro
   verifyToken,

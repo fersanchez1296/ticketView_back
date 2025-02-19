@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
 import { postCrearTicket } from "../repository/posts.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
-import { putEditarTicket } from "../repository/puts.js";
+import { putEditarTicket, putNota } from "../repository/puts.js";
 import { addHours } from "date-fns";
 import usuarioModel from "../models/usuario.model.js";
 import { toZonedTime } from "date-fns-tz";
@@ -1140,6 +1140,34 @@ export const ticketsPorResolutor = async (req, res, next) => {
     console.log("error", error);
     return res.status(500).json({
       desc: "Ocurrio un error al obtener los ticket del usuario. Error interno en el servidor.",
+    });
+  }
+};
+
+export const crearNota = async (req, res, next) => {
+  const session = req.mongoSession;
+  try {
+    const { userId } = req.session.user;
+    const nota = req.body.Nota;
+    const _id = req.params.id
+
+    const result = await putNota(userId, _id, nota, session);
+    if (!result) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrio un error al guardar la nota en el ticket." });
+    }
+    req.ticketIdDb = result._id;
+    return next();
+  } catch (error) {
+    console.log(error);
+    console.log("Transacción abortada");
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({
+      desc: "Ocurrió un error al agrear la nota. Error interno en el servidor.",
     });
   }
 };

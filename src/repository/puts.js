@@ -150,13 +150,16 @@ export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
       {
         $set: {
           ...ticketEditado,
-          Fecha_hora_ultima_modificacion: toZonedTime(new Date(), "America/Mexico_City"),
+          Fecha_hora_ultima_modificacion: toZonedTime(
+            new Date(),
+            "America/Mexico_City"
+          ),
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
             Mensaje: `El ticket ha sido editado por ${nombre} (${rol}).`,
-            Fecha:toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
       },
@@ -167,6 +170,30 @@ export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
       return false;
     }
     return respuesta;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const putNota = async (userId, _id, nota, session) => {
+  try {
+    const result = await TICKETS.findOneAndUpdate(
+      { _id },
+      {
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: nota,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
+        },
+      },
+      { session, returnDocument: "after" }
+    );
+    if(!result){
+      return false;
+    }
+    return result;
   } catch (error) {
     return false;
   }
