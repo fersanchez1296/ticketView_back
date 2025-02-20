@@ -2,13 +2,6 @@ import { Router } from "express";
 import {
   getTickets,
   resolverTicket,
-  ticketsCerrados,
-  ticketsResueltos,
-  ticketsEnCurso,
-  ticketsReabiertos,
-  ticketsPendientes,
-  ticketsRevision,
-  ticketsNuevos,
   areasReasignacion,
   areasAsignacion,
   reasignarTicket,
@@ -23,10 +16,10 @@ import {
   obtenerAreasModerador,
   buscarTicket,
   editTicket,
-  ticketsStandby,
   asignarTicket,
   ticketsPorResolutor,
   crearNota,
+  reabrirFields
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -35,7 +28,6 @@ import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 import { uploadMiddleware } from "../middleware/upload.middleware.js";
 import { guardarCliente } from "../middleware/guardarCliente.middleware.js";
-import multer from "multer";
 import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 import { startTransaction } from "../middleware/startTransaction.middleware.js";
@@ -45,13 +37,6 @@ import { responseNota } from "../middleware/respuestaNota.middleware.js";
 const router = Router();
 //router.get("/tickets", verifyToken, getTicketsAbiertos);
 router.get(
-  "/tickets/nuevos",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
   "/tickets/estado/:estado",
   verifyToken,
   getTickets,
@@ -59,53 +44,10 @@ router.get(
   populateTickets
 );
 router.get(
-  "/tickets/standby",
+  "/tickets/reabrir/fields",
   verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/en%20curso",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/reabiertos",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/pendientes",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/cerrados",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/resueltos",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/revision",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
+  verifyRole(["Root", "Administrador"]),
+  reabrirFields,
 );
 router.put(
   "/tickets/reasignar/:id",
@@ -179,7 +121,7 @@ router.get(
 router.get(
   "/tickets/historico/area",
   verifyToken,
-  verifyRole(["Root","Administrador", "Moderador"]),
+  verifyRole(["Root", "Administrador", "Moderador"]),
   obtenerTicketsPorArea,
   formatearCamposFecha,
   populateTickets
@@ -220,7 +162,7 @@ router.put(
   crearNota,
   guardarArchivo,
   endTransaction,
-  responseNota,
+  responseNota
 );
 
 router.put(

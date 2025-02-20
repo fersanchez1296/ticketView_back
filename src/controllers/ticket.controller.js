@@ -1,14 +1,17 @@
-import { TICKETS, ESTADOS, USUARIO, ROLES, CLIENTES } from "../models/index.js";
-import Clientes from "../models/clientes.model.js";
-import { redisClient } from "../config/redis_connection.js";
-import formateDate from "../functions/dateFormat.functions.js";
+import {
+  TICKETS,
+  ESTADOS,
+  USUARIO,
+  ROLES,
+  CLIENTES,
+  PRIORIDADES,
+  AREA,
+} from "../models/index.js";
 import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
 import { postCrearTicket } from "../repository/posts.js";
-import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 import { putEditarTicket, putNota } from "../repository/puts.js";
 import { addHours } from "date-fns";
-import usuarioModel from "../models/usuario.model.js";
 import { toZonedTime } from "date-fns-tz";
 const ObjectId = mongoose.Types.ObjectId;
 // export const getTickets = async (req, res) => {
@@ -57,252 +60,6 @@ export const getTickets = async (req, res, next) => {
     return res
       .status(500)
       .json({ desc: "Ocurrió un Error al obtener los tickets." });
-  }
-};
-
-export const ticketsNuevos = async (req, res, next) => {
-  const { userId } = req.session.user;
-  try {
-    const ESTADO = await Gets.getEstadoTicket("NUEVO");
-    if (!ESTADO) {
-      return res.status(404).json({ message: "Estado no encontrado" });
-    }
-    const RES = await Gets.getTicketsNuevos(userId, ESTADO._id);
-    if (!RES) {
-      return res.status(500).json({ desc: "Error al obtener los tickets" });
-    }
-    req.tickets = RES;
-    next();
-  } catch (error) {
-    console.error("Error al obtener los tickets:", error);
-    return res.status(500).json({ message: "Error al obtener los datos" });
-  }
-};
-
-export const ticketsEnCurso = async (req, res, next) => {
-  const { userId } = req.session.user;
-  try {
-    const ESTADO = await Gets.getEstadoTicket("ABIERTOS");
-    if (!ESTADO) {
-      return res.status(404).json({ message: "Estado no encontrado" });
-    }
-    const RES = await Gets.getTicketsEnCurso(userId, ESTADO._id);
-    if (RES === false) {
-      return res.status(500).json({ desc: "Error al obtener los tickets" });
-    }
-    req.tickets = RES;
-    next();
-  } catch (error) {
-    console.error("Error al obtener los tickets:", error);
-    return res.status(500).json({ message: "Error al obtener los datos" });
-  }
-};
-
-export const ticketsReabiertos = async (req, res, next) => {
-  const { userId } = req.session.user;
-  try {
-    const ESTADO = await Gets.getEstadoTicket("REABIERTOS");
-    if (!ESTADO) {
-      return res.status(404).json({ message: "Estado no encontrado" });
-    }
-    const RES = await Gets.getTicketsReabiertos(userId, ESTADO._id);
-    if (RES === false) {
-      return res.status(500).json({ desc: "Error al obtener los tickets" });
-    }
-    req.tickets = RES;
-    next();
-  } catch (error) {
-    console.error("Error al obtener los tickets:", error);
-    return res.status(500).json({ message: "Error al obtener los datos" });
-  }
-};
-
-export const ticketsPendientes = async (req, res, next) => {
-  const { userId } = req.session.user;
-  try {
-    const ESTADO = await Gets.getEstadoTicket("PENDIENTES");
-    if (!ESTADO) {
-      return res.status(404).json({ message: "Estado no encontrado" });
-    }
-    const RES = await Gets.getTicketsPendientes(userId, ESTADO._id);
-    if (RES === false) {
-      return res.status(500).json({ desc: "Error al obtener los tickets" });
-    }
-    req.tickets = RES;
-    next();
-  } catch (error) {
-    console.error("Error al obtener los tickets:", error);
-    return res.status(500).json({ message: "Error al obtener los datos" });
-  }
-};
-//PENDIENTE DE MODIFICAR EL QUERY
-export const ticketsRevision = async (req, res, next) => {
-  const { areas } = req.session.user;
-  try {
-    const ESTADO = await Gets.getEstadoTicket("REVISION");
-    if (!ESTADO) {
-      return res.status(404).json({ message: "Estado no encontrado" });
-    }
-    const RES = await Gets.getTicketsRevision(ESTADO._id, areas);
-    if (RES === false) {
-      return res.status(500).json({ desc: "Error al obtener los tickets" });
-    }
-    req.tickets = RES;
-    next();
-  } catch (error) {
-    return res.status(500).json({ message: "Error al obtener los datos" });
-  }
-};
-//PENDIENTE DE MODIFICAR EL QUERY
-export const ticketsCerrados = async (req, res, next) => {
-  const { userId, rol } = req.session.user;
-  let resp;
-  try {
-    const ESTADO = await Gets.getEstadoTicket("CERRADOS");
-    if (!ESTADO) {
-      return resp.status(404).json({ message: "Estado no encontrado" });
-    }
-    if (rol === "Usuario" || rol === "Moderador") {
-      resp = await Gets.getTicketsCerradosForResolAndMod(userId, ESTADO._id);
-      if (resp === false) {
-        return res.status(500).json({ desc: "Error al obtener los tickets" });
-      }
-      req.tickets = resp;
-      next();
-    } else {
-      resp = await Gets.getTicketsCerradosForAdmin(userId, ESTADO._id);
-      if (resp === false) {
-        return res.status(500).json({ desc: "Error al obtener los tickets" });
-      }
-      req.tickets = resp;
-      next();
-    }
-  } catch (error) {
-    console.error("Error al obtener los tickets:", error);
-    res.status(500).json({ message: "Error al obtener los datos" });
-  }
-};
-
-export const ticketsResueltos = async (req, res) => {
-  const { userId, rol } = req.session.user;
-  let resultado;
-  try {
-    const resuelto = await ESTADOS.findOne({ Estado: "RESUELTOS" });
-    if (!resuelto) {
-      return res.status(404).json({ message: "Estado no encontrado" });
-    }
-    if (rol === "Usuario" || rol === "Moderador") {
-      //resolutor
-      resultado = await TICKETS.aggregate([
-        {
-          $match: {
-            $and: [
-              {
-                Estado: resuelto._id,
-              },
-              { Resuelto_por: new ObjectId(userId) },
-            ],
-          },
-        },
-        {
-          $addFields: {
-            Asignado_final_a: {
-              $cond: [
-                {
-                  $eq: ["$Resuelto_por", new ObjectId(userId)],
-                },
-                "$Resuelto_por",
-                "$Resuelto_por",
-              ],
-            },
-          },
-        },
-        {
-          $project: {
-            Asignado_final: 0,
-          },
-        },
-      ]);
-    } else {
-      resultado = await TICKETS.aggregate([
-        {
-          $match: {
-            $and: [
-              { Estado: resuelto._id },
-              { Creado_por: new ObjectId(userId) },
-            ],
-          },
-        },
-        {
-          $addFields: {
-            Asignado_final_a: {
-              $cond: [
-                {
-                  $eq: ["$Resuelto_por", new ObjectId(userId)],
-                },
-                "$Resuelto_por",
-                "$Resuelto_por",
-              ],
-            },
-          },
-        },
-        {
-          $project: {
-            Asignado_final: 0,
-          },
-        },
-      ]);
-    }
-
-    const ticketsConPopulate = await TICKETS.populate(resultado, [
-      { path: "Tipo_incidencia", select: "Tipo_de_incidencia -_id" },
-      { path: "Area_asignado", select: "Area _id" },
-      { path: "Categoria", select: "Categoria -_id" },
-      { path: "Servicio", select: "Servicio -_id" },
-      { path: "Subcategoria", select: "Subcategoria -_id" },
-      { path: "Direccion_general", select: "Direccion_General -_id" },
-      { path: "Direccion_area", select: "direccion_area -_id" },
-      { path: "Prioridad", select: "Prioridad Descripcion -_id" },
-      { path: "Estado" },
-      { path: "Asignado_a", select: "Nombre Coordinacion" },
-      { path: "Reasignado_a", select: "Nombre Coordinacion" },
-      { path: "Resuelto_por", select: "Nombre Coordinacion" },
-      { path: "Creado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Area_reasignado_a", select: "Area -_id" },
-      { path: "Cerrado_por", select: "Nombre Coordinacion -_id" },
-      { path: "Asignado_final_a", select: "Nombre Coordinacion" },
-      {
-        path: "Historia_ticket",
-        populate: { path: "Nombre", select: "Nombre -_id" },
-      },
-    ]);
-    const data = ticketsConPopulate.map((ticket) => {
-      return {
-        ...ticket,
-        Fecha_hora_creacion: formateDate(ticket.Fecha_hora_creacion),
-        Fecha_limite_resolucion_SLA: formateDate(
-          ticket.Fecha_limite_resolucion_SLA
-        ),
-        Fecha_hora_ultima_modificacion: formateDate(
-          ticket.Fecha_hora_ultima_modificacion
-        ),
-        Fecha_hora_cierre: formateDate(ticket.Fecha_hora_cierre),
-        Fecha_limite_respuesta_SLA: formateDate(
-          ticket.Fecha_limite_respuesta_SLA
-        ),
-        Historia_ticket: ticket.Historia_ticket
-          ? ticket.Historia_ticket.map((historia) => ({
-              Nombre: historia.Nombre,
-              Mensaje: historia.Mensaje,
-              Fecha: formateDate(historia.Fecha),
-            }))
-          : [],
-      };
-    });
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("Error al obtener los tickets:", error);
-    res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
 
@@ -811,18 +568,6 @@ export const rechazarResolucion = async (req, res) => {
   }
 };
 
-export const crearTicket = async (req, res) => {
-  const ticketNuevo = req.body;
-  const { Id, Rol } = req.session.user;
-  try {
-    const nuevoTicket = new TICKETS({ ...ticketNuevo });
-    redisClient.publish("channel_crearTicket", JSON.stringify(message));
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ desc: "Error interno en el servidor" });
-  }
-};
-
 export const obtenerAreas = async (req, res) => {
   try {
     const AREAS = await Gets.getAreas();
@@ -1005,27 +750,6 @@ export const createTicket = async (req, res, next) => {
   }
 };
 
-export const ticketsStandby = async (req, res, next) => {
-  try {
-    const Estado = await Gets.getEstadoTicket("STANDBY");
-    if (!Estado) {
-      return res.status(404).json({ message: "Estado no encontrado" });
-    }
-    const result = await TICKETS.find({ Estado: Estado._id }).lean();
-    if (!result) {
-      return res
-        .status(404)
-        .json({ desc: "No se encontraron tickets para este estado" });
-    }
-    req.tickets = result;
-    next();
-  } catch (error) {
-    return res.status(500).json({
-      desc: "Ocurrio un error al obtener los ticket. Error interno en el servidor.",
-    });
-  }
-};
-
 export const asignarTicket = async (req, res, next) => {
   const sessionDB = await mongoose.startSession();
   sessionDB.startTransaction();
@@ -1149,7 +873,7 @@ export const crearNota = async (req, res, next) => {
   try {
     const { userId } = req.session.user;
     const nota = req.body.Nota;
-    const _id = req.params.id
+    const _id = req.params.id;
 
     const result = await putNota(userId, _id, nota, session);
     if (!result) {
@@ -1168,6 +892,45 @@ export const crearNota = async (req, res, next) => {
     session.endSession();
     return res.status(500).json({
       desc: "Ocurrió un error al agrear la nota. Error interno en el servidor.",
+    });
+  }
+};
+
+export const reabrirFields = async (req, res) => {
+  try {
+    const rolId = await ROLES.findOne({ Rol: "Moderador" });
+    console.log(rolId);
+    const [prioridades, areas] = await Promise.all([
+      PRIORIDADES.find(),
+      AREA.find(),
+    ]);
+
+    const moderadores = await Promise.all(
+      areas.map(async (area) => {
+        const resolutor = await USUARIO.find({
+          Area: new ObjectId(area._id),
+          isActive: true,
+          Rol: new ObjectId(rolId),
+        }).select("Nombre");
+        return {
+          area: { area: area.Area, _id: area._id },
+          resolutores: resolutor,
+        };
+      })
+    );
+
+    if (!prioridades && !moderadores) {
+      console.log("No se encontrarón prioridades o moderadores");
+      return res
+        .status(404)
+        .json({ desc: "No se encontrarón prioridades o moderadores" });
+    }
+
+    return res.status(200).json({ prioridades, moderadores });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      desc: "Ocurrio un error al obtener los campos para la ventana de reasignar. Error interno en el servidor.",
     });
   }
 };
