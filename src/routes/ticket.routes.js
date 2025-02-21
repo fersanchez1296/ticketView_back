@@ -83,11 +83,14 @@ router.put(
   enviarCorreo
 );
 router.put(
-  "/tickets/reabrir",
+  "/tickets/reabrir/:id",
+  uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador"]),
-  validateData("reabrir"),
-  reabrirTicket
+  startTransaction,
+  reabrirTicket,
+  guardarArchivo,
+  endTransaction,
 );
 router.put(
   "/tickets/resolver/:id",

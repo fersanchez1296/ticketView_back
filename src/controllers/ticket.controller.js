@@ -10,7 +10,11 @@ import {
 import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
 import { postCrearTicket } from "../repository/posts.js";
-import { putEditarTicket, putNota } from "../repository/puts.js";
+import {
+  putEditarTicket,
+  putNota,
+  putReabrirTicket,
+} from "../repository/puts.js";
 import { addHours } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 const ObjectId = mongoose.Types.ObjectId;
@@ -390,92 +394,60 @@ export const cerrarTicket = async (req, res, next) => {
     });
   }
 };
-//FALTA AGREGAR AL REPOSITORIO (puts)
-//TODO falta evaular la gravedad del ticket (limite_tiempo_respuesta)
-export const reabrirTicket = async (req, res) => {
-  const { _id, descripcion_reabrir, Area_asignado, Asignado_a } = req.body;
-  const { Id, Rol, Nombre } = req.session.user;
 
+export const reabrirTicket = async (req, res, next) => {
+  const session = req.mongoSession;
   try {
-    const [ticketAnterior] = await TICKETS.find({ _id });
-    if (!ticketAnterior) {
-      return res.status(404).json({ desc: "No se encontró el ticket" });
+    const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
+    const ticketId = req.params.id;
+    const { userId, nombre, rol } = req.session.user;
+    const ticketData = JSON.parse(req.body.ticketData);
+    if (ticketData.tiempo) {
+      const tiempo = ticketData.tiempo;
+      ticketData = {
+        ...ticketData,
+        Fecha_limite_resolucion_SLA: addHours(fechaActual, tiempo),
+        Fecha_limite_respuesta_SLA: addHours(fechaActual, tiempo),
+        Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
+      };
+      delete ticketData.tiempo;
     }
-
-    const {
-      Estado: Estado_anterior,
-      Area_asignado: Area_asignado_anterior,
-      Asignado_a: Asignado_a_anterior,
-      Area_reasignado_a: Area_reasignado_a_anterior,
-      Reasignado_a: Reasignado_a_anterior,
-      Descripcion: Descripcion_anterior,
-      Causa: Causa_anterior,
-      Prioridad: Prioridad_anterior,
-      Fecha_hora_cierre: Fecha_hora_cierre_anterior,
-      Respuesta_cierre_reasignado: Respuesta_cierre_reasignado_anterior,
-      Resuelto_por: Resuelto_por_anterior,
-    } = ticketAnterior;
-
-    const estado = await ESTADOS.findOne({ Estado: "REABIERTOS" });
-    if (!estado) {
+    const Estado = await Gets.getEstadoTicket("REABIERTOS");
+    if (!Estado) {
+      console.log("Transaccion abortada.");
+      await session.abortTransaction();
+      session.endSession();
       return res
         .status(404)
-        .json({ desc: "No se encontró el estado REABIERTOS" });
+        .json({ desc: "No se encontró el estado reabierto." });
     }
-
-    const result = await TICKETS.updateOne(
-      { _id },
-      {
-        $set: {
-          Area_asignado,
-          Asignado_a,
-          Estado: estado._id,
-          Descripcion: descripcion_reabrir,
-        },
-        $unset: {
-          Area_reasignado_a: "",
-          Reasignado_a: "",
-          Causa: "",
-          Prioridad: "",
-          Fecha_limite_respuesta_SLA: "",
-          Fecha_limite_resolucion_SLA: "",
-          Fecha_hora_cierre: "",
-          Respuesta_cierre_reasignado: "",
-          Resuelto_por: "",
-        },
-        $push: {
-          Historia_ticket: {
-            Nombre: Id,
-            Mensaje: `El ticket fue reabierto por ${Nombre}(${Rol})\n
-                Descripción anterior:\n
-                Estado anterior: ${Estado_anterior},\n
-                Área asignada anterior: ${Area_asignado_anterior},\n
-                Asignado anterior: ${Asignado_a_anterior},\n
-                Área reasignada anterior: ${Area_reasignado_a_anterior},\n
-                Reasignado anterior: ${Reasignado_a_anterior},\n
-                Descripción anterior: ${Descripcion_anterior},\n
-                Causa anterior: ${Causa_anterior},\n
-                Prioridad anterior: ${Prioridad_anterior},\n
-                Fecha de cierre anterior: ${Fecha_hora_cierre_anterior},\n
-                Respuesta cierre reasignado anterior: ${Respuesta_cierre_reasignado_anterior},\n
-                Resuelto por anterior: ${Resuelto_por_anterior}
-                `,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
-          },
-        },
-      }
+    const result = await putReabrirTicket(
+      ticketId,
+      Estado,
+      ticketData,
+      userId,
+      nombre,
+      rol,
+      session
     );
-
-    if (result.modifiedCount > 0) {
-      return res.status(200).json({ desc: "El ticket fue reabierto" });
-    } else {
+    if (!result) {
+      console.log("Transaccion abortada.");
+      await session.abortTransaction();
+      session.endSession();
       return res
-        .status(500)
-        .json({ desc: "Ocurrió un error al intentar reabrir el ticket" });
+        .status(400)
+        .json({ desc: "Ocurrio un error al reabrir el ticket." });
     }
+    req.channel = "channel_reabrirTicket";
+    return next();
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ desc: "Error interno en el servidor" });
+    console.log(error);
+    console.log("Transaccion abortada.");
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({
+      desc: "Ocurrió un error al reabrir el ticket. Error interno en el servidor.",
+    });
   }
 };
 
@@ -530,7 +502,6 @@ export const rechazarResolucion = async (req, res) => {
   const { userId, nombre, rol } = req.session.user;
   try {
     const estado = await ESTADOS.findOne({ Estado: "ABIERTOS" });
-    console.log(estado._id);
     if (!estado) {
       return res.status(404).json({ desc: "No se encontró el estado." });
     }
@@ -571,7 +542,6 @@ export const rechazarResolucion = async (req, res) => {
 export const obtenerAreas = async (req, res) => {
   try {
     const AREAS = await Gets.getAreas();
-    console.log(AREAS);
     if (!AREAS) {
       return res.status(400).json({ desc: "No se encontraron areas" });
     }
@@ -584,13 +554,11 @@ export const obtenerAreas = async (req, res) => {
 
 export const obtenerTicketsPorArea = async (req, res, next) => {
   const area = req.query.area;
-  console.log("queries", req.query.area);
   try {
     const TICKETS = await Gets.getTicketsPorArea(area);
     if (!TICKETS) {
       return res.status(400).json({ desc: "No se encontraron areas." });
     }
-    console.log(TICKETS);
     req.tickets = TICKETS;
     next();
   } catch (error) {
@@ -736,7 +704,7 @@ export const createTicket = async (req, res, next) => {
     }
     req.ticketIdDb = RES._id;
     req.ticket = RES;
-    req.standby = ticketState.standby;
+    req.channel = "channel_crearTicket";
     console.log("ticket guardado");
     return next();
   } catch (error) {
@@ -801,7 +769,6 @@ export const asignarTicket = async (req, res, next) => {
       },
       { returnDocument: "after", new: true, sessionDB }
     );
-    console.log("Este es el resultado despues de asignar el ticket", result);
     if (result) {
       const populateResult = await TICKETS.populate(result, [
         { path: "Asignado_a", select: "Correo _id" },
@@ -810,10 +777,6 @@ export const asignarTicket = async (req, res, next) => {
           select: "Nombre Correo Telefono Extension Ubicacion _id",
         },
       ]);
-      console.log(
-        "Este es el resultado despues de asignar el ticket",
-        populateResult
-      );
       const correoData = {
         idTicket: populateResult.Id,
         descripcionTicket: populateResult.Descripcion,
@@ -825,7 +788,6 @@ export const asignarTicket = async (req, res, next) => {
         ubicacion: populateResult.Cliente.Ubicacion,
         standby: req.body.standby,
       };
-      console.log("Datos del correo", correoData);
       req.channel = "channel_crearTicket";
       req.correoData = correoData;
       await sessionDB.commitTransaction();
@@ -852,7 +814,6 @@ export const ticketsPorResolutor = async (req, res, next) => {
   try {
     const userId = req.params.userId;
     const result = await Gets.getTicketsPorUsuario(userId);
-    console.log("ticket en controlador", result);
     if (!result) {
       return res
         .status(404)
@@ -899,7 +860,6 @@ export const crearNota = async (req, res, next) => {
 export const reabrirFields = async (req, res) => {
   try {
     const rolId = await ROLES.findOne({ Rol: "Moderador" });
-    console.log(rolId);
     const [prioridades, areas] = await Promise.all([
       PRIORIDADES.find(),
       AREA.find(),
@@ -920,7 +880,6 @@ export const reabrirFields = async (req, res) => {
     );
 
     if (!prioridades && !moderadores) {
-      console.log("No se encontrarón prioridades o moderadores");
       return res
         .status(404)
         .json({ desc: "No se encontrarón prioridades o moderadores" });

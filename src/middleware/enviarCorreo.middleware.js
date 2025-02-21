@@ -4,25 +4,23 @@ const enviarCorreo = async (req, res) => {
   try {
     const correoData = req.correoData;
     const channel = req.channel;
-
-    // Asegúrate de que el canal y el mensaje sean cadenas
     if (typeof channel !== "string") {
       throw new TypeError("El canal debe ser una cadena");
     }
     const message = JSON.stringify(correoData);
-
-    // Publicar el mensaje en el canal
     await redisClient.publish(channel, message);
-    if (req.ticketId) {
+    if (channel === "channel_crearTicket") {
       console.log("Correo enviado");
       return res
         .status(200)
-        .json({ desc: `Se creó el número de ticket ${req.ticketId}` });
+        .json({ desc: `Se creó el ticket con número ${req.ticketId}` });
     }
     console.log("Correo enviado");
     return res
       .status(200)
-      .json({ desc: "Transacción realizada correctamente" });
+      .json({
+        desc: `Acción realizada correctamente para el ticket con número #${req.ticketId}`,
+      });
   } catch (error) {
     console.error("Error al enviar el correo:", error);
     res.status(500).json({ error: "Error al enviar el correo" });

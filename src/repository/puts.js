@@ -92,7 +92,41 @@ export const putCerrarTicket = async (
   return RES;
 };
 
-export const putReabrirTicket = async () => {};
+export const putReabrirTicket = async (
+  _id,
+  Estado,
+  ticketData,
+  userId,
+  nombre,
+  rol,
+  session
+) => {
+  try {
+    const result = TICKETS.findOneAndUpdate(
+      { _id },
+      {
+        $set: {
+          Estado,
+          ...ticketData,
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `El ticket fue reabierto por ${nombre}-${rol}.`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
+        },
+      },
+      { session, returnDocument: "after" }
+    );
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
 
 export const putAceptarResolucion = async (_id, estado, id, nombre, rol) => {
   const RES = await TICKETS.findOneAndUpdate(
@@ -190,7 +224,7 @@ export const putNota = async (userId, _id, nota, session) => {
       },
       { session, returnDocument: "after" }
     );
-    if(!result){
+    if (!result) {
       return false;
     }
     return result;

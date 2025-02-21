@@ -841,10 +841,8 @@ export const getPrioridades = async () => {
 };
 
 export const getTicketsPorUsuario = async (userId) => {
-  console.log(typeof userId);
   try {
     const result = await TICKETS.find({ Reasignado_a: new ObjectId(userId) });
-    console.log("tickets en repositorio", result);
     if (!result) {
       return false;
     }
