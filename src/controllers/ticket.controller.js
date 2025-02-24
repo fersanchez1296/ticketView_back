@@ -9,7 +9,7 @@ import { putEditarTicket, putTicketPendiente, putTicketAbierto } from "../reposi
 import { addHours } from "date-fns";
 import usuarioModel from "../models/usuario.model.js";
 import { toZonedTime } from "date-fns-tz";
-import { ro } from "date-fns/locale";
+import { ro, se } from "date-fns/locale";
 const ObjectId = mongoose.Types.ObjectId;
 // export const getTickets = async (req, res) => {
 //   const page = parseInt(req.query.page) || 1;
@@ -934,6 +934,8 @@ export const encontartTicket = async (req, res, next) => {
 
 //TODO falta de agregar al repositorio (puts)
 export const editTicket = async (req, res) => {
+  const sessionDB = await mongoose.startSession();
+  sessionDB.startTransaction();
   const { userId, nombre, rol } = req.session.user; // Datos del usuario que edita
   const ticketState = req.body; // Datos actualizados del ticket
   //console.log("Esto llega", ticketState);
@@ -966,12 +968,16 @@ export const editTicket = async (req, res) => {
     );
 
     if (!updatedTicket) {
-      return res.status(404).json({ error: "Error al editar el ticket" });
-    }
-
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+      return res
+      .status(500)
+      .json({desc: "Ocurrio un error al editar el Ticket."});
+    } else{
     res.status(200).json({
-      desc: "Ticket actualizado correctamente",
+      desc: "Se edito el Ticket",
     });
+  };
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al actualizar el ticket" });
@@ -1198,6 +1204,8 @@ export const asignarTicket = async (req, res, next) => {
 };
 
 export const pendienteTicket = async (req, res) => {
+  const sessionDB = await mongoose.startSession();
+  sessionDB.startTransaction();
   const { userId, nombre, rol } = req.session.user; // Datos del usuario que edita
   const ticketState = req.body; // Datos actualizados del ticket
   const _id = req.params;
@@ -1224,12 +1232,16 @@ export const pendienteTicket = async (req, res) => {
     );
 
     if (!updatedTicket) {
-      return res.status(404).json({ error: "No se encontró el ticket para actualizar" });
-    }
-
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+      return res
+      .status(500)
+      .json({desc: "Ocurrio un error al marcar el Ticket como (PENDIENTE)."});
+    } else{
     res.status(200).json({
       desc: "Ticket enviado a Mesa",
     });
+  };
   } catch (error) {
     console.error("Error al enviar el ticket a Mesa:", error.message);
     res.status(500).json({ error: "Error interno del servidor" });
