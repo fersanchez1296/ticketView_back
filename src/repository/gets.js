@@ -74,6 +74,20 @@ export const getTicketsNuevosModerador = async (userId, Estado) => {
   }
 };
 
+export const getTicketsReabiertosModerador = async (userId, Estado) => {
+  try {
+    const result = await TICKETS.find({
+      $and: [{ Estado }, { Asignado_a: userId }],
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const getTicketsAdmin = async (Estado) => {
   try {
     const result = await TICKETS.find({ Estado }).lean();
@@ -836,6 +850,19 @@ export const getPrioridades = async () => {
     const RES = await PRIORIDADES.find();
     return RES;
   } catch (error) {
+    return false;
+  }
+};
+
+export const getTicketsPorUsuario = async (userId) => {
+  try {
+    const result = await TICKETS.find({ Reasignado_a: new ObjectId(userId) });
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    console.log("error en repositorio", error);
     return false;
   }
 };

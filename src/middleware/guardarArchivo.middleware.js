@@ -1,82 +1,68 @@
 import axios from "axios";
 import FormData from "form-data";
 import fs from "fs";
-//TODO modificar logica para que se pueda reutilizar, las validaciones impiden esto.
-// const guardarArchivo = async (req, res, next) => {
-//   if (
-//     (req.body.ticketState.NumeroRec_Oficio === "" ||
-//       req.body.ticketState.Numero_Oficio === "") &&
-//     !req.file
-//   ) {
-//     return res.status(400).json({
-//       desc: "Se proporcionó un nombre de archivo pero no se inlcuyó un archivo.",
-//     });
-//   } else if (req.file) {
-//     const token = req.cookies.access_token;
-//     const { originalname, path } = req.file;
-//     const formData = new FormData();
-//     formData.append("file", fs.createReadStream(path), originalname);
-//     try {
-//       const response = await axios.post(
-//         "http://files-service-node:4400/files",
-//         formData,
-//         {
-//           headers: {
-//             ...formData.getHeaders(),
-//             Cookie: `access_token=${token}`,
-//           },
-//           withCredentials: true,
-//         }
-//       );
-//       fs.unlinkSync(path);
-//       if (!response) {
-//         return res
-//           .status(400)
-//           .json({ desc: "Ocurrió un error al guardar el archivo." });
-//       }
-//       req.dataArchivo = response.data;
-//       next();
-//     } catch (error) {
-//       res.status(500).json({ desc: "Error interno en el servidor." });
-//     }
-//   }
-// };
+import { TICKETS } from "../models/index.js";
 
-const guardarArchivo = async (req, res, next) => {
-  if (req.file) {
-    console.log("Guardando archivo");
-    const token = req.cookies.access_token;
-    const { originalname, path } = req.file;
-    const formData = new FormData();
-    formData.append("file", fs.createReadStream(path), originalname);
-    try {
-      const response = await axios.post(
-        "http://files-service-node:4400/files",
-        formData,
-        {
-          headers: {
-            ...formData.getHeaders(),
-            Cookie: `access_token=${token}`,
-          },
-          withCredentials: true,
-        }
-      );
-      fs.unlinkSync(path);
-      if (!response) {
-        return res
-          .status(400)
-          .json({ desc: "Ocurrió un error al guardar el archivo." });
-      }
-      req.dataArchivo = response.data;
-      console.log("Archivo guardado, saliendo del middleware");
-      return next();
-    } catch (error) {
-      console.log("No se pudo guardar el archivo");
-      res.status(500).json({ desc: "Error interno en el servidor." });
-    }
+const guardarArchivos = async (req, res, next) => {
+  if (!req.files || req.files.length === 0) {
+    console.log("No se proporcionaron archivos...");
+    return next();
   }
-  console.log("No se proporciono archivo...");
-  return next();
+
+  console.log("Guardando archivos...");
+  const token = req.cookies.access_token;
+  const formData = new FormData();
+
+  // Agregamos todos los archivos al FormData
+  req.files.forEach((file) => {
+    formData.append("files", fs.createReadStream(file.path), file.originalname);
+  });
+
+  try {
+    // Enviar una sola petición con todos los archivos
+    const response = await axios.post(
+      "http://files-service-node:4400/files",
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          Cookie: `access_token=${token}`,
+        },
+        withCredentials: true,
+      }
+    );
+
+    // Eliminar los archivos temporales después de enviarlos
+    req.files.forEach((file) => fs.unlinkSync(file.path));
+
+    if (!response.data || !Array.isArray(response.data)) {
+      console.error("Respuesta inválida al guardar archivos:", response);
+      return res
+        .status(400)
+        .json({ desc: "Ocurrió un error al guardar los archivos." });
+    }
+
+    // Guardar en la base de datos
+    const result = await TICKETS.findOneAndUpdate(
+      { _id: req.ticketIdDb },
+      { $push: { Files: { $each: response.data } } },
+      { session: req.mongoSession, returnDocument: "after" }
+    );
+
+    if (!result) {
+      throw new Error("Error al guardar los archivos en la BD.");
+    }
+
+    console.log("Archivos guardados exitosamente.");
+    req.ticket = result;
+    return next();
+  } catch (error) {
+    console.error("Error al guardar los archivos:", error);
+    console.log("Transaccion abortada");
+    await req.mongoSession.abortTransaction();
+    req.mongoSession.endSession();
+    return res.status(500).json({ desc: "Error interno en el servidor." });
+  }
 };
 
-export default guardarArchivo;
+export default guardarArchivos;

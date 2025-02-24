@@ -1,7 +1,6 @@
 import Joi from "joi";
 const crearSchema = Joi.object({
   Tipo_incidencia: Joi.string().alphanum().required(),
-  Estado: Joi.string().alphanum().required(),
   Area_asignado: Joi.string().alphanum().required(),
   Asignado_a: Joi.string().alphanum().required(),
   Categoria: Joi.string().alphanum().required(),
@@ -13,7 +12,6 @@ const crearSchema = Joi.object({
   Descripcion: Joi.string().required(),
   Prioridad: Joi.string().alphanum().required(),
   NumeroRec_Oficio: Joi.string().allow(null, ''),
-  Numero_Oficio: Joi.string().allow(null, ''),
 });
 
 export default crearSchema;

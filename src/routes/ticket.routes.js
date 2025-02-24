@@ -2,13 +2,6 @@ import { Router } from "express";
 import {
   getTickets,
   resolverTicket,
-  ticketsCerrados,
-  ticketsResueltos,
-  ticketsEnCurso,
-  ticketsReabiertos,
-  ticketsPendientes,
-  ticketsRevision,
-  ticketsNuevos,
   areasReasignacion,
   areasAsignacion,
   reasignarTicket,
@@ -23,8 +16,11 @@ import {
   obtenerAreasModerador,
   buscarTicket,
   editTicket,
-  ticketsStandby,
   asignarTicket,
+  ticketsPorResolutor,
+  crearNota,
+  reabrirFields,
+  exportTicketsToExcel,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -33,18 +29,14 @@ import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 import { uploadMiddleware } from "../middleware/upload.middleware.js";
 import { guardarCliente } from "../middleware/guardarCliente.middleware.js";
-import multer from "multer";
 import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
+import { startTransaction } from "../middleware/startTransaction.middleware.js";
+import { endTransaction } from "../middleware/endTransaction.middleware.js";
+import { generarCorreoData } from "../middleware/generarCorreoData.middleware.js";
+import { responseNota } from "../middleware/respuestaNota.middleware.js";
+import { genericResponse } from "../middleware/genericResponse.middleware.js";
 const router = Router();
-//router.get("/tickets", verifyToken, getTicketsAbiertos);
-router.get(
-  "/tickets/nuevos",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
 router.get(
   "/tickets/estado/:estado",
   verifyToken,
@@ -53,53 +45,10 @@ router.get(
   populateTickets
 );
 router.get(
-  "/tickets/standby",
+  "/tickets/reabrir/fields",
   verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/en%20curso",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/reabiertos",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/pendientes",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/cerrados",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/resueltos",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
-);
-router.get(
-  "/tickets/revision",
-  verifyToken,
-  getTickets,
-  formatearCamposFecha,
-  populateTickets
+  verifyRole(["Root", "Administrador"]),
+  reabrirFields
 );
 router.put(
   "/tickets/reasignar/:id",
@@ -111,9 +60,14 @@ router.put(
 );
 router.put(
   "/tickets/asignar/:id",
+  uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador"]),
+  startTransaction,
   asignarTicket,
+  guardarArchivo,
+  endTransaction,
+  generarCorreoData,
   enviarCorreo
 );
 router.get("/tickets/asignar/areas", verifyToken, areasAsignacion);
@@ -129,40 +83,59 @@ router.put(
   uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador"]),
-  validateData("cerrar"),
-  guardarArchivo,
+  // validateData("cerrar"),
+  startTransaction,
   cerrarTicket,
+  guardarArchivo,
+  endTransaction,
+  generarCorreoData,
   enviarCorreo
 );
 router.put(
-  "/tickets/reabrir",
+  "/tickets/reabrir/:id",
+  uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador"]),
-  validateData("reabrir"),
-  reabrirTicket
+  startTransaction,
+  reabrirTicket,
+  guardarArchivo,
+  endTransaction,
+  generarCorreoData,
+  enviarCorreo
 );
 router.put(
   "/tickets/resolver/:id",
   uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador", "Usuario"]),
-  validateData("resolver"),
+  startTransaction,
+  // validateData("resolver"),
+  resolverTicket,
   guardarArchivo,
-  resolverTicket
+  endTransaction,
+  genericResponse
 );
 router.put(
   "/tickets/resolver/aceptar/:id",
   verifyToken,
   verifyRole(["Moderador"]),
-  validateData("aceptarResolucion"),
-  aceptarResolucion
+  // validateData("aceptarResolucion"),
+  startTransaction,
+  aceptarResolucion,
+  endTransaction,
+  genericResponse
 );
 router.put(
   "/tickets/resolver/rechazar/:id",
+  uploadMiddleware,
   verifyToken,
   verifyRole(["Moderador"]),
-  validateData("rechazarResolucion"),
-  rechazarResolucion
+  // validateData("rechazarResolucion"),
+  startTransaction,
+  rechazarResolucion,
+  guardarArchivo,
+  endTransaction,
+  genericResponse
 );
 router.get(
   "/tickets/historico",
@@ -173,7 +146,7 @@ router.get(
 router.get(
   "/tickets/historico/area",
   verifyToken,
-  verifyRole(["Root","Administrador", "Moderador"]),
+  verifyRole(["Root", "Administrador", "Moderador"]),
   obtenerTicketsPorArea,
   formatearCamposFecha,
   populateTickets
@@ -197,16 +170,47 @@ router.post(
   uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador"]),
+  startTransaction,
   guardarCliente,
-  guardarArchivo,
   createTicket,
+  guardarArchivo,
+  endTransaction,
+  generarCorreoData,
   enviarCorreo
 );
+
+router.put(
+  "/tickets/nota/:id",
+  uploadMiddleware,
+  verifyToken,
+  startTransaction,
+  crearNota,
+  guardarArchivo,
+  endTransaction,
+  responseNota
+);
+
 router.put(
   "/tickets/editar", //agregar id como parametro
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   editTicket
+);
+
+router.get(
+  "/tickets/resolutor/:userId",
+  verifyToken,
+  verifyRole(["Root", "Administrador", "Moderador"]),
+  ticketsPorResolutor,
+  formatearCamposFecha,
+  populateTickets
+);
+
+router.get(
+  "/tickets/export/excel",
+  verifyToken,
+  verifyRole(["Root"]),
+  exportTicketsToExcel
 );
 
 export default router;

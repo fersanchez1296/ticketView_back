@@ -13,6 +13,7 @@ import BLACKLIST from "./blacklist.model.js";
 import CLIENTES from "./clientes.model.js";
 import DEPENDENCIAS from "./dependencia.model.js"
 import ROLES from "./roles.model.js"
+import Counter from "./counter.model.js";
 export {
     TICKETS,
     CATEGORIAS,
@@ -28,5 +29,6 @@ export {
     BLACKLIST,
     CLIENTES,
     DEPENDENCIAS,
-    ROLES
+    ROLES,
+    Counter,
 }

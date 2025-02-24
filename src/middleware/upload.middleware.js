@@ -18,8 +18,8 @@ const upload = multer({
     cb(null, true);
   },
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 15 * 1024 * 1024,
   },
 });
 
-export const uploadMiddleware = upload.single("file");
+export const uploadMiddleware = upload.array("files", 10);

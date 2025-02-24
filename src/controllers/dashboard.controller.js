@@ -29,8 +29,9 @@ export const dashboard = async (req, res) => {
       TICKETS.find({
         $and: [
           {
-            Reasignado_a: userId,
+            Asignado_a: userId,
           },
+          { Reasignado_a: { $ne: userId } },
           { Estado: "67200415ab8f070f7ce3538c" },
         ],
       }).countDocuments(),
