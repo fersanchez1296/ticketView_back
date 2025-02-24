@@ -94,6 +94,7 @@ export const createTicket = async (req, res, next) => {
       Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
       Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
       Creado_por: userId,
+      standby: ticketState.standby,
       Asignado_a: ticketState.standby ? Asignado_a._id : ticketState.Asignado_a,
       Area_asignado: ticketState.standby
         ? Asignado_a.Area[0]
