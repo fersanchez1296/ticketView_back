@@ -3,6 +3,7 @@ export const generarCorreoData = async (req, res, next) => {
   try {
     const populateResult = await TICKETS.populate(req.ticket, [
       { path: "Asignado_a", select: "Correo _id" },
+      { path: "Reasignado_a", select: "Correo _id" },
       {
         path: "Cliente",
         select: "Nombre Correo Telefono Extension Ubicacion _id",
@@ -20,6 +21,8 @@ export const generarCorreoData = async (req, res, next) => {
       extensionCliente: populateResult.Cliente.Extension,
       ubicacion: populateResult.Cliente.Ubicacion,
       standby: populateResult.standby,
+      descripcionTicketRegresado: populateResult.Descripcion_respuesta_cliente ?? "",
+      correoResol: populateResult.Reasignado_a?.Correo ?? "",
     };
     console.log("correodata", correoData);
     req.ticketId = populateResult.Id;

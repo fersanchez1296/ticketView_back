@@ -21,6 +21,11 @@ import {
   crearNota,
   reabrirFields,
   exportTicketsToExcel,
+  pendienteTicket,
+  dependenciasClientes,
+  encontartTicket,
+  regresarcorreos,
+  regresarTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -36,6 +41,7 @@ import { endTransaction } from "../middleware/endTransaction.middleware.js";
 import { generarCorreoData } from "../middleware/generarCorreoData.middleware.js";
 import { responseNota } from "../middleware/respuestaNota.middleware.js";
 import { genericResponse } from "../middleware/genericResponse.middleware.js";
+import { populateCorreos } from "../controllers/ticket.controller.js";
 const router = Router();
 router.get(
   "/tickets/estado/:estado",
@@ -190,13 +196,6 @@ router.put(
   responseNota
 );
 
-router.put(
-  "/tickets/editar", //agregar id como parametro
-  verifyToken,
-  verifyRole(["Root", "Administrador"]),
-  editTicket
-);
-
 router.get(
   "/tickets/resolutor/:userId",
   verifyToken,
@@ -213,4 +212,48 @@ router.get(
   exportTicketsToExcel
 );
 
+router.put(
+  "/tickets/editar/:id", //agregar id como parametro
+  uploadMiddleware,
+  verifyToken,
+  verifyRole(["Root", "Administrador"]),
+  startTransaction,
+  editTicket,
+  guardarArchivo,
+  endTransaction,
+  genericResponse
+);
+
+router.put(
+  "/tickets/pendiente/:id", //agregar id como parametro
+  verifyToken,
+  verifyRole(["Usuario"]),
+  startTransaction,
+  pendienteTicket,
+  endTransaction,
+  genericResponse
+);
+
+router.get("/tickets/clientes/dependencias", verifyToken, dependenciasClientes);
+
+router.get(
+  "/tickets/correos/:id",
+  verifyToken,
+  encontartTicket,
+  populateCorreos,
+  regresarcorreos
+);
+
+router.put(
+  "/tickets/regresar/:id",
+  uploadMiddleware,
+  verifyToken,
+  verifyRole(["Root"]),
+  startTransaction,
+  regresarTicket,
+  guardarArchivo,
+  endTransaction,
+  generarCorreoData,
+  enviarCorreo
+);
 export default router;

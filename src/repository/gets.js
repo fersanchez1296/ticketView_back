@@ -11,6 +11,7 @@ import {
   DIRECCION_AREA,
   DIRECCION_GENERAL,
   DEPENDENCIAS,
+  CLIENTES,
 } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
@@ -863,6 +864,33 @@ export const getTicketsPorUsuario = async (userId) => {
     return result;
   } catch (error) {
     console.log("error en repositorio", error);
+    return false;
+  }
+};
+
+export const getClientesPorDependencia = async (Dependencia) => {
+  try {
+    const clientes = await CLIENTES.find({
+      Dependencia: new ObjectId(Dependencia),
+    });
+    return clientes;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getTicketpor_id = async (id) => {
+  try {
+    const RES = await TICKETS.findOne({ _id: id }).lean();
+    if (!RES) {
+      return false;
+    }
+    if (!RES) {
+      return false;
+    }
+    return RES;
+  } catch (error) {
+    console.error("Error al obtener los correos:", error);
     return false;
   }
 };

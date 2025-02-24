@@ -11,13 +11,15 @@ import * as Gets from "../repository/gets.js";
 import { postCrearTicket } from "../repository/posts.js";
 import {
   putCerrarTicket,
-  putEditarTicket,
   putNota,
   putReabrirTicket,
   putResolverTicket,
   putAceptarResolucion,
   putRechazarResolucion,
   putAsignarTicket,
+  putTicketPendiente,
+  putEditarTicket,
+  putTicketAbierto,
 } from "../repository/puts.js";
 import { addHours } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
@@ -99,7 +101,7 @@ export const createTicket = async (req, res, next) => {
         ? Asignado_a.Area[0]
         : ticketState.Area_asignado,
     };
-    console.log("ticketstate", ticketState)
+    console.log("ticketstate", ticketState);
     const RES = await postCrearTicket(
       ticketState,
       userId,
@@ -107,7 +109,7 @@ export const createTicket = async (req, res, next) => {
       rol,
       session
     );
-    console.log("ticketstate", RES)
+    console.log("ticketstate", RES);
     if (!RES) {
       console.log("Error al guardar ticket");
       console.log("Transaccion abortada");
@@ -508,53 +510,32 @@ export const reabrirTicket = async (req, res, next) => {
 };
 
 //TODO falta de agregar al repositorio (puts)
-export const editTicket = async (req, res) => {
-  const { userId, nombre, rol } = req.session.user; // Datos del usuario que edita
-  const { ticketState } = req.body; // Datos actualizados del ticket
-  if (!ticketState || !ticketState._id) {
-    return res.status(400).json({
-      error: "No se proporcionó el ID del ticket o el estado del ticket",
-    });
-  }
-  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
-  const ticketEditado = {
-    _id: ticketState._id,
-    Id: ticketState.Id,
-    Prioridad: ticketState.Prioridad,
-    Estado: ticketState.Estado,
-    Tipo_de_incidencia: ticketState.Tipo_de_incidencia,
-    NumeroRec_Oficio: ticketState.NumeroRec_Oficio,
-    Numero_Oficio: ticketState.Numero_Oficio,
-    PendingReason: ticketState.PendingReason,
-    Servicio: ticketState.Servicio,
-    Categoria: ticketState.Categoria,
-    Subcategoria: ticketState.Subcategoria,
-    Descripcion: ticketState.Descripcion,
-    Direccion_general: ticketState.Direccion_general,
-    Direccion_area: ticketState.Direccion_area,
-    Nombre_cliente: ticketState.Nombre_cliente,
-    Telefono_cliente: ticketState.Telefono_cliente,
-    Correo_cliente: ticketState.Correo_cliente,
-  };
+export const editTicket = async (req, res, next) => {
+  const session = req.mongoSession;
   try {
-    // Buscar y actualizar el ticket
-    const updatedTicket = await putEditarTicket(
-      ticketEditado,
+    const ticketData = JSON.parse(req.body.ticketData);
+    const ticketId = req.params.id;
+    const { userId, nombre, rol } = req.session.user;
+    const result = await putEditarTicket(
+      ticketId,
+      ticketData,
+      session,
       userId,
       nombre,
       rol
     );
-
-    if (!updatedTicket) {
-      return res.status(404).json({ error: "Error al editar el ticket" });
+    if (!result) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({ desc: "Error al editar el ticket" });
     }
-
-    res.status(200).json({
-      desc: "Ticket actualizado correctamente",
-    });
+    req.ticket = result;
+    req.ticketIdDb = result._id;
+    return next();
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al actualizar el ticket" });
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
 
@@ -944,6 +925,174 @@ export const exportTicketsToExcel = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al generar el Excel:", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const pendienteTicket = async (req, res, next) => {
+  const session = req.mongoSession;
+  try {
+    const { DescripcionPendiente } = req.body;
+    const ticketId = req.params.id;
+    const { userId, nombre, rol } = req.session.user;
+    const Estado = await Gets.getEstadoTicket("PENDIENTES");
+    const result = await putTicketPendiente(
+      ticketId,
+      Estado,
+      DescripcionPendiente,
+      userId,
+      nombre,
+      rol,
+      session
+    );
+    if (!result) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ message: "Error al cambiar el estadio del ticket." });
+    }
+    return next();
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+//Controlador para traer los clientes por dependencia
+export const dependenciasClientes = async (req, res) => {
+  try {
+    const DEPENDENCIAS = await Gets.getDependencias();
+    if (!DEPENDENCIAS) {
+      return res.status(404).json({ desc: "No se encontraron dependencias" });
+    }
+    const DEPENDENCIASCLIENTES = await Promise.all(
+      DEPENDENCIAS.map(async (Dependencia) => {
+        const CLIENTES = await Gets.getClientesPorDependencia(Dependencia._id);
+        return {
+          Dependencia: {
+            Dependencia: Dependencia.Dependencia,
+            _id: Dependencia._id,
+          },
+          clientes: CLIENTES,
+        };
+      })
+    );
+    console.log("DEPENDENCIAS DE LOS CLIENTES", DEPENDENCIASCLIENTES);
+    res.status(200).json(DEPENDENCIASCLIENTES);
+  } catch (error) {
+    console.error(
+      "Error al obtener clientes agrupados por dependencia:",
+      error
+    );
     res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const encontartTicket = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const RES = await Gets.getTicketpor_id(id);
+    if (!RES) {
+      return res.status(404).json({
+        desc: "No se encontro el numero de ticket en la base de datos",
+      });
+    }
+    console.log("Ticket que se va poner como pendiente", RES);
+    req.tickets = RES;
+    next();
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};
+
+export const populateCorreos = async (req, res, next) => {
+  try {
+    console.log("tickets en populate", req.tickets);
+    const POPULATE = await TICKETS.populate(req.tickets, [
+      { path: "Asignado_a", select: "Nombre Correo Coordinacion Area _id" },
+      {
+        path: "Cliente",
+        select: "Nombre Correo Telefono Ubicacion _id",
+        populate: [
+          { path: "Dependencia", select: "Dependencia _id" },
+          { path: "Direccion_General", select: "Direccion_General _id" },
+          { path: "direccion_area", select: "direccion_area _id" },
+        ],
+      },
+    ]);
+    if (!POPULATE) {
+      console.log("error en populate");
+      return res.status(500).json({ desc: "Error al procesar los tickets." });
+    }
+    console.log("POPULATE", POPULATE);
+    req.tickets = POPULATE;
+    next();
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error al formatear los tickets." });
+  }
+};
+
+export const regresarcorreos = async (req, res) => {
+  const Datos = req.tickets;
+  console.log("DATOS", Datos);
+  try {
+    if (!Datos) {
+      return res.status(404).json({
+        desc: "No se encontro el numero de ticket en la base de datos",
+      });
+    }
+    const CORREOS = {
+      correoCliente: Datos.Cliente.Correo,
+      correoModerador: Datos.Asignado_a.Correo,
+      correoMesa: process.env.SMTP_USERNAME,
+    };
+    console.log("CORREOS", CORREOS);
+    return res.status(200).json(CORREOS);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};
+
+export const regresarTicket = async (req, res, next) => {
+  const session = req.mongoSession;
+  try {
+    const ticketId = req.params.id;
+    const { userId, nombre, rol } = req.session.user;
+    const ticketData = JSON.parse(req.body.ticketData);
+    const { Descripcion_respuesta_cliente } = ticketData;
+    const Estado = await Gets.getEstadoTicket("ABIERTOS");
+    if (!Estado) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ desc: "No se encontro el estado" });
+    }
+    const result = await putTicketAbierto(
+      ticketId,
+      Estado,
+      Descripcion_respuesta_cliente,
+      userId,
+      nombre,
+      rol,
+      session
+    );
+    if (!result) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({ desc: "No se actualizo el ticket." });
+    }
+    req.ticket = result;
+    req.ticketIdDb = result._id;
+    req.channel = "channel_regresarTicket";
+    return next();
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };

@@ -236,17 +236,20 @@ export const putRechazarResolucion = async (
   }
 };
 
-export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
+export const putEditarTicket = async (
+  ticketId,
+  ticketData,
+  session,
+  userId,
+  nombre,
+  rol
+) => {
   try {
     const respuesta = await TICKETS.findOneAndUpdate(
-      { _id: ticketEditado._id },
+      { _id: ticketId },
       {
         $set: {
-          ...ticketEditado,
-          Fecha_hora_ultima_modificacion: toZonedTime(
-            new Date(),
-            "America/Mexico_City"
-          ),
+          ...ticketData,
         },
         $push: {
           Historia_ticket: {
@@ -256,9 +259,8 @@ export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
           },
         },
       },
-      { new: true } // Retorna el documento actualizado
+      { session, returnDocument: "after" }
     );
-    console.log(respuesta);
     if (!respuesta) {
       return false;
     }
@@ -287,6 +289,76 @@ export const putNota = async (userId, ticketId, nota, session) => {
       return false;
     }
     return result;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const putTicketPendiente = async (
+  ticketId,
+  Estado,
+  DescripcionPendiente,
+  userId,
+  nombre,
+  rol,
+  session
+) => {
+  try {
+    const respuesta = await TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      {
+        $set: {
+          Estado,
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `El ticket se ha marcado como pendiente por el resolutor: ${nombre} (${rol}). Con la descripción (${DescripcionPendiente})`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
+        },
+      },
+      { session, returnDocument: "after" }
+    );
+    if (!respuesta) {
+      return false;
+    }
+    return respuesta;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const putTicketAbierto = async (
+  ticketId,
+  Estado,
+  Descripcion_respuesta_cliente,
+  userId,
+  nombre,
+  rol,
+  session
+) => {
+  try {
+    const respuesta = await TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      {
+        $set: {
+          Estado,
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `El ticket ha sido enviado de regreso al resolutor por: ${nombre} (${rol}). Con la respuesta del cliente (${Descripcion_respuesta_cliente})`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
+        },
+      },
+      { session, returnDocument: "after" }
+    );
+    if (!respuesta) {
+      return false;
+    }
+    return respuesta;
   } catch (error) {
     return false;
   }
