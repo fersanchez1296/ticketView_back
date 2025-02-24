@@ -57,7 +57,7 @@ const guardarArchivos = async (req, res, next) => {
     req.ticket = result;
     return next();
   } catch (error) {
-    //console.error("Error al guardar los archivos:", error);
+    console.error("Error al guardar los archivos:", error);
     console.log("Transaccion abortada");
     await req.mongoSession.abortTransaction();
     req.mongoSession.endSession();

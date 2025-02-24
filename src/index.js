@@ -2,8 +2,6 @@ import connectDB from "./config/db_connection.js";
 import express from "express";
 import morgan from "morgan";
 import ticketsRoute from "./routes/ticket.routes.js";
-import ticketsFilterRoute from "./routes/ticket.filters.route.js";
-import usuariosRoutes from "./routes/users.routes.js";
 import dashboard from "./routes/dashboard.routes.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -36,8 +34,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("temp", express.static(path.join(__dirname, "temp")));
 app.use(ticketsRoute);
-app.use(ticketsFilterRoute);
-app.use(usuariosRoutes);
 app.use(dashboard);
 
 connectDB();

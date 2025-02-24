@@ -1,34 +1,72 @@
 import { TICKETS } from "../models/index.js";
 import { toZonedTime } from "date-fns-tz";
 export const putResolverTicket = async (
-  _id,
-  estado,
-  idResolutor,
-  descripcionResolucion,
+  userId,
+  Estado,
   nombre,
-  rol
+  rol,
+  ticketId,
+  ticketData,
+  session
 ) => {
   const RES = await TICKETS.findOneAndUpdate(
-    { _id },
+    { _id: ticketId },
     {
       $set: {
-        Estado: estado,
-        Resuelto_por: idResolutor,
-        Respuesta_cierre_reasignado: descripcionResolucion,
+        Estado,
+        Resuelto_por: userId,
+        ...ticketData,
       },
       $push: {
         Historia_ticket: {
-          Nombre: idResolutor,
+          Nombre: userId,
           Mensaje:
             rol === "Usuario"
-              ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${descripcionResolucion}`
-              : `El ticket ha sido resuelto por ${nombre}(${rol}).`,
+              ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`
+              : `El ticket ha sido resuelto por ${nombre}(${rol}).\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`,
           Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       },
-    }
+    },
+    { session, returnDocument: "after" }
   );
   return RES;
+};
+
+export const putAsignarTicket = async (
+  ticketId,
+  Estado,
+  ticketData,
+  userId,
+  nombre,
+  rol,
+  session
+) => {
+  try {
+    const result = TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      {
+        $set: {
+          Estado,
+          ...ticketData,
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `El ticket ha sido asignado a un moderador por ${nombre}-${rol}.`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
+        },
+      },
+      { session, returnDocument: "after" }
+    );
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
 };
 
 export const putReasignarTicket = async (
@@ -61,29 +99,26 @@ export const putReasignarTicket = async (
 };
 
 export const putCerrarTicket = async (
-  _id,
-  estado,
-  idCerradoPor,
-  descripcionCierre,
-  causaCierre,
-  id,
-  nombreCerrador,
-  rol
+  ticketId,
+  Estado,
+  userId,
+  nombre,
+  rol,
+  ticketData
 ) => {
   const RES = await TICKETS.findOneAndUpdate(
-    { _id },
+    { _id: ticketId },
     {
       $set: {
-        Estado: estado,
-        Cerrado_por: idCerradoPor,
-        Descripcion_cierre: descripcionCierre,
-        Causa: causaCierre,
+        ...ticketData,
+        Estado,
+        Cerrado_por: userId,
         Fecha_hora_cierre: toZonedTime(new Date(), "America/Mexico_City"),
       },
       $push: {
         Historia_ticket: {
-          Nombre: id,
-          Mensaje: `El ticket fue cerrado por ${nombreCerrador}(${rol})`,
+          Nombre: userId,
+          Mensaje: `El ticket fue cerrado por ${nombre}(${rol}).\nDescripción:\n${ticketData.Descripcion_cierre}`,
           Fecha: toZonedTime(new Date(), "America/Mexico_City"),
         },
       },
@@ -128,53 +163,77 @@ export const putReabrirTicket = async (
   }
 };
 
-export const putAceptarResolucion = async (_id, estado, id, nombre, rol) => {
-  const RES = await TICKETS.findOneAndUpdate(
-    { _id },
-    {
-      $set: { Estado: estado },
-      $push: {
-        Historia_ticket: {
-          Nombre: id,
-          Mensaje: `${nombre}(${rol}) ha aceptado la solucion del Resolutor. El estado del ticket es cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
-          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+export const putAceptarResolucion = async (
+  ticketId,
+  Estado,
+  Nombre,
+  userId,
+  nombre,
+  rol,
+  session
+) => {
+  try {
+    const result = await TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      {
+        $set: { Estado },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `${nombre}(${rol}) ha aceptado la solucion de ${Nombre}(Resolutor). El estado del ticket es cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
         },
       },
+      { session, returnDocument: "after" }
+    );
+    if (!result) {
+      return false;
     }
-  );
-
-  return RES;
+    return result;
+  } catch (error) {
+    return false;
+  }
 };
 
 export const putRechazarResolucion = async (
-  _id,
-  estado,
-  id,
+  ticketId,
+  Estado,
+  Nombre,
+  feedback,
+  userId,
   nombre,
   rol,
-  motivoRechazo
+  session
 ) => {
-  const RES = await TICKETS.findOneAndUpdate(
-    { _id },
-    {
-      $set: {
-        Estado: estado,
-      },
-      $unset: {
-        Resuelto_por: "",
-        Respuesta_cierre_reasignado: "",
-      },
-      $push: {
-        Historia_ticket: {
-          Nombre: id,
-          Mensaje: `${nombre}(${rol}) ha rechazado la solucion del Resolutor. El estado del ticket es cambiado a "Abierto". \nMotivo:\n${motivoRechazo}`,
-          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+  try {
+    const result = await TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      {
+        $set: {
+          Estado,
+        },
+        $unset: {
+          Resuelto_por: "",
+          Respuesta_cierre_reasignado: "",
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `${nombre}(${rol}) ha rechazado la solucion de ${Nombre}(Resolutor). El estado del ticket es cambiado a "Abierto". \nMotivo:\n${feedback}`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
         },
       },
+      { session, returnDocument: "after" }
+    );
+    if (!result) {
+      return false;
     }
-  );
-
-  return RES;
+    return result;
+  } catch (error) {
+    return false;
+  }
 };
 
 export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
@@ -209,10 +268,10 @@ export const putEditarTicket = async (ticketEditado, userId, nombre, rol) => {
   }
 };
 
-export const putNota = async (userId, _id, nota, session) => {
+export const putNota = async (userId, ticketId, nota, session) => {
   try {
     const result = await TICKETS.findOneAndUpdate(
-      { _id },
+      { _id: ticketId },
       {
         $push: {
           Historia_ticket: {

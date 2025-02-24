@@ -74,6 +74,20 @@ export const getTicketsNuevosModerador = async (userId, Estado) => {
   }
 };
 
+export const getTicketsReabiertosModerador = async (userId, Estado) => {
+  try {
+    const result = await TICKETS.find({
+      $and: [{ Estado }, { Asignado_a: userId }],
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const getTicketsAdmin = async (Estado) => {
   try {
     const result = await TICKETS.find({ Estado }).lean();

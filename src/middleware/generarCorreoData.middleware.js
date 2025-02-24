@@ -22,7 +22,6 @@ export const generarCorreoData = async (req, res, next) => {
     };
     console.log("Correo data generado");
     req.ticketId = populateResult.Id;
-    req.ticketIdDb = populateResult._id;
     req.correoData = correoData;
 
     return next();

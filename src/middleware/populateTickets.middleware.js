@@ -10,12 +10,19 @@ export const populateTickets = async (req, res) => {
       { path: "Subcategoria", select: "Subcategoria _id" },
       { path: "Prioridad"},
       { path: "Estado" },
-      { path: "Asignado_a", select: "Nombre Coordinacion Area _id" },
-      { path: "Reasignado_a", select: "Nombre Coordinacion Area _id" },
-      { path: "Resuelto_por", select: "Nombre Coordinacion Area _id" },
+      { path: "Asignado_a", select: "Nombre Area _id" },
+      { path: "Reasignado_a", select: "Nombre Area _id" },
+      { path: "Resuelto_por", select: "Nombre Area _id" },
       { path: "Creado_por", select: "Nombre Area _id" },
       { path: "Area_reasignado_a", select: "Area _id" },
-      { path: "Cerrado_por", select: "Nombre Coordinacion Area _id" },
+      { path: "Cerrado_por", select: "Nombre Area _id" },
+      {
+        path: "Resuelto_por",
+        select: "Nombre Correo _id",
+        populate: [
+          { path: "Area", select: "Area _id" },
+        ],
+      },
       {
         path: "Cliente",
         select: "Nombre Correo Telefono Ubicacion _id",
