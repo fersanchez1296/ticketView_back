@@ -143,6 +143,11 @@ const ticketModel = new Schema(
       trim: true,
       default: false,
     },
+    standby: {
+      type: Boolean,
+      trim: true,
+      default: false,
+    },
   },
   {
     timestamps: true,

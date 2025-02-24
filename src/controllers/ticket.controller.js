@@ -75,7 +75,6 @@ export const createTicket = async (req, res, next) => {
     const { userId, nombre, rol, correo } = req.session.user;
     let Asignado_a = {};
     let Estado = {};
-    console.log("standby", ticketState.standby);
     if (ticketState.standby) {
       Estado = await Gets.getEstadoTicket("STANDBY");
       Asignado_a = await USUARIO.findOne({ Username: "standby" }).lean();
@@ -100,7 +99,6 @@ export const createTicket = async (req, res, next) => {
         ? Asignado_a.Area[0]
         : ticketState.Area_asignado,
     };
-    console.log("ticketstate", ticketState.standby);
     const RES = await postCrearTicket(
       ticketState,
       userId,
@@ -108,7 +106,6 @@ export const createTicket = async (req, res, next) => {
       rol,
       session
     );
-    console.log(RES);
     if (!RES) {
       console.log("Error al guardar ticket");
       console.log("Transaccion abortada");
