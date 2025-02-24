@@ -20,7 +20,6 @@ export const generarCorreoData = async (req, res, next) => {
       ubicacion: populateResult.Cliente.Ubicacion,
       standby: populateResult.standby,
     };
-    console.log("Correo data generado",correoData);
     req.ticketId = populateResult.Id;
     req.correoData = correoData;
 
