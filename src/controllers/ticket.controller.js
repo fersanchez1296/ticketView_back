@@ -99,6 +99,7 @@ export const createTicket = async (req, res, next) => {
         ? Asignado_a.Area[0]
         : ticketState.Area_asignado,
     };
+    console.log("ticketstate", ticketState)
     const RES = await postCrearTicket(
       ticketState,
       userId,
@@ -106,6 +107,7 @@ export const createTicket = async (req, res, next) => {
       rol,
       session
     );
+    console.log("ticketstate", RES)
     if (!RES) {
       console.log("Error al guardar ticket");
       console.log("Transaccion abortada");

@@ -8,6 +8,7 @@ export const generarCorreoData = async (req, res, next) => {
         select: "Nombre Correo Telefono Extension Ubicacion _id",
       },
     ]);
+    console.log("populateResult", populateResult);
 
     const correoData = {
       idTicket: populateResult.Id,
@@ -20,6 +21,7 @@ export const generarCorreoData = async (req, res, next) => {
       ubicacion: populateResult.Cliente.Ubicacion,
       standby: populateResult.standby,
     };
+    console.log("correodata", correoData);
     req.ticketId = populateResult.Id;
     req.correoData = correoData;
 
