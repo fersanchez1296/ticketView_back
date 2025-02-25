@@ -178,7 +178,7 @@ export const asignarTicket = async (req, res, next) => {
     }
     req.ticket = result;
     req.ticketIdDb = result._id;
-    req.channel = "channel_crearTicket";
+    req.channel = "channel_asignarTicket";
     return next();
   } catch (error) {
     console.log(error);
