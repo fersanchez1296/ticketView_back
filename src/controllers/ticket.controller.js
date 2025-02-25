@@ -139,7 +139,7 @@ export const asignarTicket = async (req, res, next) => {
     const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
-    const ticketData = JSON.parse(req.body.ticketData);
+    let ticketData = JSON.parse(req.body.ticketData);
     if (ticketData.tiempo) {
       const tiempo = ticketData.tiempo;
       ticketData = {
