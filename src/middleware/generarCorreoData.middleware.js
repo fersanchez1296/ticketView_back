@@ -2,7 +2,7 @@ import { TICKETS } from "../models/index.js";
 export const generarCorreoData = async (req, res, next) => {
   try {
     const populateResult = await TICKETS.populate(req.ticket, [
-      { path: "Asignado_a", select: "Correo _id" },
+      { path: "Asignado_a", select: "Nombre Correo _id" },
       { path: "Reasignado_a", select: "Correo _id" },
       {
         path: "Cliente",
@@ -23,6 +23,7 @@ export const generarCorreoData = async (req, res, next) => {
       standby: populateResult.standby,
       descripcionTicketRegresado: populateResult.Descripcion_respuesta_cliente ?? "",
       correoResol: populateResult.Reasignado_a?.Correo ?? "",
+      Asignado_a: populateResult.Asignado_a?.Nombre ?? "",
     };
     console.log("correodata", correoData);
     req.ticketId = populateResult.Id;

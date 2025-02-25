@@ -48,6 +48,7 @@ export const putAsignarTicket = async (
       {
         $set: {
           Estado,
+          standby: false,
           ...ticketData,
         },
         $push: {
