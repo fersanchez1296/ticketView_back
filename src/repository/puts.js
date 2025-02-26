@@ -21,7 +21,7 @@ export const putResolverTicket = async (
         Historia_ticket: {
           Nombre: userId,
           Mensaje:
-            rol === "Usuario"
+          ticketData.vistoBueno === true
               ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`
               : `El ticket ha sido resuelto por ${nombre}(${rol}).\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`,
           Fecha: toZonedTime(new Date(), "America/Mexico_City"),
