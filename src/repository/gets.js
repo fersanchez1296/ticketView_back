@@ -12,6 +12,7 @@ import {
   DIRECCION_GENERAL,
   DEPENDENCIAS,
   CLIENTES,
+  MEDIO
 } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
@@ -579,6 +580,7 @@ export const getInfoSelectsCrearTicket = async (
       USUARIOS_,
       DIRECCIONESGENERALES_,
       DEPENDENCIAS_,
+      MEDIO_,
     ] = await Promise.all([
       ESTADOS.find({
         Estado: "NUEVO",
@@ -599,6 +601,7 @@ export const getInfoSelectsCrearTicket = async (
       ),
       DIRECCION_GENERAL.find(),
       DEPENDENCIAS.find(),
+      MEDIO.find(),
     ]);
 
     const AREASRESOLUTORES = await Promise.all(
@@ -630,6 +633,7 @@ export const getInfoSelectsCrearTicket = async (
       direccion_generales: DIRECCIONESGENERALES_,
       areasResolutores: AREASRESOLUTORES,
       dependencias: DEPENDENCIAS_,
+      medios: MEDIO_,
     };
   } catch (error) {
     return false;
@@ -855,19 +859,6 @@ export const getPrioridades = async () => {
   }
 };
 
-export const getTicketsPorUsuario = async (userId) => {
-  try {
-    const result = await TICKETS.find({ Reasignado_a: new ObjectId(userId) });
-    if (!result) {
-      return false;
-    }
-    return result;
-  } catch (error) {
-    console.log("error en repositorio", error);
-    return false;
-  }
-};
-
 export const getClientesPorDependencia = async (Dependencia) => {
   try {
     const clientes = await CLIENTES.find({
@@ -891,6 +882,18 @@ export const getTicketpor_id = async (id) => {
     return RES;
   } catch (error) {
     console.error("Error al obtener los correos:", error);
+    return false;
+  }
+};
+
+export const ticketsResolutor = async (userId) => {
+  try {
+    const result = await TICKETS.find({ Reasignado_a: new ObjectId(userId) }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
     return false;
   }
 };

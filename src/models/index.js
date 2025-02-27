@@ -14,6 +14,7 @@ import CLIENTES from "./clientes.model.js";
 import DEPENDENCIAS from "./dependencia.model.js"
 import ROLES from "./roles.model.js"
 import Counter from "./counter.model.js";
+import MEDIO from "./medio.model.js";
 export {
     TICKETS,
     CATEGORIAS,
@@ -30,5 +31,6 @@ export {
     CLIENTES,
     DEPENDENCIAS,
     ROLES,
+    MEDIO,
     Counter,
 }

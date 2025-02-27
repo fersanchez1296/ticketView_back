@@ -279,7 +279,7 @@ export const putNota = async (userId, ticketId, nota, session) => {
         $push: {
           Historia_ticket: {
             Nombre: userId,
-            Mensaje: nota,
+            Mensaje: `Nota:\n${nota}`,
             Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },
@@ -298,7 +298,7 @@ export const putNota = async (userId, ticketId, nota, session) => {
 export const putTicketPendiente = async (
   ticketId,
   Estado,
-  DescripcionPendiente,
+  cuerpo,
   userId,
   nombre,
   rol,
@@ -314,7 +314,7 @@ export const putTicketPendiente = async (
         $push: {
           Historia_ticket: {
             Nombre: userId,
-            Mensaje: `El ticket se ha marcado como pendiente por el resolutor: ${nombre} (${rol}). Con la descripción (${DescripcionPendiente})`,
+            Mensaje: `Ticket marcado como pendiente. ${nombre}-${rol} se ha puesto en contacto mediante correo electrónico con el cliente. Cuerpo del correo: <${cuerpo}>."`,
             Fecha: toZonedTime(new Date(), "America/Mexico_City"),
           },
         },

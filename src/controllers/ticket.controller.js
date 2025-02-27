@@ -672,15 +672,15 @@ export const obtenerTicketsPorArea = async (req, res, next) => {
       return res.status(400).json({ desc: "No se encontraron areas." });
     }
     req.tickets = TICKETS;
-    next();
+    return next();
   } catch (error) {
     console.error("Error al obtener los tickets:", error);
     res.status(500).json({ message: "Error al obtener los datos" });
   }
 };
-
+//TODO este debe estar en usuarios
 export const obtenerAreasModerador = async (req, res, next) => {
-  const { Id, Area } = req.session.user;
+  const { Area } = req.session.user;
   try {
     const AREAS = await Gets.getAreasModerador(Area);
     if (!AREAS) {
@@ -688,7 +688,6 @@ export const obtenerAreasModerador = async (req, res, next) => {
     }
     return res.status(200).json({ areas: AREAS });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
@@ -704,29 +703,10 @@ export const buscarTicket = async (req, res, next) => {
       });
     }
     req.tickets = RES;
-    next();
+    return next();
   } catch (error) {
     console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
-  }
-};
-
-export const ticketsPorResolutor = async (req, res, next) => {
-  try {
-    const userId = req.params.userId;
-    const result = await Gets.getTicketsPorUsuario(userId);
-    if (!result) {
-      return res
-        .status(404)
-        .json({ desc: "No se encontraron tickets para este usuario" });
-    }
-    req.tickets = result;
-    return next();
-  } catch (error) {
-    console.log("error", error);
-    return res.status(500).json({
-      desc: "Ocurrio un error al obtener los ticket del usuario. Error interno en el servidor.",
-    });
   }
 };
 
@@ -932,14 +912,14 @@ export const exportTicketsToExcel = async (req, res) => {
 export const pendienteTicket = async (req, res, next) => {
   const session = req.mongoSession;
   try {
-    const { DescripcionPendiente } = req.body;
+    const { cuerpo } = req.body;
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
     const Estado = await Gets.getEstadoTicket("PENDIENTES");
     const result = await putTicketPendiente(
       ticketId,
       Estado,
-      DescripcionPendiente,
+      cuerpo,
       userId,
       nombre,
       rol,
@@ -952,6 +932,11 @@ export const pendienteTicket = async (req, res, next) => {
         .status(500)
         .json({ message: "Error al cambiar el estadio del ticket." });
     }
+    req.ticket = result;
+    req.cuerpo = cuerpo;
+    req.contactoCliente = true;
+    req.ticketIdDb = result._id;
+    req.channel = "channel_contactoCliente";
     return next();
   } catch (error) {
     await session.abortTransaction();
@@ -1094,5 +1079,24 @@ export const regresarTicket = async (req, res, next) => {
     await session.abortTransaction();
     session.endSession();
     return res.status(500).json({ desc: "Error interno en el servidor" });
+  }
+};
+
+export const obtenerTicketsResolutor = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const result = await Gets.ticketsResolutor(userId);
+    if (!result) {
+      console.log("error");
+      return res
+        .status(400)
+        .json({ desc: "Error al obtener los ticket del resolutor." });
+    }
+    req.tickets = result;
+    return next();
+  } catch (error) {
+    return res.status(500).json({
+      desc: "Error al obtener los tickets del resolutor. Error interno en el servidor.",
+    });
   }
 };

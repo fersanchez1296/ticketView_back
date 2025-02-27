@@ -13,11 +13,9 @@ import {
   obtenerAreas,
   obtenerTicketsPorArea,
   createTicket,
-  obtenerAreasModerador,
   buscarTicket,
   editTicket,
   asignarTicket,
-  ticketsPorResolutor,
   crearNota,
   reabrirFields,
   exportTicketsToExcel,
@@ -26,6 +24,7 @@ import {
   encontartTicket,
   regresarcorreos,
   regresarTicket,
+  obtenerTicketsResolutor
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -157,12 +156,6 @@ router.get(
   formatearCamposFecha,
   populateTickets
 );
-router.get(
-  "/tickets/coordinacion",
-  verifyToken,
-  verifyRole(["Moderador"]),
-  obtenerAreasModerador
-);
 router.post(
   "/tickets/buscar/:id",
   verifyToken,
@@ -197,10 +190,10 @@ router.put(
 );
 
 router.get(
-  "/tickets/resolutor/:userId",
+  "/tickets/resolutor/:id",
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador"]),
-  ticketsPorResolutor,
+  obtenerTicketsResolutor,
   formatearCamposFecha,
   populateTickets
 );
@@ -231,7 +224,8 @@ router.put(
   startTransaction,
   pendienteTicket,
   endTransaction,
-  genericResponse
+  generarCorreoData,
+  enviarCorreo,
 );
 
 router.get("/tickets/clientes/dependencias", verifyToken, dependenciasClientes);

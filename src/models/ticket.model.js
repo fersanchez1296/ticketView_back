@@ -148,6 +148,11 @@ const ticketModel = new Schema(
       trim: true,
       default: false,
     },
+    Medio: {
+      type: Schema.Types.ObjectId,
+      trim: true,
+      ref: "MEDIO",
+    },
   },
   {
     timestamps: true,
