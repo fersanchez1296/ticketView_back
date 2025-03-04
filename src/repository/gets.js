@@ -12,7 +12,7 @@ import {
   DIRECCION_GENERAL,
   DEPENDENCIAS,
   CLIENTES,
-  MEDIO
+  MEDIO,
 } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
@@ -20,7 +20,7 @@ const ObjectId = mongoose.Types.ObjectId;
 export const getTicketsUsuario = async (userId, Estado) => {
   try {
     const result = await TICKETS.find({
-      $and: [{ Estado }, { Reasignado_a: userId }],
+      $and: [{ Estado }, { Reasignado_a: { $in: userId } }],
     }).lean();
     if (!result) {
       return false;
@@ -34,7 +34,11 @@ export const getTicketsUsuario = async (userId, Estado) => {
 export const getTicketsModerador = async (userId, Estado) => {
   try {
     const result = await TICKETS.find({
-      $and: [{ Estado }, { Asignado_a: userId }, { Reasignado_a: userId }],
+      $and: [
+        { Estado },
+        { Asignado_a: { $in: userId } },
+        { Reasignado_a: { $in: userId } },
+      ],
     }).lean();
     if (!result) {
       return false;
@@ -64,7 +68,7 @@ export const getTicketsNuevosModerador = async (userId, Estado) => {
     const result = await TICKETS.find({
       $and: [
         { Estado: new ObjectId(Estado) },
-        { Asignado_a: new ObjectId(userId) },
+        { Asignado_a: { $in: new ObjectId(userId) } },
       ],
     }).lean();
     if (!result) {
@@ -79,7 +83,7 @@ export const getTicketsNuevosModerador = async (userId, Estado) => {
 export const getTicketsReabiertosModerador = async (userId, Estado) => {
   try {
     const result = await TICKETS.find({
-      $and: [{ Estado }, { Asignado_a: userId }],
+      $and: [{ Estado }, { Asignado_a: { $in: userId } }],
     }).lean();
     if (!result) {
       return false;
@@ -888,7 +892,9 @@ export const getTicketpor_id = async (id) => {
 
 export const ticketsResolutor = async (userId) => {
   try {
-    const result = await TICKETS.find({ Reasignado_a: new ObjectId(userId) }).lean();
+    const result = await TICKETS.find({
+      Reasignado_a: new ObjectId(userId),
+    }).lean();
     if (!result) {
       return false;
     }

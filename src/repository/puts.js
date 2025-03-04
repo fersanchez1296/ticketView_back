@@ -21,7 +21,7 @@ export const putResolverTicket = async (
         Historia_ticket: {
           Nombre: userId,
           Mensaje:
-          ticketData.vistoBueno === true
+            ticketData.vistoBueno === true
               ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`
               : `El ticket ha sido resuelto por ${nombre}(${rol}).\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`,
           Fecha: toZonedTime(new Date(), "America/Mexico_City"),
@@ -45,11 +45,13 @@ export const putAsignarTicket = async (
   try {
     const result = TICKETS.findOneAndUpdate(
       { _id: ticketId },
+      // { $unset: { Asignado_a: [] } },
       {
         $set: {
+          ...ticketData,
           Estado,
           standby: false,
-          ...ticketData,
+          Asignado_a: [ticketData.Asignado_a],
         },
         $push: {
           Historia_ticket: {

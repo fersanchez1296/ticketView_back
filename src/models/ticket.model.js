@@ -37,16 +37,10 @@ const ticketModel = new Schema(
       trim: true,
       ref: "ESTADOS",
     },
-    Area_asignado: {
-      type: Schema.Types.ObjectId,
-      trim: true,
-      ref: "AREA",
-    },
-    Asignado_a: {
-      type: Schema.Types.ObjectId,
-      trim: true,
-      ref: "USUARIOS",
-    },
+    Area: { type: mongoose.Schema.Types.ObjectId, ref: "AREA" },
+    Asignado_a: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "USUARIOS", default: [] },
+    ],
     Creado_por: {
       type: Schema.Types.ObjectId,
       trim: true,
@@ -89,14 +83,9 @@ const ticketModel = new Schema(
       type: Date,
       trim: true,
     },
-    Reasignado_a: {
-      type: Schema.Types.ObjectId,
-      ref: "USUARIOS",
-    },
-    Area_reasignado_a: {
-      type: Schema.Types.ObjectId,
-      ref: "AREA",
-    },
+    Reasignado_a: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "USUARIOS", default: [] },
+    ],
     Respuesta_cierre_reasignado: {
       type: String,
       trim: true,

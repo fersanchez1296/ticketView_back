@@ -97,11 +97,7 @@ export const createTicket = async (req, res, next) => {
       Creado_por: userId,
       standby: ticketState.standby,
       Asignado_a: ticketState.standby ? Asignado_a._id : ticketState.Asignado_a,
-      Area_asignado: ticketState.standby
-        ? Asignado_a.Area[0]
-        : ticketState.Area_asignado,
     };
-    console.log("ticketstate", ticketState);
     const RES = await postCrearTicket(
       ticketState,
       userId,
@@ -109,7 +105,6 @@ export const createTicket = async (req, res, next) => {
       rol,
       session
     );
-    console.log("ticketstate", RES);
     if (!RES) {
       console.log("Error al guardar ticket");
       console.log("Transaccion abortada");
@@ -157,7 +152,7 @@ export const asignarTicket = async (req, res, next) => {
       session.endSession();
       return res
         .status(404)
-        .json({ desc: "No se encontró el estado reabierto." });
+        .json({ desc: "No se encontró el estado Nuevo." });
     }
     const result = await putAsignarTicket(
       ticketId,
@@ -235,6 +230,7 @@ export const reasignarTicket = async (req, res, next) => {
       {
         $set: {
           ...reasignado,
+          Reasignado_a: [reasignado.Reasignado_a],
           Estado,
           vistoBueno: reasignado.vistoBueno,
         },
@@ -303,6 +299,7 @@ export const resolverTicket = async (req, res, next) => {
       Estado = await Gets.getEstadoTicket("REVISION");
     } else {
       Estado = await Gets.getEstadoTicket("RESUELTOS");
+      ticketData.Reasignado_a = userId;
     }
     if (!Estado) {
       await session.abortTransaction();
