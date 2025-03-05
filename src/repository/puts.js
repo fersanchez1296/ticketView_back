@@ -366,3 +366,35 @@ export const putTicketAbierto = async (
     return false;
   }
 };
+
+
+export const contactarCliente = async (
+  ticketId,
+  cuerpo,
+  userId,
+  nombre,
+  rol,
+  session
+) => {
+  try {
+    const respuesta = await TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      {
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Mensaje: `${nombre}-${rol} se ha puesto en contacto mediante correo electrónico con el cliente. Cuerpo del correo: <${cuerpo}>."`,
+            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          },
+        },
+      },
+      { session, returnDocument: "after" }
+    );
+    if (!respuesta) {
+      return false;
+    }
+    return respuesta;
+  } catch (error) {
+    return false;
+  }
+};

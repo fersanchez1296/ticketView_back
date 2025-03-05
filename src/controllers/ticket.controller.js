@@ -18,6 +18,7 @@ import {
   putRechazarResolucion,
   putAsignarTicket,
   putTicketPendiente,
+  contactarCliente,
   putEditarTicket,
   putTicketAbierto,
 } from "../repository/puts.js";
@@ -1095,5 +1096,39 @@ export const obtenerTicketsResolutor = async (req, res, next) => {
     return res.status(500).json({
       desc: "Error al obtener los tickets del resolutor. Error interno en el servidor.",
     });
+  }
+};
+
+export const contactoCliente = async (req, res, next) => {
+  const session = req.mongoSession;
+  try {
+    const { cuerpo } = req.body;
+    const ticketId = req.params.id;
+    const { userId, nombre, rol } = req.session.user;
+    const result = await contactarCliente(
+      ticketId,
+      cuerpo,
+      userId,
+      nombre,
+      rol,
+      session
+    );
+    if (!result) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ message: "Error al cambiar el estadio del ticket." });
+    }
+    req.ticket = result;
+    req.cuerpo = cuerpo;
+    req.contactoCliente = true;
+    req.ticketIdDb = result._id;
+    req.channel = "channel_contactoCliente";
+    return next();
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
 };

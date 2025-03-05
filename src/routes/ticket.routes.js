@@ -24,7 +24,8 @@ import {
   encontartTicket,
   regresarcorreos,
   regresarTicket,
-  obtenerTicketsResolutor
+  obtenerTicketsResolutor,
+  contactoCliente
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -223,6 +224,17 @@ router.put(
   verifyRole(["Usuario"]),
   startTransaction,
   pendienteTicket,
+  endTransaction,
+  generarCorreoData,
+  enviarCorreo,
+);
+
+router.put(
+  "/tickets/contactoCliente/:id",
+  verifyToken,
+  verifyRole(["Root"]),
+  startTransaction,
+  contactoCliente,
   endTransaction,
   generarCorreoData,
   enviarCorreo,
