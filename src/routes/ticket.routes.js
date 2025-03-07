@@ -25,7 +25,7 @@ import {
   regresarcorreos,
   regresarTicket,
   obtenerTicketsResolutor,
-  contactoCliente
+  contactoCliente,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -146,7 +146,7 @@ router.put(
 router.get(
   "/tickets/historico",
   verifyToken,
-  verifyRole(["Root", "Administrador"]),
+  verifyRole(["Root", "Administrador", "Moderador"]),
   obtenerAreas
 );
 router.get(
@@ -226,7 +226,7 @@ router.put(
   pendienteTicket,
   endTransaction,
   generarCorreoData,
-  enviarCorreo,
+  enviarCorreo
 );
 
 router.put(
@@ -237,7 +237,7 @@ router.put(
   contactoCliente,
   endTransaction,
   generarCorreoData,
-  enviarCorreo,
+  enviarCorreo
 );
 
 router.get("/tickets/clientes/dependencias", verifyToken, dependenciasClientes);
