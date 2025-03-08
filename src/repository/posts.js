@@ -1,5 +1,5 @@
 import { TICKETS, ESTADOS, USUARIO } from "../models/index.js";
-import { toZonedTime } from "date-fns-tz";
+import { fechaActual } from "../utils/fechas.js";
 export const postCrearTicket = async (
   nuevoTicket,
   userId,
@@ -9,16 +9,27 @@ export const postCrearTicket = async (
 ) => {
   try {
     console.log("Guardando Ticket...");
+    const Historia_ticket = [
+      {
+        Nombre: userId,
+        Titulo: "Ticket Creado",
+        Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
+        Fecha: fechaActual,
+      },
+    ];
+    if (!nuevoTicket.standby) {
+      Historia_ticket.push({
+        Nombre: userId,
+        Titulo: "Ticket Asignado",
+        Mensaje: `El ticket ha sido asignado a un moderador por ${nombre} (${rol}).`,
+        Fecha: fechaActual,
+      });
+    }
     const newTicket = new TICKETS({
       ...nuevoTicket,
       Asignado_a: [nuevoTicket.Asignado_a],
-      Historia_ticket: [
-        {
-          Nombre: userId,
-          Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
-          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
-        },
-      ],
+      Fecha_hora_ultima_modificacion: fechaActual,
+      Historia_ticket,
     });
     const savedTicket = await newTicket.save({ session });
     if (!savedTicket) {
@@ -26,14 +37,6 @@ export const postCrearTicket = async (
     }
     return savedTicket;
   } catch (error) {
-    console.log(
-      "Estado de la sesión al caer al catch del repositorio:",
-      session.inTransaction()
-    );
-    console.log(
-      "Ocurrio un error al guardar el ticket en el respositorio. Transaccion abortada."
-    );
-    console.log(error);
     return false;
   }
 };

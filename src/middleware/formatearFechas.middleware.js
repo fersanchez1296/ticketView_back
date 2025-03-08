@@ -14,6 +14,8 @@ export const formatearCamposFecha = (req, res, next) => {
       return {
         ...ticket,
         Fecha_hora_creacion: formatFecha(ticket.Fecha_hora_creacion),
+        Fecha_hora_resolucion: formatFecha(ticket.Fecha_hora_resolucion),
+        Fecha_hora_reabierto: formatFecha(ticket.Fecha_hora_reabierto),
         Fecha_limite_resolucion_SLA: formatFecha(
           ticket.Fecha_limite_resolucion_SLA
         ),

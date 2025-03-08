@@ -28,6 +28,7 @@ import exceljs from "exceljs";
 import path from "path";
 import fs from "fs";
 import { __dirname, __filename } from "../config/config.js";
+import { fechaActual, fechaDefecto } from "../utils/fechas.js";
 const ObjectId = mongoose.Types.ObjectId;
 
 export const getTickets = async (req, res, next) => {
@@ -74,7 +75,6 @@ export const createTicket = async (req, res, next) => {
 
   try {
     let ticketState = req.ticketState;
-    const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
     const { userId, nombre, rol, correo } = req.session.user;
     let Asignado_a = {};
     let Estado = {};
@@ -82,8 +82,8 @@ export const createTicket = async (req, res, next) => {
       Estado = await Gets.getEstadoTicket("STANDBY");
       Asignado_a = await USUARIO.findOne({ Username: "standby" }).lean();
     } else {
-      Asignado_a = ticketState.Asignado_a;
       Estado = await Gets.getEstadoTicket("NUEVOS");
+      Asignado_a = ticketState.Asignado_a;
     }
 
     ticketState = {
@@ -93,8 +93,10 @@ export const createTicket = async (req, res, next) => {
       Fecha_hora_creacion: fechaActual,
       Fecha_limite_resolucion_SLA: addHours(fechaActual, ticketState.tiempo),
       Fecha_limite_respuesta_SLA: addHours(fechaActual, ticketState.tiempo),
-      Fecha_hora_ultima_modificacion: new Date("1900-01-01T18:51:03.980+00:00"),
-      Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
+      Fecha_hora_ultima_modificacion: fechaDefecto,
+      Fecha_hora_cierre: fechaDefecto,
+      Fecha_hora_resolucion: fechaDefecto,
+      Fecha_hora_reabierto: fechaDefecto,
       Creado_por: userId,
       standby: ticketState.standby,
       Asignado_a: ticketState.standby ? Asignado_a._id : ticketState.Asignado_a,
@@ -132,7 +134,6 @@ export const createTicket = async (req, res, next) => {
 export const asignarTicket = async (req, res, next) => {
   const session = req.mongoSession;
   try {
-    const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
     let ticketData = JSON.parse(req.body.ticketData);
@@ -142,7 +143,7 @@ export const asignarTicket = async (req, res, next) => {
         ...ticketData,
         Fecha_limite_resolucion_SLA: addHours(fechaActual, tiempo),
         Fecha_limite_respuesta_SLA: addHours(fechaActual, tiempo),
-        Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
+        Fecha_hora_cierre: fechaDefecto,
       };
       delete ticketData.tiempo;
     }
@@ -151,9 +152,7 @@ export const asignarTicket = async (req, res, next) => {
       console.log("Transaccion abortada.");
       await session.abortTransaction();
       session.endSession();
-      return res
-        .status(404)
-        .json({ desc: "No se encontró el estado Nuevo." });
+      return res.status(404).json({ desc: "No se encontró el estado Nuevo." });
     }
     const result = await putAsignarTicket(
       ticketId,
@@ -193,7 +192,6 @@ export const reasignarTicket = async (req, res, next) => {
   const sessionDB = await mongoose.startSession();
   sessionDB.startTransaction();
   const ticketId = req.params.id;
-  const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
   const { userId, nombre, rol, correo } = req.session.user;
   function deleteCamposTiempo(body) {
     const {
@@ -238,8 +236,9 @@ export const reasignarTicket = async (req, res, next) => {
         $push: {
           Historia_ticket: {
             Nombre: userId,
+            Titulo: "Ticket Reasignado",
             Mensaje: `El ticket ha sido reasignado a ${reasignado.Nombre} por ${nombre} - ${rol}`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: fechaActual,
           },
         },
       },
@@ -452,7 +451,6 @@ export const cerrarTicket = async (req, res, next) => {
 export const reabrirTicket = async (req, res, next) => {
   const session = req.mongoSession;
   try {
-    const fechaActual = toZonedTime(new Date(), "America/Mexico_City");
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
     let ticketData = JSON.parse(req.body.ticketData);
@@ -462,7 +460,7 @@ export const reabrirTicket = async (req, res, next) => {
         ...ticketData,
         Fecha_limite_resolucion_SLA: addHours(fechaActual, tiempo),
         Fecha_limite_respuesta_SLA: addHours(fechaActual, tiempo),
-        Fecha_hora_cierre: new Date("1900-01-01T18:51:03.980+00:00"),
+        Fecha_hora_cierre: fechaDefecto,
       };
       delete ticketData.tiempo;
     }
@@ -556,7 +554,6 @@ export const crearNota = async (req, res, next) => {
     req.ticketIdDb = result._id;
     return next();
   } catch (error) {
-    console.log(error);
     console.log("Transacción abortada");
     await session.abortTransaction();
     session.endSession();

@@ -3,6 +3,7 @@ import Counter from "../models/counter.model.js"; // Importar el modelo Counter
 
 const HistoriaTicketSchema = new Schema({
   Nombre: { type: Schema.Types.ObjectId, ref: "USUARIOS", required: true },
+  Titulo: { type: String, required: true, trim: true },
   Mensaje: { type: String, required: true, trim: true },
   Fecha: { type: Date, required: true, default: Date.now },
 });
@@ -14,23 +15,18 @@ const fileSchema = new Schema({
 
 const ticketModel = new Schema(
   {
+    //campos del cliente
+    Cliente: {
+      type: Schema.Types.ObjectId,
+      trim: true,
+      ref: "Clientes",
+    },
+    //campos del ticket
     Id: { type: Number, unique: true },
     Tipo_incidencia: {
       type: Schema.Types.ObjectId,
       trim: true,
       ref: "TIPO_TICKET",
-    },
-    Fecha_hora_creacion: {
-      type: Date,
-      trim: true,
-    },
-    Fecha_limite_resolucion_SLA: {
-      type: Date,
-      trim: true,
-    },
-    Fecha_hora_ultima_modificacion: {
-      type: Date,
-      trim: true,
     },
     Estado: {
       type: Schema.Types.ObjectId,
@@ -38,9 +34,6 @@ const ticketModel = new Schema(
       ref: "ESTADOS",
     },
     Area: { type: mongoose.Schema.Types.ObjectId, ref: "AREA" },
-    Asignado_a: [
-      { type: mongoose.Schema.Types.ObjectId, ref: "USUARIOS", default: [] },
-    ],
     Creado_por: {
       type: Schema.Types.ObjectId,
       trim: true,
@@ -61,11 +54,6 @@ const ticketModel = new Schema(
       trim: true,
       ref: "SUBCATEGORIA",
     },
-    Cliente: {
-      type: Schema.Types.ObjectId,
-      trim: true,
-      ref: "Clientes",
-    },
     Descripcion: {
       type: String,
       trim: true,
@@ -75,38 +63,15 @@ const ticketModel = new Schema(
       trim: true,
       ref: "PRIORIDADES",
     },
-    Fecha_limite_respuesta_SLA: {
-      type: Date,
-      trim: true,
-    },
-    Fecha_hora_cierre: {
-      type: Date,
-      trim: true,
-    },
-    Reasignado_a: [
-      { type: mongoose.Schema.Types.ObjectId, ref: "USUARIOS", default: [] },
-    ],
-    Respuesta_cierre_reasignado: {
-      type: String,
-      trim: true,
-    },
-    Fecha_hora_resolucion: {
-      type: Date,
-      trim: true,
-    },
-    Resuelto_por: {
+    Medio: {
       type: Schema.Types.ObjectId,
       trim: true,
-      ref: "USUARIOS",
+      ref: "MEDIO",
     },
     Cerrado_por: {
       type: Schema.Types.ObjectId,
       trim: true,
       ref: "USUARIOS",
-    },
-    Historia_ticket: {
-      type: [HistoriaTicketSchema],
-      default: [],
     },
     Descripcion_cierre: {
       type: String,
@@ -121,12 +86,7 @@ const ticketModel = new Schema(
       type: String,
       trim: true,
       default: "",
-    },
-    Files: {
-      type: [fileSchema],
-      trim: true,
-      default: [],
-    },
+    }, 
     vistoBueno: {
       type: Boolean,
       trim: true,
@@ -137,10 +97,68 @@ const ticketModel = new Schema(
       trim: true,
       default: false,
     },
-    Medio: {
+    //archivos
+    Files: {
+      type: [fileSchema],
+      trim: true,
+      default: [],
+    },
+    //historia
+    Historia_ticket: {
+      type: [HistoriaTicketSchema],
+      default: [],
+    },
+    //tags
+    Tags: {
+      type: [String],
+      trim: true,
+      default: [],
+    },
+    //fechas
+    Fecha_hora_creacion: {
+      type: Date,
+      trim: true,
+    },
+    Fecha_limite_resolucion_SLA: {
+      type: Date,
+      trim: true,
+    },
+    Fecha_limite_respuesta_SLA: {
+      type: Date,
+      trim: true,
+    },
+    Fecha_hora_ultima_modificacion: {
+      type: Date,
+      trim: true,
+    },
+    Fecha_hora_cierre: {
+      type: Date,
+      trim: true,
+    },
+    Fecha_hora_resolucion: {
+      type: Date,
+      trim: true,
+    },
+    Fecha_hora_reabierto: {
+      type: Date,
+      trim: true,
+    },
+    //moderador
+    Asignado_a: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "USUARIOS", default: [] },
+    ],
+    //resolutor
+    Reasignado_a: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "USUARIOS", default: [] },
+    ],
+    Respuesta_cierre_reasignado: {
+      type: String,
+      trim: true,
+    },
+    Resuelto_por: {
       type: Schema.Types.ObjectId,
       trim: true,
-      ref: "MEDIO",
+      ref: "USUARIOS",
     },
   },
   {

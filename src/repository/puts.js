@@ -1,5 +1,5 @@
 import { TICKETS } from "../models/index.js";
-import { toZonedTime } from "date-fns-tz";
+import { fechaActual } from "../utils/fechas.js";
 export const putResolverTicket = async (
   userId,
   Estado,
@@ -13,6 +13,7 @@ export const putResolverTicket = async (
     { _id: ticketId },
     {
       $set: {
+        Fecha_hora_ultima_modificacion: fechaActual,
         Estado,
         Resuelto_por: userId,
         ...ticketData,
@@ -20,11 +21,14 @@ export const putResolverTicket = async (
       $push: {
         Historia_ticket: {
           Nombre: userId,
+          Titulo: ticketData.vistoBueno
+            ? "Ticket enviado a revisión"
+            : "Ticket resuelto",
           Mensaje:
             ticketData.vistoBueno === true
               ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`
               : `El ticket ha sido resuelto por ${nombre}(${rol}).\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`,
-          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          Fecha: fechaActual,
         },
       },
     },
@@ -49,6 +53,7 @@ export const putAsignarTicket = async (
       {
         $set: {
           ...ticketData,
+          Fecha_hora_ultima_modificacion: fechaActual,
           Estado,
           standby: false,
           Asignado_a: [ticketData.Asignado_a],
@@ -56,8 +61,9 @@ export const putAsignarTicket = async (
         $push: {
           Historia_ticket: {
             Nombre: userId,
+            Titulo: "Ticket Asignado",
             Mensaje: `El ticket ha sido asignado a un moderador por ${nombre}-${rol}.`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: fechaActual,
           },
         },
       },
@@ -85,14 +91,16 @@ export const putReasignarTicket = async (
     { _id },
     {
       $set: {
+        Fecha_hora_ultima_modificacion: fechaActual,
         Area_reasignado_a: Area,
         Reasignado_a: idUsuarioReasignado,
       },
       $push: {
         Historia_ticket: {
           Nombre: Id,
+          Titulo: "Ticket Reasignado",
           Mensaje: `El ticket ha sido reasignado a ${nombreReasignado} por ${NombreReasignador}(${rol})`,
-          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          Fecha: fechaActual,
         },
       },
     },
@@ -114,15 +122,17 @@ export const putCerrarTicket = async (
     {
       $set: {
         ...ticketData,
+        Fecha_hora_ultima_modificacion: fechaActual,
         Estado,
         Cerrado_por: userId,
-        Fecha_hora_cierre: toZonedTime(new Date(), "America/Mexico_City"),
+        Fecha_hora_cierre: fechaActual,
       },
       $push: {
         Historia_ticket: {
           Nombre: userId,
+          Titulo: "Ticket Cerrado",
           Mensaje: `El ticket fue cerrado por ${nombre}(${rol}).\nDescripción:\n${ticketData.Descripcion_cierre}`,
-          Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+          Fecha: fechaActual,
         },
       },
     }
@@ -144,14 +154,16 @@ export const putReabrirTicket = async (
       { _id },
       {
         $set: {
+          Fecha_hora_ultima_modificacion: fechaActual,
           Estado,
           ...ticketData,
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
+            Titulo: "Ticket Reabierto",
             Mensaje: `El ticket fue reabierto por ${nombre}-${rol}.`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: fechaActual,
           },
         },
       },
@@ -179,12 +191,13 @@ export const putAceptarResolucion = async (
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
       {
-        $set: { Estado },
+        $set: { Estado, Fecha_hora_ultima_modificacion: fechaActual },
         $push: {
           Historia_ticket: {
             Nombre: userId,
+            Titulo: "Ticket revisado y aceptado",
             Mensaje: `${nombre}(${rol}) ha aceptado la solucion de ${Nombre}(Resolutor). El estado del ticket es cambiado a "Resuelto" y se encuentra en espera de Cierre.`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: fechaActual,
           },
         },
       },
@@ -215,6 +228,7 @@ export const putRechazarResolucion = async (
       {
         $set: {
           Estado,
+          Fecha_hora_ultima_modificacion: fechaActual,
         },
         $unset: {
           Resuelto_por: "",
@@ -223,8 +237,9 @@ export const putRechazarResolucion = async (
         $push: {
           Historia_ticket: {
             Nombre: userId,
+            Titulo: "Ticket revisado y rechazado",
             Mensaje: `${nombre}(${rol}) ha rechazado la solucion de ${Nombre}(Resolutor). El estado del ticket es cambiado a "Abierto". \nMotivo:\n${feedback}`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: fechaActual,
           },
         },
       },
@@ -253,12 +268,14 @@ export const putEditarTicket = async (
       {
         $set: {
           ...ticketData,
+          Fecha_hora_ultima_modificacion: fechaActual,
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
+            Titulo: "Ticket editado",
             Mensaje: `El ticket ha sido editado por ${nombre} (${rol}).`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: fechaActual,
           },
         },
       },
@@ -278,11 +295,13 @@ export const putNota = async (userId, ticketId, nota, session) => {
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
       {
+        $set: { Fecha_hora_ultima_modificacion: fechaActual },
         $push: {
           Historia_ticket: {
             Nombre: userId,
+            Titulo: "Nota agregada",
             Mensaje: `Nota:\n${nota}`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: fechaActual,
           },
         },
       },
@@ -312,12 +331,14 @@ export const putTicketPendiente = async (
       {
         $set: {
           Estado,
+          Fecha_hora_ultima_modificacion: fechaActual,
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
+            Titulo: "Ticket pendiente",
             Mensaje: `Ticket marcado como pendiente. ${nombre}-${rol} se ha puesto en contacto mediante correo electrónico con el cliente. Cuerpo del correo: <${cuerpo}>."`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: fechaActual,
           },
         },
       },
@@ -347,12 +368,14 @@ export const putTicketAbierto = async (
       {
         $set: {
           Estado,
+          Fecha_hora_ultima_modificacion: fechaActual,
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
-            Mensaje: `El ticket ha sido enviado de regreso al resolutor por: ${nombre} (${rol}). Con la respuesta del cliente (${Descripcion_respuesta_cliente})`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Titulo: "Ticket devuelto",
+            Mensaje: `El ticket ha sido devuelto al resolutor por: ${nombre} (${rol}). Con la respuesta del cliente <${Descripcion_respuesta_cliente}>`,
+            Fecha: fechaActual,
           },
         },
       },
@@ -367,7 +390,6 @@ export const putTicketAbierto = async (
   }
 };
 
-
 export const contactarCliente = async (
   ticketId,
   cuerpo,
@@ -379,12 +401,14 @@ export const contactarCliente = async (
   try {
     const respuesta = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
+      { $set: { Fecha_hora_ultima_modificacion: fechaActual } },
       {
         $push: {
           Historia_ticket: {
             Nombre: userId,
+            Titulo: "Contacto con el cliente",
             Mensaje: `${nombre}-${rol} se ha puesto en contacto mediante correo electrónico con el cliente. Cuerpo del correo: <${cuerpo}>."`,
-            Fecha: toZonedTime(new Date(), "America/Mexico_City"),
+            Fecha: fechaActual,
           },
         },
       },
