@@ -3,8 +3,13 @@ import Counter from "../models/counter.model.js"; // Importar el modelo Counter
 
 const HistoriaTicketSchema = new Schema({
   Nombre: { type: Schema.Types.ObjectId, ref: "USUARIOS", required: true },
-  Titulo: { type: String, required: true, trim: true },
   Mensaje: { type: String, required: true, trim: true },
+  Fecha: { type: Date, required: true, default: Date.now },
+  Titulo: { type: String, required: true, trim: true },
+});
+
+const ReabiertoSchema = new Schema({
+  Descripcion: { type: String, trim: true },
   Fecha: { type: Date, required: true, default: Date.now },
 });
 
@@ -86,7 +91,7 @@ const ticketModel = new Schema(
       type: String,
       trim: true,
       default: "",
-    }, 
+    },
     vistoBueno: {
       type: Boolean,
       trim: true,
@@ -96,6 +101,10 @@ const ticketModel = new Schema(
       type: Boolean,
       trim: true,
       default: false,
+    },
+    Reabierto: {
+      type: [ReabiertoSchema],
+      default: [],
     },
     //archivos
     Files: {
@@ -136,10 +145,6 @@ const ticketModel = new Schema(
       trim: true,
     },
     Fecha_hora_resolucion: {
-      type: Date,
-      trim: true,
-    },
-    Fecha_hora_reabierto: {
       type: Date,
       trim: true,
     },

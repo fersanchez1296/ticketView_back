@@ -1,4 +1,4 @@
-import { TICKETS } from "../models/index.js";
+import { TICKETS, USUARIO } from "../models/index.js";
 import { fechaActual } from "../utils/fechas.js";
 export const putResolverTicket = async (
   userId,
@@ -13,6 +13,7 @@ export const putResolverTicket = async (
     { _id: ticketId },
     {
       $set: {
+        Fecha_hora_resolucion: fechaActual,
         Fecha_hora_ultima_modificacion: fechaActual,
         Estado,
         Resuelto_por: userId,
@@ -26,8 +27,8 @@ export const putResolverTicket = async (
             : "Ticket resuelto",
           Mensaje:
             ticketData.vistoBueno === true
-              ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`
-              : `El ticket ha sido resuelto por ${nombre}(${rol}).\nDescripcion resolucion:\n${ticketData.Respuesta_cierre_reasignado}`,
+              ? `El ticket ha sido enviado a revisión por ${nombre}(${rol}). En espera de respuesta del moderador.\nDescripcion resolucion:\n<${ticketData.Respuesta_cierre_reasignado}>`
+              : `El ticket ha sido resuelto por ${nombre}(${rol}).\nDescripcion resolucion:\n<${ticketData.Respuesta_cierre_reasignado}>`,
           Fecha: fechaActual,
         },
       },
@@ -35,6 +36,22 @@ export const putResolverTicket = async (
     { session, returnDocument: "after" }
   );
   return RES;
+};
+
+export const incTickets = async (userId, actualizarContador, session) => {
+  try {
+    const result = await USUARIO.findOneAndUpdate(
+      { _id: userId },
+      { $inc: { [`Tickets_resueltos.${actualizarContador}`]: 1 } },
+      { session }
+    );
+    if (!result) {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    return false;
+  }
 };
 
 export const putAsignarTicket = async (
@@ -150,19 +167,32 @@ export const putReabrirTicket = async (
   session
 ) => {
   try {
-    const result = TICKETS.findOneAndUpdate(
+    const result = await TICKETS.findOneAndUpdate(
       { _id },
       {
         $set: {
+          ...ticketData,
           Fecha_hora_ultima_modificacion: fechaActual,
           Estado,
-          ...ticketData,
+        },
+        $unset: {
+          Reasignado_a: "",
+          Respuesta_cierre_reasignado: "",
+          Resuelto_por: "",
+          Fecha_hora_cierre: "",
+          Fecha_hora_resolucion: "",
+          Cerrado_por: "",
+          Descripcion_cierre: "",
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
             Titulo: "Ticket Reabierto",
             Mensaje: `El ticket fue reabierto por ${nombre}-${rol}.`,
+            Fecha: fechaActual,
+          },
+          Reabierto: {
+            Descripcion: ticketData.descripcionReabierto,
             Fecha: fechaActual,
           },
         },
@@ -191,7 +221,11 @@ export const putAceptarResolucion = async (
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
       {
-        $set: { Estado, Fecha_hora_ultima_modificacion: fechaActual },
+        $set: {
+          Estado,
+          Fecha_hora_ultima_modificacion: fechaActual,
+          vistoBueno: false,
+        },
         $push: {
           Historia_ticket: {
             Nombre: userId,
@@ -233,6 +267,7 @@ export const putRechazarResolucion = async (
         $unset: {
           Resuelto_por: "",
           Respuesta_cierre_reasignado: "",
+          Fecha_hora_resolucion: "",
         },
         $push: {
           Historia_ticket: {
@@ -401,8 +436,8 @@ export const contactarCliente = async (
   try {
     const respuesta = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
-      { $set: { Fecha_hora_ultima_modificacion: fechaActual } },
       {
+        $set: { Fecha_hora_ultima_modificacion: fechaActual },
         $push: {
           Historia_ticket: {
             Nombre: userId,

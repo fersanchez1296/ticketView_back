@@ -52,7 +52,7 @@ export const getTicketsModerador = async (userId, Estado) => {
 export const getTicketsRevision = async (area, Estado) => {
   try {
     const result = await TICKETS.find({
-      $and: [{ Estado }, { Area_reasignado_a: { $in: area } }],
+      $and: [{ Estado }, { Area: { $in: area } }],
     }).lean();
     if (!result) {
       return false;
@@ -653,6 +653,15 @@ export const getEstadoTicket = async (Estado) => {
   }
 };
 
+export const getNombreEstadoTicket = async (Estado) => {
+  try {
+    const RES = await ESTADOS.findOne({ Estado });
+    return RES.Estado;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const getAreas = async () => {
   try {
     const RES = await AREA.find();
@@ -664,34 +673,46 @@ export const getAreas = async () => {
 
 export const getTicketsPorArea = async (area) => {
   try {
-    const RES = await TICKETS.aggregate([
-      {
-        $match: {
-          $or: [
-            { Area_asignado: new ObjectId(area) },
-            { Area_reasignado_a: new ObjectId(area) },
-          ],
-        },
-      },
-      {
-        $addFields: {
-          Asignado_final_a: {
-            $cond: [
-              {
-                $eq: ["$Asignado_a", new ObjectId(area)],
-              },
-              "$Asignado_a",
-              "$Reasignado_a",
-            ],
-          },
-        },
-      },
-    ]);
-    return RES;
+    const result = await TICKETS.find({ Area: { $in: area } }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
   } catch (error) {
     return false;
   }
 };
+
+// export const getTicketsPorArea = async (area) => {
+//   try {
+//     const RES = await TICKETS.aggregate([
+//       {
+//         $match: {
+//           $or: [
+//             { Area_asignado: new ObjectId(area) },
+//             { Area_reasignado_a: new ObjectId(area) },
+//           ],
+//         },
+//       },
+//       {
+//         $addFields: {
+//           Asignado_final_a: {
+//             $cond: [
+//               {
+//                 $eq: ["$Asignado_a", new ObjectId(area)],
+//               },
+//               "$Asignado_a",
+//               "$Reasignado_a",
+//             ],
+//           },
+//         },
+//       },
+//     ]);
+//     return RES;
+//   } catch (error) {
+//     return false;
+//   }
+// };
 
 export const getAreasModerador = async (Area) => {
   try {
@@ -731,7 +752,7 @@ export const getUsuariosInactivos = async () => {
 
 export const getUsuarioPorId = async (_id) => {
   try {
-    const RES = await USUARIO.findById({ _id });
+    const RES = await USUARIO.findOneById({ _id, isActive: true });
     return RES;
   } catch (error) {
     return false;

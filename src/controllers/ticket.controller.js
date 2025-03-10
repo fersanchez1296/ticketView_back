@@ -23,7 +23,6 @@ import {
   putTicketAbierto,
 } from "../repository/puts.js";
 import { addHours } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
 import exceljs from "exceljs";
 import path from "path";
 import fs from "fs";
@@ -93,7 +92,7 @@ export const createTicket = async (req, res, next) => {
       Fecha_hora_creacion: fechaActual,
       Fecha_limite_resolucion_SLA: addHours(fechaActual, ticketState.tiempo),
       Fecha_limite_respuesta_SLA: addHours(fechaActual, ticketState.tiempo),
-      Fecha_hora_ultima_modificacion: fechaDefecto,
+      Fecha_hora_ultima_modificacion: fechaActual,
       Fecha_hora_cierre: fechaDefecto,
       Fecha_hora_resolucion: fechaDefecto,
       Fecha_hora_reabierto: fechaDefecto,
@@ -230,6 +229,7 @@ export const reasignarTicket = async (req, res, next) => {
         $set: {
           ...reasignado,
           Reasignado_a: [reasignado.Reasignado_a],
+          Fecha_hora_ultima_modificacion: fechaActual,
           Estado,
           vistoBueno: reasignado.vistoBueno,
         },
@@ -323,6 +323,10 @@ export const resolverTicket = async (req, res, next) => {
         .status(500)
         .json({ desc: "Ocurrió un error al resolver el ticket." });
     }
+    req.vistoBueno = ticketData.vistoBueno;
+    req.userId = userId;
+    req.Fecha_hora_resolucion = result.Fecha_hora_resolucion;
+    req.Fecha_limite_resolucion_SLA = result.Fecha_limite_resolucion_SLA;
     req.ticketIdDb = result._id;
     return next();
   } catch (error) {
@@ -357,6 +361,10 @@ export const aceptarResolucion = async (req, res, next) => {
       await session.abortTransaction();
       session.endSession();
     }
+    req.vistoBueno = result.vistoBueno;
+    req.userId = result.Resuelto_por._id;
+    req.Fecha_hora_resolucion = result.Fecha_hora_resolucion;
+    req.Fecha_limite_resolucion_SLA = result.Fecha_limite_resolucion_SLA;
     return next();
   } catch (error) {
     await session.abortTransaction();

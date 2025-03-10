@@ -42,6 +42,7 @@ import { generarCorreoData } from "../middleware/generarCorreoData.middleware.js
 import { responseNota } from "../middleware/respuestaNota.middleware.js";
 import { genericResponse } from "../middleware/genericResponse.middleware.js";
 import { populateCorreos } from "../controllers/ticket.controller.js";
+import incrementarContadorTickets from "../middleware/incrementarContadorTickets.middleware.js";
 const router = Router();
 router.get(
   "/tickets/estado/:estado",
@@ -117,6 +118,7 @@ router.put(
   startTransaction,
   // validateData("resolver"),
   resolverTicket,
+  incrementarContadorTickets,
   guardarArchivo,
   endTransaction,
   genericResponse
@@ -128,6 +130,7 @@ router.put(
   // validateData("aceptarResolucion"),
   startTransaction,
   aceptarResolucion,
+  incrementarContadorTickets,
   endTransaction,
   genericResponse
 );
@@ -146,13 +149,13 @@ router.put(
 router.get(
   "/tickets/historico",
   verifyToken,
-  verifyRole(["Root", "Administrador", "Moderador"]),
+  verifyRole(["Root", "Administrador", "Moderador", "Auditor"]),
   obtenerAreas
 );
 router.get(
   "/tickets/historico/area",
   verifyToken,
-  verifyRole(["Root", "Administrador", "Moderador"]),
+  verifyRole(["Root", "Administrador", "Moderador", "Auditor"]),
   obtenerTicketsPorArea,
   formatearCamposFecha,
   populateTickets
@@ -193,7 +196,7 @@ router.put(
 router.get(
   "/tickets/resolutor/:id",
   verifyToken,
-  verifyRole(["Root", "Administrador", "Moderador"]),
+  verifyRole(["Root", "Administrador", "Moderador", "Auditor"]),
   obtenerTicketsResolutor,
   formatearCamposFecha,
   populateTickets

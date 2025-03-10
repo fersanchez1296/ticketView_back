@@ -11,6 +11,10 @@ export const populateTickets = async (req, res) => {
       { path: "Estado" },
       { path: "Medio" },
       {
+        path: "Area",
+        populate: [{ path: "Area", select: "Area _id" }],
+      },
+      {
         path: "Asignado_a",
         select: "Nombre Correo _id",
         populate: [{ path: "Area", select: "Area _id" }],
@@ -47,7 +51,11 @@ export const populateTickets = async (req, res) => {
       },
       {
         path: "Historia_ticket",
-        populate: { path: "Nombre", select: "Nombre -_id" },
+        select: "Titulo Mensaje Fecha",
+        populate: {
+          path: "Nombre",
+          select: "Nombre -_id",
+        },
       },
     ]);
     if (!POPULATE) {

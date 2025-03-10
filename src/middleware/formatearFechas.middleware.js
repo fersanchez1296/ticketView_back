@@ -15,7 +15,6 @@ export const formatearCamposFecha = (req, res, next) => {
         ...ticket,
         Fecha_hora_creacion: formatFecha(ticket.Fecha_hora_creacion),
         Fecha_hora_resolucion: formatFecha(ticket.Fecha_hora_resolucion),
-        Fecha_hora_reabierto: formatFecha(ticket.Fecha_hora_reabierto),
         Fecha_limite_resolucion_SLA: formatFecha(
           ticket.Fecha_limite_resolucion_SLA
         ),
@@ -29,8 +28,15 @@ export const formatearCamposFecha = (req, res, next) => {
         Historia_ticket: ticket.Historia_ticket
           ? ticket.Historia_ticket.map((historia) => ({
               Nombre: historia.Nombre,
+              Titulo: historia.Titulo,
               Mensaje: historia.Mensaje,
               Fecha: formatFecha(historia.Fecha),
+            }))
+          : [],
+        Reabierto: ticket.Reabierto
+          ? ticket.Reabierto.map((r) => ({
+              Descripcion: r.Descripcion,
+              Fecha: formatFecha(r.Fecha),
             }))
           : [],
       };
