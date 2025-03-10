@@ -1,5 +1,5 @@
 import { TICKETS, USUARIO } from "../models/index.js";
-import { fechaActual } from "../utils/fechas.js";
+import { fechaActual, fechaDefecto } from "../utils/fechas.js";
 export const putResolverTicket = async (
   userId,
   Estado,
@@ -173,14 +173,14 @@ export const putReabrirTicket = async (
         $set: {
           ...ticketData,
           Fecha_hora_ultima_modificacion: fechaActual,
+          Fecha_hora_cierre: fechaDefecto,
+          Fecha_hora_resolucion: fechaDefecto,
           Estado,
         },
         $unset: {
           Reasignado_a: "",
           Respuesta_cierre_reasignado: "",
           Resuelto_por: "",
-          Fecha_hora_cierre: "",
-          Fecha_hora_resolucion: "",
           Cerrado_por: "",
           Descripcion_cierre: "",
         },
@@ -204,6 +204,7 @@ export const putReabrirTicket = async (
     }
     return result;
   } catch (error) {
+    console.log(error);
     return false;
   }
 };
