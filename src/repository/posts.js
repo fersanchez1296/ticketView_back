@@ -1,5 +1,5 @@
 import { TICKETS, ESTADOS, USUARIO } from "../models/index.js";
-import { fechaActual } from "../utils/fechas.js";
+import { obtenerFechaActual } from "../utils/fechas.js";
 export const postCrearTicket = async (
   nuevoTicket,
   userId,
@@ -14,7 +14,7 @@ export const postCrearTicket = async (
         Nombre: userId,
         Titulo: "Ticket Creado",
         Mensaje: `El ticket ha sido creado por ${nombre} (${rol}).`,
-        Fecha: fechaActual,
+        Fecha: obtenerFechaActual(),
       },
     ];
     if (!nuevoTicket.standby) {
@@ -22,13 +22,13 @@ export const postCrearTicket = async (
         Nombre: userId,
         Titulo: "Ticket Asignado",
         Mensaje: `El ticket ha sido asignado a un moderador por ${nombre} (${rol}).`,
-        Fecha: fechaActual,
+        Fecha: obtenerFechaActual(),
       });
     }
     const newTicket = new TICKETS({
       ...nuevoTicket,
       Asignado_a: [nuevoTicket.Asignado_a],
-      Fecha_hora_ultima_modificacion: fechaActual,
+      Fecha_hora_ultima_modificacion: obtenerFechaActual(),
       Historia_ticket,
     });
     const savedTicket = await newTicket.save({ session });

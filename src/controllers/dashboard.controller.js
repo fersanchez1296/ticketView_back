@@ -53,7 +53,7 @@ export const dashboard = async (req, res) => {
       TICKETS.find({
         $and: [
           { Estado: "672bc1010467f98349b61017" },
-          { Area_reasignado_a: { $in: areas } },
+          { Area: { $in: areas } },
         ],
       }).countDocuments(),
       TICKETS.find({

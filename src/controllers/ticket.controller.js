@@ -27,7 +27,7 @@ import exceljs from "exceljs";
 import path from "path";
 import fs from "fs";
 import { __dirname, __filename } from "../config/config.js";
-import { fechaActual, fechaDefecto } from "../utils/fechas.js";
+import { obtenerFechaActual, fechaDefecto } from "../utils/fechas.js";
 const ObjectId = mongoose.Types.ObjectId;
 
 export const getTickets = async (req, res, next) => {
@@ -89,10 +89,16 @@ export const createTicket = async (req, res, next) => {
       ...ticketState,
       Cliente: req.cliente ? req.cliente : ticketState.Cliente,
       Estado,
-      Fecha_hora_creacion: fechaActual,
-      Fecha_limite_resolucion_SLA: addHours(fechaActual, ticketState.tiempo),
-      Fecha_limite_respuesta_SLA: addHours(fechaActual, ticketState.tiempo),
-      Fecha_hora_ultima_modificacion: fechaActual,
+      Fecha_hora_creacion: obtenerFechaActual(),
+      Fecha_limite_resolucion_SLA: addHours(
+        obtenerFechaActual(),
+        ticketState.tiempo
+      ),
+      Fecha_limite_respuesta_SLA: addHours(
+        obtenerFechaActual(),
+        ticketState.tiempo
+      ),
+      Fecha_hora_ultima_modificacion: obtenerFechaActual(),
       Fecha_hora_cierre: fechaDefecto,
       Fecha_hora_resolucion: fechaDefecto,
       Fecha_hora_reabierto: fechaDefecto,
@@ -140,8 +146,8 @@ export const asignarTicket = async (req, res, next) => {
       const tiempo = ticketData.tiempo;
       ticketData = {
         ...ticketData,
-        Fecha_limite_resolucion_SLA: addHours(fechaActual, tiempo),
-        Fecha_limite_respuesta_SLA: addHours(fechaActual, tiempo),
+        Fecha_limite_resolucion_SLA: addHours(obtenerFechaActual(), tiempo),
+        Fecha_limite_respuesta_SLA: addHours(obtenerFechaActual(), tiempo),
         Fecha_hora_cierre: fechaDefecto,
       };
       delete ticketData.tiempo;
@@ -205,11 +211,11 @@ export const reasignarTicket = async (req, res, next) => {
     return {
       ...body,
       Fecha_limite_respuesta_SLA: addHours(
-        fechaActual,
+        obtenerFechaActual(),
         body.Fecha_limite_respuesta_SLA
       ),
       Fecha_limite_resolucion_SLA: addHours(
-        fechaActual,
+        obtenerFechaActual(),
         body.Fecha_limite_resolucion_SLA
       ),
     };
@@ -229,7 +235,7 @@ export const reasignarTicket = async (req, res, next) => {
         $set: {
           ...reasignado,
           Reasignado_a: [reasignado.Reasignado_a],
-          Fecha_hora_ultima_modificacion: fechaActual,
+          Fecha_hora_ultima_modificacion: obtenerFechaActual(),
           Estado,
           vistoBueno: reasignado.vistoBueno,
         },
@@ -238,7 +244,7 @@ export const reasignarTicket = async (req, res, next) => {
             Nombre: userId,
             Titulo: "Ticket Reasignado",
             Mensaje: `El ticket ha sido reasignado a ${reasignado.Nombre} por ${nombre} - ${rol}`,
-            Fecha: fechaActual,
+            Fecha: obtenerFechaActual(),
           },
         },
       },
@@ -466,8 +472,8 @@ export const reabrirTicket = async (req, res, next) => {
       const tiempo = ticketData.tiempo;
       ticketData = {
         ...ticketData,
-        Fecha_limite_resolucion_SLA: addHours(fechaActual, tiempo),
-        Fecha_limite_respuesta_SLA: addHours(fechaActual, tiempo),
+        Fecha_limite_resolucion_SLA: addHours(obtenerFechaActual(), tiempo),
+        Fecha_limite_respuesta_SLA: addHours(obtenerFechaActual(), tiempo),
         Fecha_hora_cierre: fechaDefecto,
       };
       delete ticketData.tiempo;
