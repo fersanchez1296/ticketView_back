@@ -440,7 +440,8 @@ export const cerrarTicket = async (req, res, next) => {
       userId,
       nombre,
       rol,
-      ticketData
+      ticketData,
+      session
     );
     if (!result) {
       await session.abortTransaction();

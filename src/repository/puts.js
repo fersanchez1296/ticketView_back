@@ -132,7 +132,8 @@ export const putCerrarTicket = async (
   userId,
   nombre,
   rol,
-  ticketData
+  ticketData,
+  session
 ) => {
   const RES = await TICKETS.findOneAndUpdate(
     { _id: ticketId },
@@ -152,7 +153,8 @@ export const putCerrarTicket = async (
           Fecha: obtenerFechaActual(),
         },
       },
-    }
+    },
+    { session, returnDocument: "after" }
   );
   return RES;
 };

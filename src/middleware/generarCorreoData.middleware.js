@@ -9,6 +9,7 @@ export const generarCorreoData = async (req, res, next) => {
         select: "Nombre Correo Telefono Extension Ubicacion _id",
       },
     ]);
+    console.log(populateResult.Descripcion_cierre);
     if (!req.contactoCliente) {
       req.correoData = {
         idTicket: populateResult.Id,
