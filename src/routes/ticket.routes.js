@@ -42,6 +42,8 @@ import { generarCorreoData } from "../middleware/generarCorreoData.middleware.js
 import { responseNota } from "../middleware/respuestaNota.middleware.js";
 import { genericResponse } from "../middleware/genericResponse.middleware.js";
 import { populateCorreos } from "../controllers/ticket.controller.js";
+import { verificarAsignado } from "../middleware/verificarAsignado.middleware.js";
+import { obtenerEstadoTicket } from "../middleware/obtenerEstadoTicket.middleware.js";
 import incrementarContadorTickets from "../middleware/incrementarContadorTickets.middleware.js";
 const router = Router();
 router.get(
@@ -175,6 +177,8 @@ router.post(
   verifyRole(["Root", "Administrador"]),
   startTransaction,
   guardarCliente,
+  verificarAsignado,
+  obtenerEstadoTicket,
   createTicket,
   guardarArchivo,
   endTransaction,

@@ -567,7 +567,8 @@ export const getResolutoresParaReasignacionPorArea = async (Area) => {
 export const getInfoSelectsCrearTicket = async (
   moderador,
   root,
-  administrador
+  administrador,
+  usuario
 ) => {
   // Se agrego un gion bajo (_) al final del nombre de las constantes para evitar tener errores
   // con el nombre de los modelos
@@ -613,11 +614,20 @@ export const getInfoSelectsCrearTicket = async (
         const resolutor = await USUARIO.find({
           Area: new ObjectId(area._id),
           isActive: true,
-          $or: [
-            { Rol: new ObjectId(moderador) },
-            { Rol: new ObjectId(root) },
-            { Rol: new ObjectId(administrador) },
-          ],
+          Rol: { $ne: new ObjectId(usuario) },
+        }).select("Nombre Correo");
+        return {
+          area: { area: area.Area, _id: area._id },
+          resolutores: resolutor,
+        };
+      })
+    );
+    const resolutores = await Promise.all(
+      AREAS_.map(async (area) => {
+        const resolutor = await USUARIO.find({
+          Area: new ObjectId(area._id),
+          isActive: true,
+          Rol: { $eq: new ObjectId(usuario) },
         }).select("Nombre Correo");
         return {
           area: { area: area.Area, _id: area._id },
@@ -636,6 +646,7 @@ export const getInfoSelectsCrearTicket = async (
       direccion_areas: DIRECCIONESAREAS_,
       direccion_generales: DIRECCIONESGENERALES_,
       areasResolutores: AREASRESOLUTORES,
+      resolutores,
       dependencias: DEPENDENCIAS_,
       medios: MEDIO_,
     };

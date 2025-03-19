@@ -7,7 +7,6 @@ import Clientes from "../models/clientes.model.js";
 export const guardarCliente = async (req, res, next) => {
   const session = req.mongoSession;
   try {
-    console.log("no hay cliente");
     req.ticketState = JSON.parse(req.body.ticketState);
     if (!req.body.nuevoCliente) {
       return next();

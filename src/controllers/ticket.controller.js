@@ -75,20 +75,9 @@ export const createTicket = async (req, res, next) => {
   try {
     let ticketState = req.ticketState;
     const { userId, nombre, rol, correo } = req.session.user;
-    let Asignado_a = {};
-    let Estado = {};
-    if (ticketState.standby) {
-      Estado = await Gets.getEstadoTicket("STANDBY");
-      Asignado_a = await USUARIO.findOne({ Username: "standby" }).lean();
-    } else {
-      Estado = await Gets.getEstadoTicket("NUEVOS");
-      Asignado_a = ticketState.Asignado_a;
-    }
-
     ticketState = {
       ...ticketState,
       Cliente: req.cliente ? req.cliente : ticketState.Cliente,
-      Estado,
       Fecha_hora_creacion: obtenerFechaActual(),
       Fecha_limite_resolucion_SLA: addHours(
         obtenerFechaActual(),
@@ -104,7 +93,6 @@ export const createTicket = async (req, res, next) => {
       Fecha_hora_reabierto: fechaDefecto,
       Creado_por: userId,
       standby: ticketState.standby,
-      Asignado_a: ticketState.standby ? Asignado_a._id : ticketState.Asignado_a,
     };
     const RES = await postCrearTicket(
       ticketState,
@@ -643,13 +631,20 @@ export const areasReasignacion = async (req, res) => {
 
 export const getInfoSelects = async (req, res) => {
   try {
-    const moderador = await ROLES.findOne({ Rol: "Moderador" });
-    const root = await ROLES.findOne({ Rol: "Root" });
-    const administrador = await ROLES.findOne({ Rol: "Administrador" });
+    const roles = await ROLES.find({ Rol: { $ne: "Auditor" } });
+    const rolesMap = roles.reduce((acc, role) => {
+      acc[role.Rol] = role._id;
+      return acc;
+    }, {});
+    const moderador = rolesMap["Moderador"];
+    const root = rolesMap["Root"];
+    const administrador = rolesMap["Administrador"];
+    const usuario = rolesMap["Usuario"];
     const RES = await Gets.getInfoSelectsCrearTicket(
-      moderador._id,
-      root._id,
-      administrador._id
+      moderador,
+      root,
+      administrador,
+      usuario
     );
     if (!RES) {
       return res.status(404).json({ desc: "No se encontró información" });
