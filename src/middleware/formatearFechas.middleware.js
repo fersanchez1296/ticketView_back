@@ -3,7 +3,7 @@ import { es } from "date-fns/locale";
 
 export const formatearCamposFecha = (req, res, next) => {
   try {
-    const DATA = req.tickets.map((ticket) => {
+    const DATA = req.ticketsFormateados.map((ticket) => {
       const formatFecha = (fecha) => {
         if (!fecha || new Date(fecha).getFullYear() === 1900) {
           return "";
@@ -41,8 +41,7 @@ export const formatearCamposFecha = (req, res, next) => {
           : [],
       };
     });
-    req.ticketsFormateados = DATA;
-    return next();
+    return res.status(200).json(DATA);
   } catch (error) {
     return res.send("Error al formatear los campos");
   }

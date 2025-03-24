@@ -26,6 +26,7 @@ import {
   regresarTicket,
   obtenerTicketsResolutor,
   contactoCliente,
+  retornarTicket,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -50,8 +51,8 @@ router.get(
   "/tickets/estado/:estado",
   verifyToken,
   getTickets,
-  formatearCamposFecha,
-  populateTickets
+  populateTickets,
+  formatearCamposFecha
 );
 router.get(
   "/tickets/reabrir/fields",
@@ -159,15 +160,15 @@ router.get(
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador", "Auditor"]),
   obtenerTicketsPorArea,
-  formatearCamposFecha,
-  populateTickets
+  populateTickets,
+  formatearCamposFecha
 );
 router.post(
   "/tickets/buscar/:id",
   verifyToken,
   buscarTicket,
-  formatearCamposFecha,
-  populateTickets
+  populateTickets,
+  formatearCamposFecha
 );
 //TODO agregar la validacion de la informacion por schema
 router.post(
@@ -197,13 +198,24 @@ router.put(
   responseNota
 );
 
+router.put(
+  "/tickets/retornoMesa/:id",
+  uploadMiddleware,
+  verifyToken,
+  startTransaction,
+  retornarTicket,
+  guardarArchivo,
+  endTransaction,
+  genericResponse
+);
+
 router.get(
   "/tickets/resolutor/:id",
   verifyToken,
   verifyRole(["Root", "Administrador", "Moderador", "Auditor"]),
   obtenerTicketsResolutor,
-  formatearCamposFecha,
-  populateTickets
+  populateTickets,
+  formatearCamposFecha
 );
 
 router.get(

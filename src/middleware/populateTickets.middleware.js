@@ -1,8 +1,8 @@
 import { TICKETS } from "../models/index.js";
 
-export const populateTickets = async (req, res) => {
+export const populateTickets = async (req, res, next) => {
   try {
-    const POPULATE = await TICKETS.populate(req.ticketsFormateados, [
+    const POPULATE = await TICKETS.populate(req.tickets, [
       { path: "Tipo_incidencia", select: "Tipo_de_incidencia _id" },
       { path: "Categoria", select: "Categoria _id" },
       { path: "Servicio", select: "Servicio _id" },
@@ -52,17 +52,21 @@ export const populateTickets = async (req, res) => {
       {
         path: "Historia_ticket",
         select: "Titulo Mensaje Fecha",
+        options: { sort: { Fecha: -1 } },
         populate: {
           path: "Nombre",
           select: "Nombre -_id",
         },
       },
     ]);
+    
+    POPULATE.Historia_ticket.map
     if (!POPULATE) {
       console.log("error en populate");
       return res.status(500).json({ desc: "Error al procesar los tickets." });
     }
-    return res.status(200).json(POPULATE);
+    req.ticketsFormateados = POPULATE;
+    return next();
   } catch (error) {
     console.log(error);
     return res.status(500).json({ desc: "Error al formatear los tickets." });
