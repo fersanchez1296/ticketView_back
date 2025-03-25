@@ -26,6 +26,7 @@ export const generarCorreoData = async (req, res, next) => {
         correoResol: populateResult.Reasignado_a[0]?.Correo ?? "",
         Asignado_a: populateResult.Asignado_a[0]?.Nombre ?? "",
         Descripcion_cierre: populateResult.Descripcion_cierre ?? "",
+        area: populateResult.Cliente.direccion_area.direccion_area ?? "",
       };
     } else {
       req.correoData = {
