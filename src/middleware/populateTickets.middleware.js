@@ -59,8 +59,6 @@ export const populateTickets = async (req, res, next) => {
         },
       },
     ]);
-    
-    POPULATE.Historia_ticket.map
     if (!POPULATE) {
       console.log("error en populate");
       return res.status(500).json({ desc: "Error al procesar los tickets." });
