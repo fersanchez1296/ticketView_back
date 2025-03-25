@@ -42,7 +42,7 @@ export const populateTickets = async (req, res, next) => {
       },
       {
         path: "Cliente",
-        select: "Nombre Correo Telefono Ubicacion _id",
+        select: "Nombre Correo Telefono Ubicacion Extension _id",
         populate: [
           { path: "Dependencia", select: "Dependencia _id" },
           { path: "Direccion_General", select: "Direccion_General _id" },
