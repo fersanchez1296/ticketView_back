@@ -30,7 +30,7 @@ export const generarCorreoData = async (req, res, next) => {
     } else {
       req.correoData = {
         idTicket: populateResult.Id,
-        correoUsuario: populateResult.Asignado_a[0].Correo,
+        correoUsuario: populateResult.Asignado_a[0].Correo ?? "",
         correoCliente: populateResult.Cliente.Correo,
         correoResol: populateResult.Reasignado_a[0]?.Correo ?? "",
         cuerpo: req.cuerpo,
