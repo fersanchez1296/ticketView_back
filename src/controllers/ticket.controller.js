@@ -40,7 +40,7 @@ export const getTickets = async (req, res, next) => {
     if (rol === "Usuario") {
       result = await Gets.getTicketsUsuario(userId, Estado);
     } else if (paramEstado === "REVISION") {
-      result = await Gets.getTicketsRevision(areas, Estado);
+      result = await Gets.getTicketsRevisionUsuario(userId, Estado);
     }
     if (rol === "Moderador") {
       if (paramEstado === "NUEVOS") {
@@ -173,7 +173,6 @@ export const asignarTicket = async (req, res, next) => {
     req.channel = "channel_asignarTicket";
     return next();
   } catch (error) {
-    console.log(error);
     console.log("Transaccion abortada.");
     await session.abortTransaction();
     session.endSession();
@@ -279,7 +278,6 @@ export const reasignarTicket = async (req, res, next) => {
   } catch (error) {
     await sessionDB.abortTransaction();
     sessionDB.endSession();
-    console.log(error);
     return res.status(500).json({
       desc: "Ocurrio un error al reasignar el ticket. Error interno en el servidor.",
     });
@@ -405,7 +403,6 @@ export const rechazarResolucion = async (req, res, next) => {
     req.ticketIdDb = result._id;
     return next();
   } catch (error) {
-    console.log(error);
     await session.abortTransaction();
     session.endSession();
     return res.status(500).json({ desc: "Error interno en el servidor." });
@@ -502,7 +499,6 @@ export const reabrirTicket = async (req, res, next) => {
     req.channel = "channel_reabrirTicket";
     return next();
   } catch (error) {
-    console.log(error);
     console.log("Transaccion abortada.");
     await session.abortTransaction();
     session.endSession();
@@ -710,7 +706,6 @@ export const obtenerAreas = async (req, res) => {
     }
     return res.status(200).json({ areas: AREAS, tickets: [] });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
@@ -756,7 +751,6 @@ export const buscarTicket = async (req, res, next) => {
     req.tickets = RES;
     return next();
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };
@@ -791,7 +785,6 @@ export const reabrirFields = async (req, res) => {
 
     return res.status(200).json({ prioridades, moderadores });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       desc: "Ocurrio un error al obtener los campos para la ventana de reasignar. Error interno en el servidor.",
     });
@@ -1015,14 +1008,9 @@ export const dependenciasClientes = async (req, res) => {
         };
       })
     );
-    console.log("DEPENDENCIAS DE LOS CLIENTES", DEPENDENCIASCLIENTES);
-    res.status(200).json(DEPENDENCIASCLIENTES);
+    return res.status(200).json(DEPENDENCIASCLIENTES);
   } catch (error) {
-    console.error(
-      "Error al obtener clientes agrupados por dependencia:",
-      error
-    );
-    res.status(500).json({ message: "Error interno del servidor" });
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
 };
 
@@ -1036,9 +1024,8 @@ export const encontartTicket = async (req, res, next) => {
         desc: "No se encontro el numero de ticket en la base de datos",
       });
     }
-    console.log("Ticket que se va poner como pendiente", RES);
     req.tickets = RES;
-    next();
+    return next();
   } catch (error) {
     console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
@@ -1047,7 +1034,6 @@ export const encontartTicket = async (req, res, next) => {
 
 export const populateCorreos = async (req, res, next) => {
   try {
-    console.log("tickets en populate", req.tickets);
     const POPULATE = await TICKETS.populate(req.tickets, [
       { path: "Asignado_a", select: "Nombre Correo Coordinacion Area _id" },
       {
@@ -1064,18 +1050,15 @@ export const populateCorreos = async (req, res, next) => {
       console.log("error en populate");
       return res.status(500).json({ desc: "Error al procesar los tickets." });
     }
-    console.log("POPULATE", POPULATE);
     req.tickets = POPULATE;
-    next();
+    return next();
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ desc: "Error al formatear los tickets." });
   }
 };
 
 export const regresarcorreos = async (req, res) => {
   const Datos = req.tickets;
-  console.log("DATOS", Datos);
   try {
     if (!Datos) {
       return res.status(404).json({
@@ -1087,10 +1070,8 @@ export const regresarcorreos = async (req, res) => {
       //correoModerador: Datos.Asignado_a[0].Correo,
       correoMesa: process.env.SMTP_USERNAME,
     };
-    console.log("CORREOS", CORREOS);
     return res.status(200).json(CORREOS);
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ desc: "Error interno en el servidor" });
   }
 };

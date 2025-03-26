@@ -31,6 +31,20 @@ export const getTicketsUsuario = async (userId, Estado) => {
   }
 };
 
+export const getTicketsRevisionUsuario = async (userId, Estado) => {
+  try {
+    const result = await TICKETS.find({
+      $and: [{ Estado }, { Reasignado_a: { $in: userId } }],
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const getTicketsModerador = async (userId, Estado) => {
   try {
     const result = await TICKETS.find({
@@ -227,7 +241,6 @@ export const getTicketsEnCurso = async (userId, estado) => {
     ]);
     return RES;
   } catch (error) {
-    console.log(error);
     return false;
   }
 };

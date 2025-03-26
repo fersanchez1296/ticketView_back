@@ -13,8 +13,7 @@ export const verifyToken = (req, res, next) => {
         req.session.user = data;
         next()
     } catch (error) {
-        console.log(error);
-        res.status(403).json({ mensaje: "Token inválido o expirado" })
+        res.status(403).json({ desc: "Token inválido o expirado" })
     }
     
 }

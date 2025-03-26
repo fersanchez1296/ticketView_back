@@ -206,7 +206,6 @@ export const putReabrirTicket = async (
     }
     return result;
   } catch (error) {
-    console.log(error);
     return false;
   }
 };
