@@ -251,7 +251,7 @@ router.put(
 router.put(
   "/tickets/contactoCliente/:id",
   verifyToken,
-  verifyRole(["Root"]),
+  verifyRole(["Root", "Administrador"]),
   startTransaction,
   contactoCliente,
   endTransaction,

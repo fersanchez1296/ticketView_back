@@ -39,7 +39,10 @@ export const getTickets = async (req, res, next) => {
     const Estado = await Gets.getEstadoTicket(paramEstado);
     if (rol === "Usuario") {
       result = await Gets.getTicketsUsuario(userId, Estado);
-    } else if (rol === "Moderador") {
+    } else if (paramEstado === "REVISION") {
+      result = await Gets.getTicketsRevision(areas, Estado);
+    }
+    if (rol === "Moderador") {
       if (paramEstado === "NUEVOS") {
         result = await Gets.getTicketsNuevosModerador(userId, Estado);
       } else if (paramEstado === "REVISION") {
@@ -593,11 +596,9 @@ export const retornarTicket = async (req, res, next) => {
     if (!result) {
       await session.abortTransaction();
       session.endSession();
-      return res
-        .status(500)
-        .json({
-          desc: "Ocurrio un error al retornar el ticket a mesa de servicio.",
-        });
+      return res.status(500).json({
+        desc: "Ocurrio un error al retornar el ticket a mesa de servicio.",
+      });
     }
     req.ticketIdDb = result._id;
     return next();
