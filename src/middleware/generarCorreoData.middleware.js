@@ -34,7 +34,7 @@ export const generarCorreoData = async (req, res, next) => {
     } else {
       req.correoData = {
         idTicket: populateResult.Id,
-        correoUsuario: populateResult.Asignado_a[0].Correo,
+        //correoUsuario: populateResult.Asignado_a ? populateResult.Asignado_a[0].Correo : "",
         correoCliente: populateResult.Cliente.Correo,
         correoResol: populateResult.Reasignado_a[0]?.Correo ?? "",
         cuerpo: req.cuerpo,
@@ -43,6 +43,7 @@ export const generarCorreoData = async (req, res, next) => {
     req.ticketId = populateResult.Id;
     return next();
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ desc: "Error al generar la informacion para correo." });

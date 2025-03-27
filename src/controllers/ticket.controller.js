@@ -599,11 +599,9 @@ export const retornarTicket = async (req, res, next) => {
     if (!result) {
       await session.abortTransaction();
       session.endSession();
-      return res
-        .status(500)
-        .json({
-          desc: "Ocurrio un error al retornar el ticket a mesa de servicio.",
-        });
+      return res.status(500).json({
+        desc: "Ocurrio un error al retornar el ticket a mesa de servicio.",
+      });
     }
     req.ticketIdDb = result._id;
     return next();
@@ -1089,7 +1087,7 @@ export const regresarcorreos = async (req, res) => {
     }
     const CORREOS = {
       correoCliente: Datos.Cliente.Correo,
-      correoModerador: Datos.Asignado_a[0].Correo,
+      //correoModerador: Datos.Asignado_a[0].Correo,
       correoMesa: process.env.SMTP_USERNAME,
     };
     console.log("CORREOS", CORREOS);
