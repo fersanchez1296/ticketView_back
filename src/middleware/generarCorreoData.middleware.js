@@ -6,7 +6,10 @@ export const generarCorreoData = async (req, res, next) => {
       { path: "Reasignado_a", select: "Nombre Correo _id" },
       {
         path: "Cliente",
-        select: "Nombre Correo Telefono Extension Ubicacion _id",
+        select: "Nombre Correo Telefono Ubicacion _id Extension",
+        populate: [
+          { path: "direccion_area", select: "direccion_area _id" },
+        ],
       },
     ]);
     console.log(populateResult.Descripcion_cierre);
