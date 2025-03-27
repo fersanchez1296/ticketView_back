@@ -37,6 +37,7 @@ export const generarCorreoData = async (req, res, next) => {
         //correoUsuario: populateResult.Asignado_a ? populateResult.Asignado_a[0].Correo : "",
         correoCliente: populateResult.Cliente.Correo,
         correoResol: populateResult.Reasignado_a[0]?.Correo ?? "",
+        extensionCliente: populateResult.Cliente.Extension,
         cuerpo: req.cuerpo,
       };
     }

@@ -243,7 +243,7 @@ export const reasignarTicket = async (req, res, next) => {
       const formatedTickets = await TICKETS.populate(result, [
         {
           path: "Cliente",
-          select: "Nombre Correo Telefono Ubicacion _id",
+          select: "Nombre Correo Telefono Ubicacion _id Extension",
           populate: [
             { path: "Dependencia", select: "Dependencia _id" },
             { path: "Direccion_General", select: "Direccion_General _id" },
