@@ -39,10 +39,7 @@ export const getTickets = async (req, res, next) => {
     const Estado = await Gets.getEstadoTicket(paramEstado);
     if (rol === "Usuario") {
       result = await Gets.getTicketsUsuario(userId, Estado);
-    } else if (paramEstado === "REVISION") {
-      result = await Gets.getTicketsRevision(areas, Estado);
-    }
-    if (rol === "Moderador") {
+    } else if (rol === "Moderador") {
       if (paramEstado === "NUEVOS") {
         result = await Gets.getTicketsNuevosModerador(userId, Estado);
       } else if (paramEstado === "REVISION") {
