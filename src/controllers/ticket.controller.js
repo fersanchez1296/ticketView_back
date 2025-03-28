@@ -75,6 +75,7 @@ export const createTicket = async (req, res, next) => {
 
   try {
     let ticketState = req.ticketState;
+    console.log("Cuerpo", ticketState);
     const { userId, nombre, rol, correo } = req.session.user;
     ticketState = {
       ...ticketState,
@@ -94,6 +95,7 @@ export const createTicket = async (req, res, next) => {
       Fecha_hora_reabierto: fechaDefecto,
       Creado_por: userId,
       standby: ticketState.standby,
+      PendingReason: ticketState.PendingReason,
     };
     const RES = await postCrearTicket(
       ticketState,
