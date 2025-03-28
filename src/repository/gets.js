@@ -13,6 +13,7 @@ import {
   DEPENDENCIAS,
   CLIENTES,
   MEDIO,
+  CATEGORIZACION,
 } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
@@ -599,6 +600,7 @@ export const getInfoSelectsCrearTicket = async (
       DIRECCIONESGENERALES_,
       DEPENDENCIAS_,
       MEDIO_,
+      CATEGORIZACION_,
     ] = await Promise.all([
       ESTADOS.find({
         Estado: "NUEVO",
@@ -620,6 +622,9 @@ export const getInfoSelectsCrearTicket = async (
       DIRECCION_GENERAL.find(),
       DEPENDENCIAS.find(),
       MEDIO.find(),
+      CATEGORIZACION.find().sort({ Subcategoria: 1 }).populate({
+        path: "Equipo",
+      }),
     ]);
 
     const AREASRESOLUTORES = await Promise.all(
@@ -662,6 +667,7 @@ export const getInfoSelectsCrearTicket = async (
       resolutores,
       dependencias: DEPENDENCIAS_,
       medios: MEDIO_,
+      categorizacion: CATEGORIZACION_,
     };
   } catch (error) {
     return false;
