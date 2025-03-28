@@ -6,7 +6,10 @@ export const generarCorreoData = async (req, res, next) => {
       { path: "Reasignado_a", select: "Nombre Correo _id" },
       {
         path: "Cliente",
-        select: "Nombre Correo Telefono Extension Ubicacion _id",
+        select: "Nombre Correo Telefono Ubicacion _id Extension",
+        populate: [
+          { path: "direccion_area", select: "direccion_area _id" },
+        ],
       },
     ]);
     console.log(populateResult.Descripcion_cierre);
@@ -26,6 +29,7 @@ export const generarCorreoData = async (req, res, next) => {
         correoResol: populateResult.Reasignado_a[0]?.Correo ?? "",
         Asignado_a: populateResult.Asignado_a[0]?.Nombre ?? "",
         Descripcion_cierre: populateResult.Descripcion_cierre ?? "",
+        area: populateResult.Cliente.direccion_area.direccion_area ?? "",
       };
     } else {
       req.correoData = {
@@ -33,6 +37,7 @@ export const generarCorreoData = async (req, res, next) => {
         //correoUsuario: populateResult.Asignado_a ? populateResult.Asignado_a[0].Correo : "",
         correoCliente: populateResult.Cliente.Correo,
         correoResol: populateResult.Reasignado_a[0]?.Correo ?? "",
+        extensionCliente: populateResult.Cliente.Extension,
         cuerpo: req.cuerpo,
       };
     }
