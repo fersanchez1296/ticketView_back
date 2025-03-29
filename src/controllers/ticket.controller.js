@@ -67,24 +67,14 @@ export const getTickets = async (req, res, next) => {
 
 export const createTicket = async (req, res, next) => {
   const session = req.mongoSession;
-  if (!session) {
-    return res
-      .status(500)
-      .json({ error: "No hay sesión activa para la transacción." });
-  }
-
   try {
     let ticketState = req.ticketState;
-    console.log("Cuerpo", ticketState);
-    const { userId, nombre, rol, correo } = req.session.user;
+    const { userId, nombre, rol } = req.session.user;
     ticketState = {
       ...ticketState,
       Cliente: req.cliente ? req.cliente : ticketState.Cliente,
       Fecha_hora_creacion: obtenerFechaActual(),
-      Fecha_limite_resolucion_SLA: addHours(
-        obtenerFechaActual(),
-        ticketState.tiempo
-      ),
+      Fecha_limite_resolucion_SLA: req.Fecha_limite_resolucion_SLA,
       Fecha_limite_respuesta_SLA: addHours(
         obtenerFechaActual(),
         ticketState.tiempo
@@ -267,7 +257,7 @@ export const reasignarTicket = async (req, res, next) => {
         extensionCliente: formatedTickets.Cliente.Extension,
         ubicacion: formatedTickets.Cliente.Ubicacion,
         area: formatedTickets.Cliente.direccion_area.direccion_area ?? "",
-        };
+      };
       req.channel = "channel_reasignarTicket";
       req.correoData = correoData;
       await sessionDB.commitTransaction();

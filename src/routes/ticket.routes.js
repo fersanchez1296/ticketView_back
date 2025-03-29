@@ -34,7 +34,7 @@ import { validateData } from "../middleware/validateData.middleware.js";
 import { populateTickets } from "../middleware/populateTickets.middleware.js";
 import { formatearCamposFecha } from "../middleware/formatearFechas.middleware.js";
 import { uploadMiddleware } from "../middleware/upload.middleware.js";
-import { guardarCliente } from "../middleware/guardarCliente.middleware.js";
+import { calcularFechaResolucion } from "../middleware/calcularFechaResolucion.middleware.js";
 import guardarArchivo from "../middleware/guardarArchivo.middleware.js";
 import enviarCorreo from "../middleware/enviarCorreo.middleware.js";
 import { startTransaction } from "../middleware/startTransaction.middleware.js";
@@ -177,9 +177,9 @@ router.post(
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   startTransaction,
-  guardarCliente,
   verificarAsignado,
   obtenerEstadoTicket,
+  calcularFechaResolucion,
   createTicket,
   guardarArchivo,
   endTransaction,

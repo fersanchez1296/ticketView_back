@@ -57,7 +57,7 @@ const ticketModel = new Schema(
     Subcategoria: {
       type: Schema.Types.ObjectId,
       trim: true,
-      ref: "SUBCATEGORIA",
+      ref: "CATEGORIZACION",
     },
     Descripcion: {
       type: String,

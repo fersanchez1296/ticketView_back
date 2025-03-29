@@ -3,6 +3,7 @@ import USUARIO from "../models/usuario.model.js";
 export const verificarAsignado = async (req, res, next) => {
   const session = req.mongoSession;
   try {
+    req.ticketState = JSON.parse(req.body.ticketState);
     if (req.ticketState.hasResolutor) {
       req.ticketState.standby = false;
       req.ticketState.Reasignado_a = [req.ticketState.Asignado_a];
