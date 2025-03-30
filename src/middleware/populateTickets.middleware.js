@@ -63,7 +63,16 @@ export const populateTickets = async (req, res, next) => {
       console.log("error en populate");
       return res.status(500).json({ desc: "Error al procesar los tickets." });
     }
-    req.ticketsFormateados = POPULATE;
+
+    const ordenarHistoria = POPULATE.map((ticket) => ({
+      ...ticket,
+      Historia_ticket: ticket.Historia_ticket
+        ? ticket.Historia_ticket.sort(
+            (a, b) => new Date(b.Fecha) - new Date(a.Fecha)
+          )
+        : [],
+    }));
+    req.ticketsFormateados = ordenarHistoria;
     return next();
   } catch (error) {
     console.log(error);
