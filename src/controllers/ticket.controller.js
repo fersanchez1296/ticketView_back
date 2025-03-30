@@ -162,6 +162,7 @@ export const asignarTicket = async (req, res, next) => {
     req.channel = "channel_asignarTicket";
     return next();
   } catch (error) {
+    console.log(error)
     console.log("Transaccion abortada.");
     await session.abortTransaction();
     session.endSession();

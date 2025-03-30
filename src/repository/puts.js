@@ -64,9 +64,24 @@ export const putAsignarTicket = async (
   session
 ) => {
   try {
+    const Historia_ticket = [
+      {
+        Nombre: userId,
+        Titulo: "Ticket Asignado",
+        Mensaje: `El ticket ha sido asignado a un moderador por ${nombre}-${rol}.`,
+        Fecha: obtenerFechaActual(),
+      },
+    ];
+    if (ticketData.Nota) {
+      Historia_ticket.push({
+        Nombre: userId,
+        Titulo: "Nota agregada",
+        Mensaje: `Nota:\n${ticketData.Nota}`,
+        Fecha: obtenerFechaActual(),
+      });
+    }
     const result = TICKETS.findOneAndUpdate(
       { _id: ticketId },
-      // { $unset: { Asignado_a: [] } },
       {
         $set: {
           ...ticketData,
@@ -76,12 +91,7 @@ export const putAsignarTicket = async (
           Asignado_a: [ticketData.Asignado_a],
         },
         $push: {
-          Historia_ticket: {
-            Nombre: userId,
-            Titulo: "Ticket Asignado",
-            Mensaje: `El ticket ha sido asignado a un moderador por ${nombre}-${rol}.`,
-            Fecha: obtenerFechaActual(),
-          },
+          Historia_ticket: { $each: Historia_ticket },
         },
       },
       { session, returnDocument: "after" }
@@ -91,6 +101,7 @@ export const putAsignarTicket = async (
     }
     return result;
   } catch (error) {
+    console.log(error)
     return false;
   }
 };
@@ -353,7 +364,13 @@ export const putNota = async (userId, ticketId, nota, session) => {
   }
 };
 
-export const putRetornarTicket = async (userId, ticketId, descripcion_retorno, Estado, session) => {
+export const putRetornarTicket = async (
+  userId,
+  ticketId,
+  descripcion_retorno,
+  Estado,
+  session
+) => {
   try {
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
