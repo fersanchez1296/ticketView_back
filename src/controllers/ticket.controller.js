@@ -120,6 +120,7 @@ export const createTicket = async (req, res, next) => {
 export const asignarTicket = async (req, res, next) => {
   const session = req.mongoSession;
   try {
+    let Estado = "";
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
     let ticketData = JSON.parse(req.body.ticketData);
@@ -127,14 +128,20 @@ export const asignarTicket = async (req, res, next) => {
       const tiempo = ticketData.tiempo;
       ticketData = {
         ...ticketData,
-        Reasignado_a: ticketData.Asignado_a,
         Fecha_limite_resolucion_SLA: addHours(obtenerFechaActual(), tiempo),
         Fecha_limite_respuesta_SLA: addHours(obtenerFechaActual(), tiempo),
         Fecha_hora_cierre: fechaDefecto,
       };
       delete ticketData.tiempo;
     }
-    const Estado = await Gets.getEstadoTicket("NUEVOS");
+    const rolUsuario = await Gets.getRolUsuario(ticketData.Asignado_a);
+    console.log(rolUsuario);
+    if (rolUsuario !== "Usuario") {
+      Estado = await Gets.getEstadoTicket("NUEVOS");
+    } else {
+      Estado = await Gets.getEstadoTicket("ABIERTOS");
+    }
+
     if (!Estado) {
       console.log("Transaccion abortada.");
       await session.abortTransaction();
@@ -163,7 +170,6 @@ export const asignarTicket = async (req, res, next) => {
     req.channel = "channel_asignarTicket";
     return next();
   } catch (error) {
-    console.log(error)
     console.log("Transaccion abortada.");
     await session.abortTransaction();
     session.endSession();
@@ -765,7 +771,7 @@ export const reabrirFields = async (req, res) => {
         const resolutor = await USUARIO.find({
           Area: new ObjectId(area._id),
           isActive: true,
-          Nombre: {$ne: "Mesa de Servicio"},
+          Nombre: { $ne: "Mesa de Servicio" },
           // Rol: new ObjectId(rolId),
         }).select("Nombre");
         return {

@@ -66,6 +66,7 @@ const ticketModel = new Schema(
     PendingReason: {
       type: String,
       trim: true,
+      default: "",
     },
     Prioridad: {
       type: Schema.Types.ObjectId,

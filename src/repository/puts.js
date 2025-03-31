@@ -88,7 +88,11 @@ export const putAsignarTicket = async (
           Fecha_hora_ultima_modificacion: obtenerFechaActual(),
           Estado,
           standby: false,
+          Reasignado_a: [ticketData.Asignado_a],
           Asignado_a: [ticketData.Asignado_a],
+        },
+        $unset: {
+          PendingReason: "",
         },
         $push: {
           Historia_ticket: { $each: Historia_ticket },
@@ -101,7 +105,7 @@ export const putAsignarTicket = async (
     }
     return result;
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return false;
   }
 };
