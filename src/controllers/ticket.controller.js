@@ -127,6 +127,7 @@ export const asignarTicket = async (req, res, next) => {
       const tiempo = ticketData.tiempo;
       ticketData = {
         ...ticketData,
+        Reasignado_a: ticketData.Asignado_a,
         Fecha_limite_resolucion_SLA: addHours(obtenerFechaActual(), tiempo),
         Fecha_limite_respuesta_SLA: addHours(obtenerFechaActual(), tiempo),
         Fecha_hora_cierre: fechaDefecto,
