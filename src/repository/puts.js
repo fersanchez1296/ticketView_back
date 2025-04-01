@@ -342,6 +342,36 @@ export const putEditarTicket = async (
   }
 };
 
+export const putPendingReason = async (userId, _id, PendingReason, session) => {
+  try {
+    console.log("PendingReason", PendingReason);
+    const result = await TICKETS.findOneAndUpdate(
+      { _id },
+      {
+        $set: { Fecha_hora_ultima_modificacion: obtenerFechaActual(),
+          PendingReason,
+        },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Titulo: "Razón pendiente",
+            Mensaje: `Descripción:\n${PendingReason}`,
+            Fecha: obtenerFechaActual(),
+          },
+        },
+      },
+      { session, returnDocument: "after" }
+    );
+    console.log("result", result);
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const putNota = async (userId, ticketId, nota, session) => {
   try {
     const result = await TICKETS.findOneAndUpdate(
