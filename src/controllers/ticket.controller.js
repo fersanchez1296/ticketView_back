@@ -22,6 +22,7 @@ import {
   putEditarTicket,
   putTicketAbierto,
   putRetornarTicket,
+  putPendingReason,
 } from "../repository/puts.js";
 import { addHours } from "date-fns";
 import exceljs from "exceljs";
@@ -555,6 +556,32 @@ export const crearNota = async (req, res, next) => {
     const ticketId = req.params.id;
 
     const result = await putNota(userId, ticketId, Nota, session);
+    if (!result) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrio un error al guardar la nota en el ticket." });
+    }
+    req.ticketIdDb = result._id;
+    return next();
+  } catch (error) {
+    console.log("Transacción abortada");
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({
+      desc: "Ocurrió un error al agrear la nota. Error interno en el servidor.",
+    });
+  }
+};
+
+export const ponerPendingReason = async (req, res, next) => {
+  const session = req.mongoSession;
+  try {
+    const { userId } = req.session.user;
+    const { PendingReason } = req.body;
+    const _id = req.params.id;
+    const result = await putPendingReason(userId, _id, PendingReason, session);
     if (!result) {
       await session.abortTransaction();
       session.endSession();

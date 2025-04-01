@@ -27,6 +27,7 @@ import {
   obtenerTicketsResolutor,
   contactoCliente,
   retornarTicket,
+  ponerPendingReason,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -194,6 +195,15 @@ router.put(
   startTransaction,
   crearNota,
   guardarArchivo,
+  endTransaction,
+  responseNota
+);
+router.put(
+  "/tickets/PendingReason/:id",
+  uploadMiddleware,
+  verifyToken,
+  startTransaction,
+  ponerPendingReason,
   endTransaction,
   responseNota
 );
