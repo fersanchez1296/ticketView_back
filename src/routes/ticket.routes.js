@@ -28,6 +28,7 @@ import {
   contactoCliente,
   retornarTicket,
   ponerPendingReason,
+  retornarTicketaModerador,
 } from "../controllers/ticket.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { verifyRole } from "../middleware/verifyRole.middleware.js";
@@ -214,6 +215,17 @@ router.put(
   verifyToken,
   startTransaction,
   retornarTicket,
+  guardarArchivo,
+  endTransaction,
+  genericResponse
+);
+
+router.put(
+  "/tickets/retornoModerador/:id",
+  uploadMiddleware,
+  verifyToken,
+  startTransaction,
+  retornarTicketaModerador,
   guardarArchivo,
   endTransaction,
   genericResponse

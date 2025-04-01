@@ -23,6 +23,7 @@ import {
   putTicketAbierto,
   putRetornarTicket,
   putPendingReason,
+  putRetornarTicketaModerador,
 } from "../repository/puts.js";
 import { addHours } from "date-fns";
 import exceljs from "exceljs";
@@ -613,6 +614,48 @@ export const retornarTicket = async (req, res, next) => {
         .json({ desc: "Ocurrio un error al modificar el estado del ticket." });
     }
     const result = await putRetornarTicket(
+      userId,
+      ticketId,
+      descripcion_retorno,
+      Estado,
+      session
+    );
+    if (!result) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({
+        desc: "Ocurrio un error al retornar el ticket a mesa de servicio.",
+      });
+    }
+    req.ticketIdDb = result._id;
+    return next();
+  } catch (error) {
+    console.log("Transacción abortada");
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({
+      desc: "Ocurrió un error al retornar el ticket a mesa de servicio. Error interno en el servidor.",
+    });
+  }
+};
+
+export const retornarTicketaModerador = async (req, res, next) => {
+  const session = req.mongoSession;
+  try {
+    const { userId } = req.session.user;
+    const ticketData = JSON.parse(req.body.ticketData);
+    const descripcion_retorno = ticketData.descripcion_retorno;
+    const ticketId = req.params.id;
+    const Estado = await Gets.getEstadoTicket("NUEVOS");
+    if (!Estado) {
+      console.log("Transacción abortada");
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrio un error al modificar el estado del ticket." });
+    }
+    const result = await putRetornarTicketaModerador(
       userId,
       ticketId,
       descripcion_retorno,
