@@ -971,3 +971,19 @@ export const getRolUsuario = async (userId) => {
     return false;
   }
 };
+
+export const getAreaUsuario = async (userId) => {
+  try {
+    const result = await USUARIO.findOne({ _id: userId }).lean();
+    if (!result) {
+      return false;
+    }
+    console.log("result", result);
+    const areaUsuario = await USUARIO.populate(result, [{ path: "Area" }]);
+    console.log(areaUsuario);
+    return areaUsuario.Area[0]._id;
+  } catch (error) {
+    console.log("error", error);
+    return false;
+  }
+};

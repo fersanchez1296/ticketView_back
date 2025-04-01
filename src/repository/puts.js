@@ -55,6 +55,7 @@ export const incTickets = async (userId, actualizarContador, session) => {
 };
 
 export const putAsignarTicket = async (
+  Area,
   ticketId,
   Estado,
   ticketData,
@@ -80,7 +81,6 @@ export const putAsignarTicket = async (
         Fecha: obtenerFechaActual(),
       });
     }
-    console.log("X", ticketData);
     const result = TICKETS.findOneAndUpdate(
       { _id: ticketId },
       {
@@ -91,6 +91,7 @@ export const putAsignarTicket = async (
           standby: false,
           Reasignado_a: [ticketData.Asignado_a],
           Asignado_a: [ticketData.Asignado_a],
+          Area,
         },
         $unset: {
           PendingReason: "",

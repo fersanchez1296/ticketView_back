@@ -136,8 +136,16 @@ export const asignarTicket = async (req, res, next) => {
       };
       delete ticketData.tiempo;
     }
+    console.log("Asignado", ticketData.Asignado_a);
+    const Area = await Gets.getAreaUsuario(ticketData.Asignado_a);
+    if (!Area) {
+      console.log("Transaccion abortada.");
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ desc: "No se encontró el área del moderador." });
+    }
+    console.log("AREA X", Area);
     const rolUsuario = await Gets.getRolUsuario(ticketData.Asignado_a);
-    console.log(rolUsuario);
     if (rolUsuario !== "Usuario") {
       Estado = await Gets.getEstadoTicket("NUEVOS");
     } else {
@@ -151,6 +159,7 @@ export const asignarTicket = async (req, res, next) => {
       return res.status(404).json({ desc: "No se encontró el estado Nuevo." });
     }
     const result = await putAsignarTicket(
+      Area,
       ticketId,
       Estado,
       ticketData,
