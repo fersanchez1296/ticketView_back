@@ -69,10 +69,15 @@ export const createTicket = async (req, res, next) => {
   const session = req.mongoSession;
   try {
     let ticketState = req.ticketState;
+    if(!ticketState.Cliente){
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({ desc: "No se puedo guardar un ticket sin un cliente." });
+    }
     const { userId, nombre, rol } = req.session.user;
     ticketState = {
       ...ticketState,
-      Cliente: req.cliente ? req.cliente : ticketState.Cliente,
+      Cliente: req.cliente ? req.cliente : ticketState.Cliente, 
       Fecha_hora_creacion: obtenerFechaActual(),
       Fecha_limite_resolucion_SLA: req.Fecha_limite_resolucion_SLA,
       Fecha_limite_respuesta_SLA: addHours(

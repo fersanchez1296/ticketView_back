@@ -7,9 +7,7 @@ export const generarCorreoData = async (req, res, next) => {
       {
         path: "Cliente",
         select: "Nombre Correo Telefono Ubicacion _id Extension",
-        populate: [
-          { path: "direccion_area", select: "direccion_area _id" },
-        ],
+        populate: [{ path: "direccion_area", select: "direccion_area _id" }],
       },
     ]);
     console.log(populateResult.Descripcion_cierre);
@@ -39,6 +37,7 @@ export const generarCorreoData = async (req, res, next) => {
         correoResol: populateResult.Reasignado_a[0]?.Correo ?? "",
         extensionCliente: populateResult.Cliente.Extension,
         cuerpo: req.cuerpo,
+        archivos: req.files ?? [],
       };
     }
     req.ticketId = populateResult.Id;

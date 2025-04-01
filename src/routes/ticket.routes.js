@@ -250,10 +250,12 @@ router.put(
 
 router.put(
   "/tickets/contactoCliente/:id",
+  uploadMiddleware,
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   startTransaction,
   contactoCliente,
+  guardarArchivo,
   endTransaction,
   generarCorreoData,
   enviarCorreo
