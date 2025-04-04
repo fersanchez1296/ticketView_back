@@ -179,7 +179,6 @@ export const asignarTicket = async (req, res, next) => {
       return res.status(404).json({ desc: "No se encontró el estado Nuevo." });
     }
     const result = await putAsignarTicket(
-      Area,
       ticketId,
       Estado,
       ticketData,

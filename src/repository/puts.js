@@ -55,7 +55,6 @@ export const incTickets = async (userId, actualizarContador, session) => {
 };
 
 export const putAsignarTicket = async (
-  Area,
   ticketId,
   Estado,
   ticketData,
@@ -92,7 +91,6 @@ export const putAsignarTicket = async (
         Fecha_hora_ultima_modificacion: obtenerFechaActual(),
         Estado,
         standby: false,
-        Area,
         Reasignado_a: [Asignado], // Se usa Asignado
         Asignado_a: [Asignado],   // Se usa Asignado
         AreaTicket,
