@@ -39,6 +39,7 @@ const ticketModel = new Schema(
       ref: "ESTADOS",
     },
     Area: { type: mongoose.Schema.Types.ObjectId, ref: "AREA" },
+    AreaTicket: [{ type: mongoose.Schema.Types.ObjectId, ref: "AREA" }],
     Creado_por: {
       type: Schema.Types.ObjectId,
       trim: true,

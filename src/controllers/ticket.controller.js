@@ -58,8 +58,8 @@ export const getTickets = async (req, res, next) => {
     return result
       ? next()
       : res
-          .status(500)
-          .json({ desc: "Ocurrió un error al obtener los tickets." });
+        .status(500)
+        .json({ desc: "Ocurrió un error al obtener los tickets." });
   } catch (error) {
     return res
       .status(500)
@@ -72,6 +72,15 @@ export const createTicket = async (req, res, next) => {
   try {
     let ticketState = req.ticketState;
     const { userId, nombre, rol } = req.session.user;
+    let Asignado = ticketState.Asignado_a;
+    const AreaTicket = await Gets.getNombreAreaUsuario(Asignado);
+    console.log("AreaTicket", AreaTicket);
+    if (!AreaTicket) {
+      console.log("Transaccion abortada.");
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ desc: "No se encontró el área del moderador." });
+    }
     ticketState = {
       ...ticketState,
       Cliente: req.cliente ? req.cliente : ticketState.Cliente,
@@ -88,6 +97,7 @@ export const createTicket = async (req, res, next) => {
       Creado_por: userId,
       standby: ticketState.standby,
       PendingReason: ticketState.PendingReason,
+      AreaTicket,
     };
     const RES = await postCrearTicket(
       ticketState,
@@ -122,10 +132,13 @@ export const createTicket = async (req, res, next) => {
 export const asignarTicket = async (req, res, next) => {
   const session = req.mongoSession;
   try {
-    let Estado = "";
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
     let ticketData = JSON.parse(req.body.ticketData);
+    console.log("ticketData", ticketData)
+    let Estado = "";
+    let Moderador = "";
+    let Asignado = ticketData.Asignado_a;
     if (ticketData.tiempo) {
       const tiempo = ticketData.tiempo;
       ticketData = {
@@ -136,22 +149,29 @@ export const asignarTicket = async (req, res, next) => {
       };
       delete ticketData.tiempo;
     }
-    console.log("Asignado", ticketData.Asignado_a);
-    const Area = await Gets.getAreaUsuario(ticketData.Asignado_a);
+    const Area = await Gets.getAreaUsuario(Asignado);
     if (!Area) {
       console.log("Transaccion abortada.");
       await session.abortTransaction();
       session.endSession();
       return res.status(404).json({ desc: "No se encontró el área del moderador." });
     }
-    console.log("AREA X", Area);
-    const rolUsuario = await Gets.getRolUsuario(ticketData.Asignado_a);
+    const AreaTicket = await Gets.getNombreAreaUsuario(Asignado);
+    console.log("AreaTicket", AreaTicket);
+    if (!AreaTicket) {
+      console.log("Transaccion abortada.");
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ desc: "No se encontró el área del moderador." });
+    }
+    const rolUsuario = await Gets.getRolUsuario(Asignado);
     if (rolUsuario !== "Usuario") {
       Estado = await Gets.getEstadoTicket("NUEVOS");
     } else {
       Estado = await Gets.getEstadoTicket("ABIERTOS");
+      const RolModerador = await Gets.getRolModerador("Moderador");
+      Moderador = await Gets.getModeradorPorAreayRol(Area, RolModerador);
     }
-
     if (!Estado) {
       console.log("Transaccion abortada.");
       await session.abortTransaction();
@@ -166,7 +186,10 @@ export const asignarTicket = async (req, res, next) => {
       userId,
       nombre,
       rol,
-      session
+      session,
+      rolUsuario === "Usuario" ? Moderador : null,
+      Asignado,
+      AreaTicket
     );
     if (!result) {
       console.log("Transaccion abortada.");
@@ -176,6 +199,7 @@ export const asignarTicket = async (req, res, next) => {
         .status(400)
         .json({ desc: "Ocurrio un error al asignar el ticket." });
     }
+
     req.ticket = result;
     req.ticketIdDb = result._id;
     req.channel = "channel_asignarTicket";
@@ -196,6 +220,7 @@ export const reasignarTicket = async (req, res, next) => {
   const sessionDB = await mongoose.startSession();
   sessionDB.startTransaction();
   const ticketId = req.params.id;
+  console.log("ticketId", ticketId);
   const { userId, nombre, rol, correo } = req.session.user;
   function deleteCamposTiempo(body) {
     const {
@@ -223,6 +248,16 @@ export const reasignarTicket = async (req, res, next) => {
     ? deleteCamposTiempo(req.body)
     : tiempoResolucion(req.body);
   try {
+    let Reasignado = req.body.Reasignado_a;
+    const AreaTicket = await Gets.getNombreAreaUsuario(Reasignado);
+    if (!AreaTicket) {
+      console.log("Transacción abortada");
+      await sessionDB.abortTransaction();
+      sessionDB.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrio un error al modificar el estado del ticket." });
+    }
     const Estado = await ESTADOS.findOne({ Estado: "ABIERTOS" });
     if (!Estado) {
       await sessionDB.abortTransaction();
@@ -237,6 +272,7 @@ export const reasignarTicket = async (req, res, next) => {
           Fecha_hora_ultima_modificacion: obtenerFechaActual(),
           Estado,
           vistoBueno: reasignado.vistoBueno,
+          AreaTicket,
         },
         $push: {
           Historia_ticket: {
@@ -611,6 +647,7 @@ export const retornarTicket = async (req, res, next) => {
   try {
     const { userId } = req.session.user;
     const ticketData = JSON.parse(req.body.ticketData);
+    console.log("ticketData", ticketData);
     const descripcion_retorno = ticketData.descripcion_retorno;
     const ticketId = req.params.id;
     const Estado = await Gets.getEstadoTicket("STANDBY");
@@ -622,12 +659,24 @@ export const retornarTicket = async (req, res, next) => {
         .status(500)
         .json({ desc: "Ocurrio un error al modificar el estado del ticket." });
     }
+    let Nombre = "Mesa de Servicio";
+    const AreaTicket = await Gets.getAreaPorNombre(Nombre);
+    if (!AreaTicket) {
+      console.log("Transacción abortada");
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrio un error al modificar el estado del ticket." });
+    }
+    console.log("AreaTicket", AreaTicket);
     const result = await putRetornarTicket(
       userId,
       ticketId,
       descripcion_retorno,
       Estado,
-      session
+      session,
+      AreaTicket
     );
     if (!result) {
       await session.abortTransaction();
@@ -653,8 +702,20 @@ export const retornarTicketaModerador = async (req, res, next) => {
   try {
     const { userId } = req.session.user;
     const ticketData = JSON.parse(req.body.ticketData);
+    console.log("ticketData", ticketData);
     const descripcion_retorno = ticketData.descripcion_retorno;
     const ticketId = req.params.id;
+    const ticket = await Gets.getTicketpor_id(ticketId);
+    let Asignado = ticket.Asignado_a;
+    const AreaTicket = await Gets.getNombreAreaUsuario(Asignado);
+    if (!AreaTicket) {
+      console.log("Transacción abortada");
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrio un error al modificar el estado del ticket." });
+    }
     const Estado = await Gets.getEstadoTicket("NUEVOS");
     if (!Estado) {
       console.log("Transacción abortada");
@@ -669,7 +730,8 @@ export const retornarTicketaModerador = async (req, res, next) => {
       ticketId,
       descripcion_retorno,
       Estado,
-      session
+      session,
+      AreaTicket
     );
     if (!result) {
       await session.abortTransaction();

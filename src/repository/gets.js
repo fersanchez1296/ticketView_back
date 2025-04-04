@@ -14,6 +14,7 @@ import {
   CLIENTES,
   MEDIO,
   CATEGORIZACION,
+  ROLES,
 } from "../models/index.js";
 import mongoose from "mongoose";
 const ObjectId = mongoose.Types.ObjectId;
@@ -713,6 +714,22 @@ export const getTicketsPorArea = async (area) => {
   }
 };
 
+export const getModeradorPorAreayRol = async (Area, RolModerador) => {
+  try {
+    const result = await USUARIO.find({
+      Area,
+      Rol: RolModerador,
+    })
+    if (!result || result.length === 0) {
+      return false;
+    }
+    return result[0]._id;
+  } catch (error) {
+    console.error("Error al obtener moderadores:", error);
+    return false;
+  }
+};
+
 // export const getTicketsPorArea = async (area) => {
 //   try {
 //     const RES = await TICKETS.aggregate([
@@ -749,6 +766,16 @@ export const getAreasModerador = async (Area) => {
     const [RES] = await AREA.find({ _id: { $in: Area } });
     return RES;
   } catch (error) {
+    return false;
+  }
+};
+
+export const getAreaPorNombre = async (Nombre) => {
+  try {
+    const RES = await AREA.findOne({ Area: Nombre });
+    return RES || null;
+  } catch (error) {
+    console.error("Error en getAreaPorNombre:", error);
     return false;
   }
 };
@@ -927,6 +954,7 @@ export const getClientesPorDependencia = async (Dependencia) => {
 
 export const getTicketpor_id = async (id) => {
   try {
+    console.log("id", id);
     const RES = await TICKETS.findOne({ _id: id }).lean();
     if (!RES) {
       return false;
@@ -957,14 +985,11 @@ export const ticketsResolutor = async (userId) => {
 
 export const getRolUsuario = async (userId) => {
   try {
-    console.log("userId", userId);
     const result = await USUARIO.findOne({ _id: userId }).lean();
-    console.log("result", result);
     if (!result) {
       return false;
     }
     const rolUsuario = await USUARIO.populate(result, [{ path: "Rol" }]);
-    console.log("rol", rolUsuario);
     return rolUsuario.Rol.Rol;
   } catch (error) {
     console.log("error", error);
@@ -972,16 +997,40 @@ export const getRolUsuario = async (userId) => {
   }
 };
 
+export const getRolModerador = async (Rol) => {
+  try {
+    const result = await ROLES.findOne({ Rol }).lean();
+    if (!result) {
+      return null;
+    }
+    return result._id;
+  } catch (error) {
+    console.log("error", error);
+    return false;
+  }
+};
 export const getAreaUsuario = async (userId) => {
   try {
     const result = await USUARIO.findOne({ _id: userId }).lean();
     if (!result) {
       return false;
     }
-    console.log("result", result);
     const areaUsuario = await USUARIO.populate(result, [{ path: "Area" }]);
-    console.log(areaUsuario);
     return areaUsuario.Area[0]._id;
+  } catch (error) {
+    console.log("error", error);
+    return false;
+  }
+};
+
+export const getNombreAreaUsuario = async (userId) => {
+  try {
+    const result = await USUARIO.findOne({ _id: userId }).lean();
+    if (!result) {
+      return false;
+    }
+    const areaUsuario = await USUARIO.populate(result, [{ path: "Area" }]);
+    return areaUsuario.Area;
   } catch (error) {
     console.log("error", error);
     return false;

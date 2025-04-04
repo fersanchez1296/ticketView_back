@@ -62,17 +62,21 @@ export const putAsignarTicket = async (
   userId,
   nombre,
   rol,
-  session
+  session,
+  Moderador = null,
+  Asignado = null,
+  AreaTicket
 ) => {
   try {
     const Historia_ticket = [
       {
         Nombre: userId,
         Titulo: "Ticket Asignado",
-        Mensaje: `El ticket ha sido asignado a un moderador por ${nombre}-${rol}.`,
+        Mensaje: `El ticket ha sido asignado por ${nombre}-${rol}.`,
         Fecha: obtenerFechaActual(),
       },
     ];
+
     if (ticketData.Nota) {
       Historia_ticket.push({
         Nombre: userId,
@@ -81,27 +85,37 @@ export const putAsignarTicket = async (
         Fecha: obtenerFechaActual(),
       });
     }
-    const result = TICKETS.findOneAndUpdate(
-      { _id: ticketId },
-      {
-        $set: {
-          ...ticketData,
-          Fecha_hora_ultima_modificacion: obtenerFechaActual(),
-          Estado,
-          standby: false,
-          Reasignado_a: [ticketData.Asignado_a],
-          Asignado_a: [ticketData.Asignado_a],
-          Area,
-        },
-        $unset: {
-          PendingReason: "",
-        },
-        $push: {
-          Historia_ticket: { $each: Historia_ticket },
-        },
+
+    const updateData = {
+      $set: {
+        ...ticketData,
+        Fecha_hora_ultima_modificacion: obtenerFechaActual(),
+        Estado,
+        standby: false,
+        Area,
+        Reasignado_a: [Asignado], // Se usa Asignado
+        Asignado_a: [Asignado],   // Se usa Asignado
+        AreaTicket,
       },
+      $unset: {
+        PendingReason: "",
+      },
+      $push: {
+        Historia_ticket: { $each: Historia_ticket },
+      },
+    };
+
+    // Si el rol es "Usuario", también guardamos Moderador
+    if (Moderador) {
+      updateData.$set.Asignado_a = Moderador;
+    }
+
+    const result = await TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      updateData,
       { session, returnDocument: "after" }
     );
+
     if (!result) {
       return false;
     }
@@ -405,14 +419,15 @@ export const putRetornarTicket = async (
   ticketId,
   descripcion_retorno,
   Estado,
-  session
+  session,
+  AreaTicket
 ) => {
   try {
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
       {
-        $set: { Estado, Fecha_hora_ultima_modificacion: obtenerFechaActual() },
-        $unset: { Asignado_a: [] },
+        $set: { Estado, AreaTicket, Fecha_hora_ultima_modificacion: obtenerFechaActual() },
+        $unset: { Asignado_a: [], Reasignado_a: []},
         $push: {
           Historia_ticket: {
             Nombre: userId,
@@ -438,13 +453,14 @@ export const putRetornarTicketaModerador = async (
   ticketId,
   descripcion_retorno,
   Estado,
-  session
+  session,
+  AreaTicket
 ) => {
   try {
     const result = await TICKETS.findOneAndUpdate(
       { _id: ticketId },
       {
-        $set: { Estado, Fecha_hora_ultima_modificacion: obtenerFechaActual() },
+        $set: { Estado, AreaTicket, Fecha_hora_ultima_modificacion: obtenerFechaActual() },
         $unset: { Reasignado_a: [] },
         $push: {
           Historia_ticket: {
