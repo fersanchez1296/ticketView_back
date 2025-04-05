@@ -957,17 +957,26 @@ export const ticketsResolutor = async (userId) => {
 
 export const getRolUsuario = async (userId) => {
   try {
-    console.log("userId", userId);
     const result = await USUARIO.findOne({ _id: userId }).lean();
-    console.log("result", result);
     if (!result) {
       return false;
     }
     const rolUsuario = await USUARIO.populate(result, [{ path: "Rol" }]);
-    console.log("rol", rolUsuario);
     return rolUsuario.Rol.Rol;
   } catch (error) {
-    console.log("error", error);
+    return false;
+  }
+};
+
+export const getAreaUsuario = async (userId) => {
+  try {
+    const result = await USUARIO.findOne({ _id: userId }).lean();
+    if (!result) {
+      return false;
+    }
+    const areaUsuario = await USUARIO.populate(result, [{ path: "Area" }]);
+    return areaUsuario.Area[0]?._id;
+  } catch (error) {
     return false;
   }
 };

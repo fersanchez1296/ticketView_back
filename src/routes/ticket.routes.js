@@ -47,6 +47,9 @@ import { populateCorreos } from "../controllers/ticket.controller.js";
 import { verificarAsignado } from "../middleware/verificarAsignado.middleware.js";
 import { obtenerEstadoTicket } from "../middleware/obtenerEstadoTicket.middleware.js";
 import incrementarContadorTickets from "../middleware/incrementarContadorTickets.middleware.js";
+import { generarInformacionReasignar } from "../middleware/generarInformacionReasignar.middleware.js";
+import { correoResponse } from "../middleware/correoResponse.middleware.js";
+import { adjuntarArchivosCorreo } from "../middleware/adjuntarArchivosCorreo.middleware.js";
 const router = Router();
 router.get(
   "/tickets/estado/:estado",
@@ -97,10 +100,11 @@ router.put(
   // validateData("cerrar"),
   startTransaction,
   cerrarTicket,
-  guardarArchivo,
+  //guardarArchivo,
   endTransaction,
-  generarCorreoData,
-  enviarCorreo
+  adjuntarArchivosCorreo,
+  endTransaction,
+  correoResponse
 );
 router.put(
   "/tickets/reabrir/:id",
@@ -108,6 +112,7 @@ router.put(
   verifyToken,
   verifyRole(["Root", "Administrador"]),
   startTransaction,
+  generarInformacionReasignar,
   reabrirTicket,
   guardarArchivo,
   endTransaction,
@@ -248,14 +253,17 @@ router.put(
 );
 
 router.put(
-  "/tickets/pendiente/:id", //agregar id como parametro
+  "/tickets/pendiente/:id",
+  uploadMiddleware,
   verifyToken,
   verifyRole(["Usuario"]),
   startTransaction,
   pendienteTicket,
+  adjuntarArchivosCorreo,
   endTransaction,
-  generarCorreoData,
-  enviarCorreo
+  //generarCorreoData,
+  //enviarCorreo
+  correoResponse
 );
 
 router.put(
@@ -265,10 +273,12 @@ router.put(
   verifyRole(["Root", "Administrador"]),
   startTransaction,
   contactoCliente,
-  guardarArchivo,
+  adjuntarArchivosCorreo,
+  //guardarArchivo,
   endTransaction,
-  generarCorreoData,
-  enviarCorreo
+  // generarCorreoData,
+  // enviarCorreo
+  correoResponse
 );
 
 router.get("/tickets/clientes/dependencias", verifyToken, dependenciasClientes);

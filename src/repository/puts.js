@@ -190,26 +190,16 @@ export const putReabrirTicket = async (
         $set: {
           ...ticketData,
           Fecha_hora_ultima_modificacion: obtenerFechaActual(),
-          Fecha_hora_cierre: fechaDefecto,
-          Fecha_hora_resolucion: fechaDefecto,
           Estado,
-        },
-        $unset: {
-          Reasignado_a: "",
-          Respuesta_cierre_reasignado: "",
-          Resuelto_por: "",
-          Cerrado_por: "",
-          Descripcion_cierre: "",
         },
         $push: {
           Historia_ticket: {
             Nombre: userId,
             Titulo: "Ticket Reabierto",
-            Mensaje: `El ticket fue reabierto por ${nombre}-${rol}.`,
+            Mensaje: `El ticket fue reabierto por ${nombre}.`,
             Fecha: obtenerFechaActual(),
           },
           Reabierto: {
-            Descripcion: ticketData.descripcionReabierto,
             Fecha: obtenerFechaActual(),
           },
         },

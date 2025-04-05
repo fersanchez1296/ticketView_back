@@ -9,7 +9,6 @@ const HistoriaTicketSchema = new Schema({
 });
 
 const ReabiertoSchema = new Schema({
-  Descripcion: { type: String, trim: true },
   Fecha: { type: Date, required: true, default: Date.now },
 });
 

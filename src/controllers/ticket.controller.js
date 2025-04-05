@@ -70,15 +70,17 @@ export const createTicket = async (req, res, next) => {
   const session = req.mongoSession;
   try {
     let ticketState = req.ticketState;
-    if(!ticketState.Cliente){
+    if (!ticketState.Cliente) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(500).json({ desc: "No se puedo guardar un ticket sin un cliente." });
+      return res
+        .status(500)
+        .json({ desc: "No se puedo guardar un ticket sin un cliente." });
     }
     const { userId, nombre, rol } = req.session.user;
     ticketState = {
       ...ticketState,
-      Cliente: req.cliente ? req.cliente : ticketState.Cliente, 
+      Cliente: req.cliente ? req.cliente : ticketState.Cliente,
       Fecha_hora_creacion: obtenerFechaActual(),
       Fecha_limite_resolucion_SLA: req.Fecha_limite_resolucion_SLA,
       Fecha_limite_respuesta_SLA: addHours(
@@ -448,9 +450,10 @@ export const cerrarTicket = async (req, res, next) => {
         .status(500)
         .json({ desc: "Ocurrió un error al modificar el ticket." });
     }
-    req.ticket = result;
-    req.ticketIdDb = result._id;
-    req.channel = "channel_cerrarTicket";
+    //req.ticketIdDb = result._id;
+    req.cuerpo = result.Descripcion_cierre;
+    req.ticketId = result.Id;
+    req.endpoint = "cerrarTicket";
     return next();
   } catch (error) {
     await session.abortTransaction();
@@ -465,18 +468,9 @@ export const reabrirTicket = async (req, res, next) => {
   const session = req.mongoSession;
   try {
     const ticketId = req.params.id;
+    let ticketData = req.ticketData;
+    ticketData.Area = req.areaUsuario;
     const { userId, nombre, rol } = req.session.user;
-    let ticketData = JSON.parse(req.body.ticketData);
-    if (ticketData.tiempo) {
-      const tiempo = ticketData.tiempo;
-      ticketData = {
-        ...ticketData,
-        Fecha_limite_resolucion_SLA: addHours(obtenerFechaActual(), tiempo),
-        Fecha_limite_respuesta_SLA: addHours(obtenerFechaActual(), tiempo),
-        Fecha_hora_cierre: fechaDefecto,
-      };
-      delete ticketData.tiempo;
-    }
     const Estado = await Gets.getEstadoTicket("REABIERTOS");
     if (!Estado) {
       console.log("Transaccion abortada.");
@@ -485,6 +479,12 @@ export const reabrirTicket = async (req, res, next) => {
       return res
         .status(404)
         .json({ desc: "No se encontró el estado reabierto." });
+    }
+    if (req.rolUsuario === "Usuario") {
+      ticketData.Asignado_a = [ticketData.Asignado_a];
+      ticketData.Reasignado_a = [ticketData.Asignado_a];
+    } else {
+      ticketData.Asignado_a = [ticketData.Asignado_a];
     }
     const result = await putReabrirTicket(
       ticketId,
@@ -508,6 +508,7 @@ export const reabrirTicket = async (req, res, next) => {
     req.channel = "channel_reabrirTicket";
     return next();
   } catch (error) {
+    console.log(error);
     console.log("Transaccion abortada.");
     await session.abortTransaction();
     session.endSession();
@@ -550,7 +551,7 @@ export const editTicket = async (req, res, next) => {
 export const crearNota = async (req, res, next) => {
   const session = req.mongoSession;
   try {
-    const { userId } = req.session.user;
+    const { userId, rol } = req.session.user;
     const ticketData = JSON.parse(req.body.ticketData);
     const Nota = ticketData.Nota;
     const ticketId = req.params.id;
@@ -563,7 +564,10 @@ export const crearNota = async (req, res, next) => {
         .status(500)
         .json({ desc: "Ocurrio un error al guardar la nota en el ticket." });
     }
+    req.channel = "channel_notas";
     req.ticketIdDb = result._id;
+    req.ticket = result;
+    req.Nota = Nota;
     return next();
   } catch (error) {
     console.log("Transacción abortada");
@@ -792,7 +796,7 @@ export const buscarTicket = async (req, res, next) => {
 
 export const reabrirFields = async (req, res) => {
   try {
-    const rolId = await ROLES.findOne({ Rol: "Moderador" });
+    //const rolId = await ROLES.findOne({ Rol: "Moderador" });
     const [prioridades, areas] = await Promise.all([
       PRIORIDADES.find(),
       AREA.find(),
@@ -832,12 +836,10 @@ export const exportTicketsToExcel = async (req, res) => {
     const allTickets = await TICKETS.find();
     // 1️⃣ Obtener todos los tickets con populate
     const tickets = await TICKETS.populate(allTickets, [
-      { path: "Tipo_incidencia", select: "Tipo_de_incidencia _id" },
-      { path: "Area_asignado", select: "Area _id" },
-      { path: "Categoria", select: "Categoria _id" },
-      { path: "Servicio", select: "Servicio _id" },
-      { path: "Subcategoria", select: "Subcategoria _id" },
-      { path: "Prioridad" },
+      {
+        path: "Subcategoria",
+        populate: [{ path: "Equipo", select: "Area _id" }],
+      },
       { path: "Estado" },
       {
         path: "Asignado_a",
@@ -893,6 +895,7 @@ export const exportTicketsToExcel = async (req, res) => {
       { header: "Oficio recepcion", key: "NumeroRec_Oficio", width: 25 },
       { header: "Oficio cierre", key: "Numero_Oficio", width: 25 },
       { header: "Estado", key: "Estado", width: 25 },
+      { header: "Area", key: "Area", width: 25 },
       { header: "Tipo incidencia", key: "Tipo_incidencia", width: 25 },
       { header: "Servicio", key: "Servicio", width: 25 },
       { header: "Categoría", key: "Categoria", width: 25 },
@@ -940,22 +943,31 @@ export const exportTicketsToExcel = async (req, res) => {
         NumeroRec_Oficio: ticket.NumeroRec_Oficio || "",
         Numero_Oficio: ticket.Numero_Oficio || "",
         Estado: ticket.Estado?.Estado || "",
-        Tipo_incidencia: ticket.Tipo_incidencia?.Tipo_de_incidencia || "",
-        Servicio: ticket.Servicio?.Servicio || "",
-        Categoria: ticket.Categoria?.Categoria || "",
+        Area: ticket.Subcategoria?.Equipo.Area || "",
+        Tipo_incidencia: ticket.Subcategoria?.Tipo || "",
+        Servicio: ticket.Subcategoria?.Servicio || "",
+        Categoria: ticket.Subcategoria?.["Categoría"] || "",
         Subcategoria: ticket.Subcategoria?.Subcategoria || "",
         Descripcion: ticket.Descripcion || "",
-        Prioridad: ticket.Prioridad?.Descripcion || "",
+        Prioridad:ticket.Subcategoria?.Descripcion_prioridad || "",
         Fecha_lim_res: ticket.Fecha_limite_resolucion_SLA || "",
         Creado_por: ticket.Creado_por?.Nombre || "",
-        Area_creado_por: ticket.Creado_por?.Area[0]?.Area || "",
+        Area_creado_por: Array.isArray(ticket.Creado_por?.Area)
+          ? ticket.Creado_por.Area[0]?.Area
+          : "",
         Asignado_a: ticket.Asignado_a?.Nombre || "",
-        Area_asignado: ticket.Asignado_a?.Area[0]?.Area || "",
+        Area_asignado: Array.isArray(ticket.Asignado_a?.Area)
+          ? ticket.Asignado_a?.Area[0]?.Area
+          : "",
         Reasignado_a: ticket.Reasignado_a?.Nombre || "",
-        Area_reasignado_a: ticket.Reasignado_a?.Area[0]?.Area || "",
+        Area_reasignado_a: Array.isArray(ticket.Reasignado_a?.Area)
+          ? ticket.Reasignado_a?.Area[0]?.Area
+          : "",
         Respuesta_cierre_reasignado: ticket.Respuesta_cierre_reasignado || "",
         Resuelto_por: ticket.Resuelto_por?.Nombre || "",
-        Area_resuelto_por: ticket.Resuelto_por?.Area[0]?.Area || "",
+        Area_resuelto_por: Array.isArray(ticket.Resuelto_por?.Area)
+          ? ticket.Resuelto_por?.Area[0]?.Area
+          : "",
         Cliente: ticket.Cliente?.Nombre || "",
         Correo_cliente: ticket.Cliente?.Nombre || "",
         Telefono_cliente: ticket.Cliente?.Telefono || "",
@@ -992,7 +1004,8 @@ export const exportTicketsToExcel = async (req, res) => {
 export const pendienteTicket = async (req, res, next) => {
   const session = req.mongoSession;
   try {
-    const { cuerpo } = req.body;
+    console.log(req.body);
+    const { cuerpo } = JSON.parse(req.body.ticketData);
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
     const Estado = await Gets.getEstadoTicket("PENDIENTES");
@@ -1010,18 +1023,17 @@ export const pendienteTicket = async (req, res, next) => {
       session.endSession();
       return res
         .status(500)
-        .json({ message: "Error al cambiar el estadio del ticket." });
+        .json({ message: "Error al cambiar el estado del ticket." });
     }
-    req.ticket = result;
     req.cuerpo = cuerpo;
-    req.contactoCliente = true;
-    req.ticketIdDb = result._id;
-    req.channel = "channel_contactoCliente";
+    req.ticketId = result.Id;
+    req.endpoint = "contactoCliente";
     return next();
   } catch (error) {
+    console.log(error);
     await session.abortTransaction();
     session.endSession();
-    return res.status(500).json({ message: "Error interno del servidor" });
+    return res.status(500).json({ desc: "Error interno del servidor" });
   }
 };
 
@@ -1172,7 +1184,7 @@ export const obtenerTicketsResolutor = async (req, res, next) => {
 export const contactoCliente = async (req, res, next) => {
   const session = req.mongoSession;
   try {
-    const { cuerpo } = req.body;
+    const { cuerpo } = JSON.parse(req.body.ticketData);
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
     const result = await contactarCliente(
@@ -1188,15 +1200,14 @@ export const contactoCliente = async (req, res, next) => {
       session.endSession();
       return res
         .status(500)
-        .json({ message: "Error al cambiar el estadio del ticket." });
+        .json({ message: "Error al contactar al cliente." });
     }
-    req.ticket = result;
     req.cuerpo = cuerpo;
-    req.contactoCliente = true;
-    req.ticketIdDb = result._id;
-    req.channel = "channel_contactoCliente";
+    req.ticketId = result.Id;
+    req.endpoint = "contactoCliente";
     return next();
   } catch (error) {
+    console.log(error);
     await session.abortTransaction();
     session.endSession();
     return res.status(500).json({ message: "Error interno del servidor" });
