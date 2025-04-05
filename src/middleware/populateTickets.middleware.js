@@ -15,6 +15,10 @@ export const populateTickets = async (req, res, next) => {
         populate: [{ path: "Area", select: "Area _id" }],
       },
       {
+        path: "AreaTicket",
+        populate: [{ path: "Area", select: "Area _id" }],
+      },
+      {
         path: "Asignado_a",
         select: "Nombre Correo _id",
         populate: [{ path: "Area", select: "Area _id" }],
