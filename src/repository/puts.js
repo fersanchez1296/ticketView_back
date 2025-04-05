@@ -55,6 +55,7 @@ export const incTickets = async (userId, actualizarContador, session) => {
 };
 
 export const putAsignarTicket = async (
+  Area,
   ticketId,
   Estado,
   ticketData,
@@ -90,6 +91,7 @@ export const putAsignarTicket = async (
           standby: false,
           Reasignado_a: [ticketData.Asignado_a],
           Asignado_a: [ticketData.Asignado_a],
+          Area,
         },
         $unset: {
           PendingReason: "",
@@ -405,6 +407,39 @@ export const putRetornarTicket = async (
           Historia_ticket: {
             Nombre: userId,
             Titulo: "Ticket Retornado a Mesa de Servicio",
+            Mensaje: `Descripción:\n${descripcion_retorno}`,
+            Fecha: obtenerFechaActual(),
+          },
+        },
+      },
+      { session, returnDocument: "after" }
+    );
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const putRetornarTicketaModerador = async (
+  userId,
+  ticketId,
+  descripcion_retorno,
+  Estado,
+  session
+) => {
+  try {
+    const result = await TICKETS.findOneAndUpdate(
+      { _id: ticketId },
+      {
+        $set: { Estado, Fecha_hora_ultima_modificacion: obtenerFechaActual() },
+        $unset: { Reasignado_a: [] },
+        $push: {
+          Historia_ticket: {
+            Nombre: userId,
+            Titulo: "Ticket Retornado a Moderador",
             Mensaje: `Descripción:\n${descripcion_retorno}`,
             Fecha: obtenerFechaActual(),
           },
