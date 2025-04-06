@@ -103,7 +103,7 @@ router.put(
   startTransaction,
   cerrarTicket,
   //guardarArchivo,
-  endTransaction,
+  //endTransaction,
   adjuntarArchivosCorreo,
   endTransaction,
   correoResponse

@@ -655,7 +655,6 @@ export const retornarTicket = async (req, res, next) => {
   try {
     const { userId } = req.session.user;
     const ticketData = JSON.parse(req.body.ticketData);
-    console.log("ticketData", ticketData);
     const descripcion_retorno = ticketData.descripcion_retorno;
     const ticketId = req.params.id;
     const Estado = await Gets.getEstadoTicket("STANDBY");
@@ -677,7 +676,6 @@ export const retornarTicket = async (req, res, next) => {
         .status(500)
         .json({ desc: "Ocurrio un error al modificar el estado del ticket." });
     }
-    console.log("AreaTicket", AreaTicket);
     const result = await putRetornarTicket(
       userId,
       ticketId,
@@ -710,7 +708,6 @@ export const retornarTicketaModerador = async (req, res, next) => {
   try {
     const { userId } = req.session.user;
     const ticketData = JSON.parse(req.body.ticketData);
-    console.log("ticketData", ticketData);
     const descripcion_retorno = ticketData.descripcion_retorno;
     const ticketId = req.params.id;
     const ticket = await Gets.getTicketpor_id(ticketId);
