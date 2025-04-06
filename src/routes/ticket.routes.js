@@ -51,6 +51,7 @@ import incrementarContadorTickets from "../middleware/incrementarContadorTickets
 import { generarInformacionReasignar } from "../middleware/generarInformacionReasignar.middleware.js";
 import { correoResponse } from "../middleware/correoResponse.middleware.js";
 import { adjuntarArchivosCorreo } from "../middleware/adjuntarArchivosCorreo.middleware.js";
+import { responsePendingReason } from "../middleware/genericResponse.middleware copy.js";
 const router = Router();
 router.get(
   "/tickets/estado/:estado",
@@ -211,7 +212,7 @@ router.put(
   startTransaction,
   ponerPendingReason,
   endTransaction,
-  responseNota
+  responsePendingReason
 );
 
 router.put(
