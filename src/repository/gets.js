@@ -1021,19 +1021,6 @@ export const getRolModerador = async (Rol) => {
     return false;
   }
 };
-export const getAreaUsuario = async (userId) => {
-  try {
-    const result = await USUARIO.findOne({ _id: userId }).lean();
-    if (!result) {
-      return false;
-    }
-    const areaUsuario = await USUARIO.populate(result, [{ path: "Area" }]);
-    return areaUsuario.Area[0]._id;
-  } catch (error) {
-    console.log("error", error);
-    return false;
-  }
-};
 
 export const getNombreAreaUsuario = async (userId) => {
   try {
