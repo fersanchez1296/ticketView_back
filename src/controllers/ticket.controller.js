@@ -58,8 +58,8 @@ export const getTickets = async (req, res, next) => {
     return result
       ? next()
       : res
-        .status(500)
-        .json({ desc: "Ocurrió un error al obtener los tickets." });
+          .status(500)
+          .json({ desc: "Ocurrió un error al obtener los tickets." });
   } catch (error) {
     return res
       .status(500)
@@ -86,7 +86,9 @@ export const createTicket = async (req, res, next) => {
       console.log("Transaccion abortada.");
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ desc: "No se encontró el área del moderador." });
+      return res
+        .status(404)
+        .json({ desc: "No se encontró el área del moderador." });
     }
     ticketState = {
       ...ticketState,
@@ -142,7 +144,7 @@ export const asignarTicket = async (req, res, next) => {
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
     let ticketData = JSON.parse(req.body.ticketData);
-    console.log("ticketData", ticketData)
+    console.log("ticketData", ticketData);
     let Estado = "";
     let Moderador = "";
     let Asignado = ticketData.Asignado_a;
@@ -161,7 +163,9 @@ export const asignarTicket = async (req, res, next) => {
       console.log("Transaccion abortada.");
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ desc: "No se encontró el área del moderador." });
+      return res
+        .status(404)
+        .json({ desc: "No se encontró el área del moderador." });
     }
     const AreaTicket = await Gets.getNombreAreaUsuario(Asignado);
     console.log("AreaTicket", AreaTicket);
@@ -169,7 +173,9 @@ export const asignarTicket = async (req, res, next) => {
       console.log("Transaccion abortada.");
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ desc: "No se encontró el área del moderador." });
+      return res
+        .status(404)
+        .json({ desc: "No se encontró el área del moderador." });
     }
     const rolUsuario = await Gets.getRolUsuario(Asignado);
     if (rolUsuario !== "Usuario") {
@@ -495,9 +501,25 @@ export const cerrarTicket = async (req, res, next) => {
         .status(500)
         .json({ desc: "Ocurrió un error al modificar el ticket." });
     }
+    const populate = await TICKETS.populate(result, [
+      [
+        {
+          path: "Cliente",
+          select: "Nombre Correo Telefono Ubicacion Extension _id",
+        },
+      ],
+    ]);
+    if (!populate) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrió un error al obtener el correo del cliente." });
+    }
     //req.ticketIdDb = result._id;
     req.cuerpo = result.Descripcion_cierre;
     req.ticketId = result.Id;
+    req.destinatario = populate.Cliente.Correo;
     req.endpoint = "cerrarTicket";
     return next();
   } catch (error) {
@@ -1059,7 +1081,7 @@ export const exportTicketsToExcel = async (req, res) => {
         Categoria: ticket.Subcategoria?.["Categoría"] || "",
         Subcategoria: ticket.Subcategoria?.Subcategoria || "",
         Descripcion: ticket.Descripcion || "",
-        Prioridad:ticket.Subcategoria?.Descripcion_prioridad || "",
+        Prioridad: ticket.Subcategoria?.Descripcion_prioridad || "",
         Fecha_lim_res: ticket.Fecha_limite_resolucion_SLA || "",
         Creado_por: ticket.Creado_por?.Nombre || "",
         Area_creado_por: Array.isArray(ticket.Creado_por?.Area)
@@ -1135,9 +1157,25 @@ export const pendienteTicket = async (req, res, next) => {
         .status(500)
         .json({ message: "Error al cambiar el estado del ticket." });
     }
+    const populate = await TICKETS.populate(result, [
+      [
+        {
+          path: "Cliente",
+          select: "Nombre Correo Telefono Ubicacion Extension _id",
+        },
+      ],
+    ]);
+    if (!populate) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrió un error al obtener el correo del cliente." });
+    }
     req.cuerpo = cuerpo;
     req.ticketId = result.Id;
     req.endpoint = "contactoCliente";
+    req.destinatario = populate.Cliente.Correo;
     return next();
   } catch (error) {
     console.log(error);
@@ -1312,9 +1350,25 @@ export const contactoCliente = async (req, res, next) => {
         .status(500)
         .json({ message: "Error al contactar al cliente." });
     }
+    const populate = await TICKETS.populate(result, [
+      [
+        {
+          path: "Cliente",
+          select: "Nombre Correo Telefono Ubicacion Extension _id",
+        },
+      ],
+    ]);
+    if (!populate) {
+      await session.abortTransaction();
+      session.endSession();
+      return res
+        .status(500)
+        .json({ desc: "Ocurrió un error al obtener el correo del cliente." });
+    }
     req.cuerpo = cuerpo;
     req.ticketId = result.Id;
     req.endpoint = "contactoCliente";
+    req.destinatario = populate.Cliente.Correo;
     return next();
   } catch (error) {
     console.log(error);

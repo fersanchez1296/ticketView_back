@@ -8,6 +8,7 @@ export const adjuntarArchivosCorreo = async (req, res, next) => {
     const correoData = {
       details: req.cuerpo,
       idTicket: req.ticketId,
+      destinatario: req.destinatario
     };
     formData.append("correoData", JSON.stringify(correoData));
     const token = req.cookies.access_token;
