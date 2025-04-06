@@ -3,9 +3,11 @@ import { redisClient } from "../config/redis_connection.js";
 export const responseNota = async (req, res) => {
   try {
     const { rol } = req.session.user;
-    console.log(req.ticket.Reasignado_a);
-    console.log(req.ticket);
-    if (!req.ticket.Reasignado_a || req.ticket.Reasignado_a.lenght === 0) {
+    if (
+      !req.ticket ||
+      !req.ticket.Reasignado_a ||
+      req.ticket.Reasignado_a.length === 0
+    ) {
       return res.status(201).json({
         desc: "Nota agregada correctamente a la sección de historico del ticket.",
       });
@@ -34,7 +36,6 @@ export const responseNota = async (req, res) => {
       desc: "Nota agregada correctamente a la sección de historico del ticket.",
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       desc: "Ocurrio un error al agregar la nota. Error interno en el servidor.",
     });
