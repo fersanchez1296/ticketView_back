@@ -1035,3 +1035,16 @@ export const getNombreAreaUsuario = async (userId) => {
     return false;
   }
 };
+
+export const getNombreUsuario = async (userId) => {
+  try {
+    const result = await USUARIO.findOne({ _id: userId }, { Nombre: 1 }).lean();
+    if (!result) {
+      return false;
+    }
+    return result.Nombre;
+  } catch (error) {
+    console.error("Error al obtener el nombre del usuario:", error);
+    return false;
+  }
+};

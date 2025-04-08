@@ -80,8 +80,8 @@ export const createTicket = async (req, res, next) => {
     }
     const { userId, nombre, rol } = req.session.user;
     let Asignado = ticketState.Asignado_a;
+    const NAsignado = await Gets.getNombreUsuario(Asignado);
     const AreaTicket = await Gets.getNombreAreaUsuario(Asignado);
-    console.log("AreaTicket", AreaTicket);
     if (!AreaTicket) {
       console.log("Transaccion abortada.");
       await session.abortTransaction();
@@ -107,6 +107,7 @@ export const createTicket = async (req, res, next) => {
       standby: ticketState.standby,
       PendingReason: ticketState.PendingReason,
       AreaTicket,
+      NAsignado,
     };
     const RES = await postCrearTicket(
       ticketState,

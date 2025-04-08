@@ -21,7 +21,7 @@ export const postCrearTicket = async (
       Historia_ticket.push({
         Nombre: userId,
         Titulo: "Ticket Asignado",
-        Mensaje: `El ticket ha sido asignado a un resolutor por ${nombre} (${rol}).`,
+        Mensaje: `El ticket ha sido asignado al usuario ${nuevoTicket.NAsignado} por ${nombre} (${rol}).`,
         Fecha: obtenerFechaActual(),
       });
     }
