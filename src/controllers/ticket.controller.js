@@ -1333,6 +1333,7 @@ export const contactoCliente = async (req, res, next) => {
   const session = req.mongoSession;
   try {
     const { cuerpo } = JSON.parse(req.body.ticketData);
+    //console.log("cuerpo", cuerpo);
     const ticketId = req.params.id;
     const { userId, nombre, rol } = req.session.user;
     const result = await contactarCliente(
