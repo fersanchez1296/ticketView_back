@@ -4,22 +4,23 @@ import fs from "fs";
 export const adjuntarArchivosCorreo = async (req, res, next) => {
   const session = req.mongoSession;
   try {
-    const emails_extra = JSON.parse(req.body.emails_extra);
     let validEmails = [];
-    if (Array.isArray(emails_extra)) {
-      const allEmailsValid = emails_extra.every(
-        (email) => typeof email === "string" && email.includes("@")
-      );
-      if (allEmailsValid) {
-        validEmails = emails_extra;
+    if(req.body.emails_extra){
+      const emails_extra = JSON.parse(req.body.emails_extra);
+      if (Array.isArray(emails_extra)) {
+        const allEmailsValid = emails_extra.every(
+          (email) => typeof email === "string" && email.includes("@")
+        );
+        if (allEmailsValid) {
+          validEmails = emails_extra;
+        } else {
+          return res.status(500)
+          .json({ success: false, desc: "Error al ingresar correos." });
+        }
       } else {
-        return res.status(500)
-        .json({ success: false, desc: "Error al ingresar correos." });
+        validEmails = [];
       }
-    } else {
-      validEmails = [];
-    }
-
+    }  
     const formData = new FormData();
     const correoData = {
       details: req.cuerpo,
