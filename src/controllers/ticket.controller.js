@@ -58,8 +58,8 @@ export const getTickets = async (req, res, next) => {
     return result
       ? next()
       : res
-          .status(500)
-          .json({ desc: "Ocurrió un error al obtener los tickets." });
+        .status(500)
+        .json({ desc: "Ocurrió un error al obtener los tickets." });
   } catch (error) {
     return res
       .status(500)
@@ -169,7 +169,6 @@ export const asignarTicket = async (req, res, next) => {
         .json({ desc: "No se encontró el área del moderador." });
     }
     const AreaTicket = await Gets.getNombreAreaUsuario(Asignado);
-    console.log("AreaTicket", AreaTicket);
     if (!AreaTicket) {
       console.log("Transaccion abortada.");
       await session.abortTransaction();
@@ -1005,13 +1004,12 @@ export const exportTicketsToExcel = async (req, res) => {
         path: "Cliente",
         select: "Nombre Correo Telefono Ubicacion _id",
         populate: [
-          { path: "Dependencia", select: "Dependencia _id" },
+          //{ path: "Dependencia", select: "Dependencia _id" },
           { path: "Direccion_General", select: "Direccion_General _id" },
           { path: "direccion_area", select: "direccion_area _id" },
         ],
       },
     ]);
-
     if (!tickets.length) {
       return res.status(404).json({ message: "No hay tickets disponibles." });
     }
@@ -1052,9 +1050,9 @@ export const exportTicketsToExcel = async (req, res) => {
       { header: "Cliente", key: "Cliente", width: 25 },
       { header: "Correo cliente", key: "Correo_cliente", width: 25 },
       { header: "Telefono cliente", key: "Telefono_cliente", width: 25 },
-      { header: "Extension cliente", key: "Extension_cliente", width: 25 },
+      //{ header: "Extension cliente", key: "Extension_cliente", width: 25 },
       { header: "Ubicacion cliente", key: "Ubicacion_cliente", width: 25 },
-      { header: "Dependencia cliente", key: "Dependencia_cliente", width: 25 },
+      //{ header: "Dependencia cliente", key: "Dependencia_cliente", width: 25 },
       {
         header: "Direccion general cliente",
         key: "DireccionG_cliente",
@@ -1066,9 +1064,10 @@ export const exportTicketsToExcel = async (req, res) => {
         width: 25,
       },
     ];
-
+    
     // 4️⃣ Agregar los datos de los tickets
     tickets.forEach((ticket) => {
+      const categoria = ticket.Subcategoria?.["Categoría"] || ticket.Subcategoria?.Categoria || "";
       worksheet.addRow({
         Id: ticket.Id || "",
         Fecha_creacion: ticket.Fecha_hora_creacion || "",
@@ -1079,7 +1078,7 @@ export const exportTicketsToExcel = async (req, res) => {
         Area: ticket.Subcategoria?.Equipo.Area || "",
         Tipo_incidencia: ticket.Subcategoria?.Tipo || "",
         Servicio: ticket.Subcategoria?.Servicio || "",
-        Categoria: ticket.Subcategoria?.["Categoría"] || "",
+        Categoria: categoria,
         Subcategoria: ticket.Subcategoria?.Subcategoria || "",
         Descripcion: ticket.Descripcion || "",
         Prioridad: ticket.Subcategoria?.Descripcion_prioridad || "",
@@ -1102,11 +1101,11 @@ export const exportTicketsToExcel = async (req, res) => {
           ? ticket.Resuelto_por?.Area[0]?.Area
           : "",
         Cliente: ticket.Cliente?.Nombre || "",
-        Correo_cliente: ticket.Cliente?.Nombre || "",
+        Correo_cliente: ticket.Cliente?.Correo || "",
         Telefono_cliente: ticket.Cliente?.Telefono || "",
-        Extension_cliente: ticket.Cliente?.Extension || "",
+        //Extension_cliente: ticket.Cliente?.Extension || "",
         Ubicacion_cliente: ticket.Cliente?.Ubicacion || "",
-        Dependencia_cliente: ticket.Cliente?.Dependencia?.Dependencia || "",
+        //Dependencia_cliente: ticket.Cliente?.Dependencia?.Dependencia || "",
         DireccionG_cliente:
           ticket.Cliente?.Direccion_General?.Direccion_General || "",
         DireccionA_cliente:

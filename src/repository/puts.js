@@ -198,6 +198,23 @@ export const putReabrirTicket = async (
   session
 ) => {
   try {
+    const Historia_ticket = [
+      {
+        Nombre: userId,
+        Titulo: "Ticket Reabierto",
+        Mensaje: `El ticket fue reabierto por ${nombre}.`,
+        Fecha: obtenerFechaActual(),
+      },
+    ];
+
+    if (ticketData.Nota) {
+      Historia_ticket.push({
+        Nombre: userId,
+        Titulo: "Nota agregada",
+        Mensaje: `Nota:\n${ticketData.Nota}`,
+        Fecha: obtenerFechaActual(),
+      });
+    }
     const result = await TICKETS.findOneAndUpdate(
       { _id },
       {
@@ -207,12 +224,7 @@ export const putReabrirTicket = async (
           Estado,
         },
         $push: {
-          Historia_ticket: {
-            Nombre: userId,
-            Titulo: "Ticket Reabierto",
-            Mensaje: `El ticket fue reabierto por ${nombre}.`,
-            Fecha: obtenerFechaActual(),
-          },
+          Historia_ticket, 
           Reabierto: {
             Fecha: obtenerFechaActual(),
           },
