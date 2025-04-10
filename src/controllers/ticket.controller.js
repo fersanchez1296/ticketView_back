@@ -939,7 +939,6 @@ export const reabrirFields = async (req, res) => {
         const resolutor = await USUARIO.find({
           Area: new ObjectId(area._id),
           isActive: true,
-          Nombre: { $ne: "Mesa de Servicio" },
           // Rol: new ObjectId(rolId),
         }).select("Nombre");
         return {
