@@ -519,7 +519,7 @@ export const cerrarTicket = async (req, res, next) => {
     //req.ticketIdDb = result._id;
     req.cuerpo = result.Descripcion_cierre;
     req.ticketId = result.Id;
-    req.destinatario = populate.Cliente.Correo;
+    req.destinatario = populate.Cliente?.Correo;
     req.endpoint = "cerrarTicket";
     return next();
   } catch (error) {

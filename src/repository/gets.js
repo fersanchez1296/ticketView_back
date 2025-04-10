@@ -612,7 +612,7 @@ export const getInfoSelectsCrearTicket = async (
       SUBCATEGORIA.find(),
       PRIORIDADES.find(),
       AREA.find(),
-      DIRECCION_AREA.find(),
+      DIRECCION_AREA.find().sort({ direccion_area: 1 }),
       USUARIO.find(
         {
           isActive: { $ne: false },
@@ -620,7 +620,7 @@ export const getInfoSelectsCrearTicket = async (
         },
         { Nombre: 1, Correo: 1, Area: 1 }
       ),
-      DIRECCION_GENERAL.find(),
+      DIRECCION_GENERAL.find().sort({ Direccion_General: 1 }),
       DEPENDENCIAS.find(),
       MEDIO.find(),
       CATEGORIZACION.find().sort({ Subcategoria: 1 }).populate({
@@ -719,7 +719,7 @@ export const getModeradorPorAreayRol = async (Area, RolModerador) => {
     const result = await USUARIO.find({
       Area,
       Rol: RolModerador,
-    })
+    });
     if (!result || result.length === 0) {
       return false;
     }
@@ -955,7 +955,7 @@ export const getClientesPorDependencia = async (Dependencia) => {
 export const getTicketpor_id = async (id) => {
   try {
     console.log("id", id);
-    const RES = await TICKETS.findOne({ _id: id }).lean();
+    const RES = await TICKETS.findOne({ _id: id }).lean();     
     if (!RES) {
       return false;
     }
@@ -1032,6 +1032,61 @@ export const getNombreAreaUsuario = async (userId) => {
     return areaUsuario.Area;
   } catch (error) {
     console.log("error", error);
+    return false;
+  }
+};
+
+export const getTicketsPorOficio = async (termino) => {
+  try {
+    const result = await TICKETS.find({
+      $or: [{ NumeroRec_Oficio: termino }, { Numero_Oficio: termino }],
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getTicketsPorCliente = async (Cliente) => {
+  try {
+    const result = await TICKETS.find({ Cliente: { $in: Cliente } }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getTicketsPorUsuario = async (orConditions) => {
+  console.log("orconditions", orConditions);
+  try {
+    const result = await TICKETS.find({
+      $or: orConditions,
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const getTicketsGeneral = async (orConditions) => {
+  try {
+    const result = await TICKETS.find({
+      $or: orConditions,
+    }).lean();
+    if (!result) {
+      return false;
+    }
+    return result;
+  } catch (error) {
     return false;
   }
 };
