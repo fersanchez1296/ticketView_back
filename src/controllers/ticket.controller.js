@@ -58,8 +58,8 @@ export const getTickets = async (req, res, next) => {
     return result
       ? next()
       : res
-        .status(500)
-        .json({ desc: "Ocurrió un error al obtener los tickets." });
+          .status(500)
+          .json({ desc: "Ocurrió un error al obtener los tickets." });
   } catch (error) {
     return res
       .status(500)
@@ -910,7 +910,7 @@ export const obtenerAreasModerador = async (req, res, next) => {
 };
 
 export const buscarTicket = async (req, res, next) => {
-  const { id } = req.params;
+  const id = req.params.id ?? req.query.termino;
 
   try {
     const RES = await Gets.getTicketPorID(id);
@@ -1063,10 +1063,13 @@ export const exportTicketsToExcel = async (req, res) => {
         width: 25,
       },
     ];
-    
+
     // 4️⃣ Agregar los datos de los tickets
     tickets.forEach((ticket) => {
-      const categoria = ticket.Subcategoria?.["Categoría"] || ticket.Subcategoria?.Categoria || "";
+      const categoria =
+        ticket.Subcategoria?.["Categoría"] ||
+        ticket.Subcategoria?.Categoria ||
+        "";
       worksheet.addRow({
         Id: ticket.Id || "",
         Fecha_creacion: ticket.Fecha_hora_creacion || "",
