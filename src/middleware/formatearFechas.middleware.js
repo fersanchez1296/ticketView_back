@@ -1,8 +1,10 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { obtenerFechaActual } from "../utils/fechas.js";
 
 export const formatearCamposFecha = (req, res, next) => {
-  try {
+  const tickets = req.ticketsFormateados;
+   try {
     const DATA = req.ticketsFormateados.map((ticket) => {
       const formatFecha = (fecha) => {
         if (!fecha || new Date(fecha).getFullYear() === 1900) {
@@ -10,6 +12,10 @@ export const formatearCamposFecha = (req, res, next) => {
         }
         return format(fecha, "d 'de' MMMM 'de' yyyy, h:mm a", { locale: es });
       };
+
+      const vencido =
+        ticket.Fecha_limite_respuesta_SLA &&
+        new Date(ticket.Fecha_limite_respuesta_SLA).getTime() < obtenerFechaActual();
 
       return {
         ...ticket,
@@ -25,6 +31,7 @@ export const formatearCamposFecha = (req, res, next) => {
         Fecha_limite_respuesta_SLA: formatFecha(
           ticket.Fecha_limite_respuesta_SLA
         ),
+        vencido,
         Historia_ticket: ticket.Historia_ticket
           ? ticket.Historia_ticket.map((historia) => ({
               Nombre: historia.Nombre,
