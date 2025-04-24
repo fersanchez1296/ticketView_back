@@ -12,10 +12,14 @@ export const generarCorreoData = async (req, res, next) => {
     ]);
     console.log(populateResult.Descripcion_cierre);
     if (!req.contactoCliente) {
+      const correoUsuario = populateResult.Reasignado_a?.length
+        ? populateResult.Reasignado_a[0]?.Correo
+        : populateResult.Asignado_a[0]?.Correo;
+
       req.correoData = {
         idTicket: populateResult.Id,
         descripcionTicket: populateResult.Descripcion,
-        correoUsuario: populateResult.Asignado_a[0].Correo,
+        correoUsuario: correoUsuario, // Aquí ya se puede usar porque está en el mismo bloque
         nombreCliente: populateResult.Cliente.Nombre,
         correoCliente: populateResult.Cliente.Correo,
         telefonoCliente: populateResult.Cliente.Telefono,
@@ -24,7 +28,6 @@ export const generarCorreoData = async (req, res, next) => {
         standby: populateResult.standby,
         descripcionTicketRegresado:
           populateResult.Descripcion_respuesta_cliente ?? "",
-        correoResol: populateResult.Reasignado_a[0]?.Correo ?? "",
         Asignado_a: populateResult.Asignado_a[0]?.Nombre ?? "",
         Descripcion_cierre: populateResult.Descripcion_cierre ?? "",
         area: populateResult.Cliente.direccion_area.direccion_area ?? "",
@@ -40,6 +43,7 @@ export const generarCorreoData = async (req, res, next) => {
         archivos: req.files ?? [],
       };
     }
+    console.log("correoData1", req.correoData);
     req.ticketId = populateResult.Id;
     return next();
   } catch (error) {
