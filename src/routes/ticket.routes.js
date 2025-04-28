@@ -308,7 +308,7 @@ router.put(
   "/tickets/regresar/:id",
   uploadMiddleware,
   verifyToken,
-  verifyRole(["Root"]),
+  verifyRole(["Root", "Administrador"]),
   startTransaction,
   regresarTicket,
   guardarArchivo,
