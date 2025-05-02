@@ -45,7 +45,9 @@ export const getTickets = async (req, res, next) => {
       if (paramEstado === "NUEVOS") {
         result = await Gets.getTicketsNuevosModerador(userId, Estado);
       } else if (paramEstado === "REVISION") {
-        result = await Gets.getTicketsRevision(areas, Estado);
+        result = await Gets.getTicketsRevision(areas, userId, Estado);
+      } else if (paramEstado === "ABIERTOS") {
+        result = await Gets.getTicketsAbiertosModerador(userId, Estado);
       } else if (paramEstado === "REABIERTOS") {
         result = await Gets.getTicketsReabiertosModerador(userId, Estado);
       } else {

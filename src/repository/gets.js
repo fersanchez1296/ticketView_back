@@ -50,25 +50,23 @@ export const getTicketsRevisionUsuario = async (userId, Estado) => {
 export const getTicketsModerador = async (userId, Estado) => {
   try {
     const result = await TICKETS.find({
-      $and: [
-        { Estado },
-        { Asignado_a: { $in: userId } },
-        { Reasignado_a: { $in: userId } },
+      Estado,
+      $or: [
+        { $and: [{ Asignado_a: userId }, { Reasignado_a: userId }] }, // Usuario es ambos
+        { Asignado_a: userId }, // Usuario solo asignado
+        { Reasignado_a: userId }, // Usuario solo reasignado
       ],
     }).lean();
-    if (!result) {
-      return false;
-    }
     return result;
   } catch (error) {
     return false;
   }
 };
 
-export const getTicketsRevision = async (area, Estado) => {
+export const getTicketsRevision = async (area, userId, Estado) => {
   try {
     const result = await TICKETS.find({
-      $and: [{ Estado }, { Area: { $in: area } }],
+      $and: [{ Estado }, { Area: { $in: area } }, { Asignado_a: userId }],
     }).lean();
     if (!result) {
       return false;
@@ -265,6 +263,30 @@ export const getTicketsEnCurso = async (userId, estado) => {
 //     return false;
 //   }
 // };
+
+export const getTicketsAbiertosModerador = async (userId, Estado) => {
+  try {
+    const result = await TICKETS.find({
+      $and: [
+        { Estado },
+        { Reasignado_a: userId }, // Filtra tickets donde el usuario está reasignado
+      ],
+    })
+      .populate({
+        path: 'Reasignado_a',
+        match: { rol: 'Moderador' }, // Verifica que el usuario tiene el rol de moderador
+      })
+      .lean();
+
+    // Filtrar tickets donde Reasignado_a no sea null (solo moderadores)
+    return result.filter(ticket => ticket.Reasignado_a !== null);
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+};
+
+
 
 export const getTicketsReabiertos = async (userId, estado) => {
   try {

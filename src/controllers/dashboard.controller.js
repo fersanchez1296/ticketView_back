@@ -28,18 +28,37 @@ export const dashboard = async (req, res) => {
         ],
       }).countDocuments(),
       TICKETS.find({
-        $and: [
+        $or: [
           {
-            Asignado_a: userId,
+            $and: [
+              { Asignado_a: userId },
+              { Reasignado_a: { $ne: userId } }, // No reasignado al mismo usuario
+              { Estado: "67200415ab8f070f7ce3538c" }, // Estado específico
+            ],
           },
-          { Reasignado_a: { $ne: userId } },
-          { Estado: "67200415ab8f070f7ce3538c" },
+          {
+            $and: [
+              { Asignado_a: userId },
+              { Reasignado_a: userId }, // Igual asignado y reasignado
+              { Estado: "67200415ab8f070f7ce3538c" }, // Estado específico
+            ],
+          },
         ],
       }).countDocuments(),
       TICKETS.find({
-        $and: [
-          { Resuelto_por: userId },
-          { Estado: "67200415ab8f070f7ce35388" },
+        $or: [
+          {
+            $and: [
+              { Asignado_a: userId },
+              { Estado: "67200415ab8f070f7ce35388" }, // Estado específico
+            ],
+          },
+          {
+            $and: [
+              { Reasignado_a: userId }, // Igual asignado y reasignado
+              { Estado: "67200415ab8f070f7ce35388" }, // Estado específico
+            ],
+          },
         ],
       }).countDocuments(),
       TICKETS.find({
@@ -55,6 +74,7 @@ export const dashboard = async (req, res) => {
         $and: [
           { Estado: "672bc1010467f98349b61017" },
           { Area: { $in: areas } },
+          { Asignado_a: userId },
         ],
       }).countDocuments(),
       TICKETS.find({
