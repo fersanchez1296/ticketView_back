@@ -5,6 +5,8 @@ import {
   oficio,
   nccliente,
   ncresolutor,
+  calendario,
+  perfil
 } from "../controllers/dashboard.controller.js";
 import { verifyToken } from "../middleware/verifyToken.middleware.js";
 import { buscarTicket } from "../controllers/ticket.controller.js";
@@ -18,6 +20,8 @@ import { buscarId } from "../middleware/buscarId.middleware.js";
 const router = Router();
 
 router.get("/tickets/dashboard", verifyToken, dashboard);
+router.get("/tickets/calendario", verifyToken, calendario);
+router.get("/tickets/perfil", verifyToken, perfil);
 router.get(
   "/tickets/general/",
   verifyToken,

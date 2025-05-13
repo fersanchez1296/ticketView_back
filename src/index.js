@@ -24,6 +24,7 @@ app.use(
     origin: [
       `http://${process.env.APIGATEWAY_SERVICE_HOST}:${process.env.APIGATEWAY_SERVICE_PORT}`,
       "http://localhost:3000",
+      "http://localhost:3001",
     ], //API Gateway
     //origin: "*",
     credentials: true,
