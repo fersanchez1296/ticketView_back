@@ -55,14 +55,16 @@ const usuarioModel = mongoose.Schema(
       required: true,
     },
     Dependencia: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       trim: true,
       required: true,
+      ref: "Dependencia"
     },
-    Direccion_general: {
-      type: String,
+    Direccion_General: {
+      type: mongoose.Schema.Types.ObjectId,
       trim: true,
       required: true,
+      ref: "DIRECCION_GENERAL"
     },
     Tickets_resueltos: {
       type: ticketResueltosSchema,

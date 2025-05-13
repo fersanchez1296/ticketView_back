@@ -1,7 +1,11 @@
-import { TICKETS } from "../models/index.js";
+import {
+  TICKETS,
+  USUARIO,
+  DEPENDENCIAS,
+  DIRECCION_GENERAL,
+} from "../models/index.js";
 import mongoose from "mongoose";
 import * as Gets from "../repository/gets.js";
-const ObjectId = mongoose.Types.ObjectId;
 export const dashboard = async (req, res) => {
   const { userId, areas } = req.session.user;
   try {
@@ -125,6 +129,58 @@ export const dashboard = async (req, res) => {
       //sales,
     });
   } catch (error) {}
+};
+
+export const calendario = async (req, res) => {
+  try {
+    const { areas, userId } = req.session.user;
+    const result = await TICKETS.find({
+      $and: [
+        {
+          $or: [
+            { Asignado_a: { $in: [userId] } },
+            { Reasignado_a: { $in: [userId] } },
+          ],
+        },
+        { $or: [{ Area: { $in: [areas] } }, { AreaTicket: { $in: [areas] } }] },
+      ],
+    }).select("Id Fecha_limite_resolucion_SLA Subcategoria");
+
+    const populate = await TICKETS.populate(result, [
+      { path: "Subcategoria", select: "Descripcion_prioridad -_id" },
+    ]);
+
+    res.send(populate);
+  } catch (error) {
+    return res.status(500).json({
+      desc: "Error al buscar tickets. Error interno en el servidor.",
+    });
+  }
+};
+
+export const perfil = async (req, res) => {
+  try {
+    const { userId } = req.session.user;
+    const result = await USUARIO.findOne(
+      { _id: userId },
+      { Password: 0, Rol: 0 }
+    );
+    if (!result) {
+      return res.status(404).json({ desc: "No se encotro el usuario" });
+    }
+    const populate = await USUARIO.populate(result, [
+      { path: "Dependencia", select: "-_id" },
+      { path: "Direccion_General", select: "-_id" },
+    ]);
+    if (!populate) {
+      return res
+        .status(404)
+        .json({ desc: "Error al formatear la informacion" });
+    }
+    return res.status(200).json(populate);
+  } catch (error) {
+    res.status(500).json({ desc: "Error interno en el servidor" });
+  }
 };
 
 export const general = async (req, res, next) => {
