@@ -66,7 +66,11 @@ export const getTicketsModerador = async (userId, Estado) => {
 export const getTicketsRevision = async (area, userId, Estado) => {
   try {
     const result = await TICKETS.find({
-      $and: [{ Estado }, { Area: { $in: area } }, { Asignado_a: userId }],
+      $and: [
+        { Estado },
+        { $or: [{ AreaTicket: { $in: area }, Area: { $in: area } }] },
+        { Asignado_a: userId },
+      ],
     }).lean();
     if (!result) {
       return false;
@@ -273,20 +277,18 @@ export const getTicketsAbiertosModerador = async (userId, Estado) => {
       ],
     })
       .populate({
-        path: 'Reasignado_a',
-        match: { rol: 'Moderador' }, // Verifica que el usuario tiene el rol de moderador
+        path: "Reasignado_a",
+        match: { rol: "Moderador" }, // Verifica que el usuario tiene el rol de moderador
       })
       .lean();
 
     // Filtrar tickets donde Reasignado_a no sea null (solo moderadores)
-    return result.filter(ticket => ticket.Reasignado_a !== null);
+    return result.filter((ticket) => ticket.Reasignado_a !== null);
   } catch (error) {
     console.error(error);
     return false;
   }
 };
-
-
 
 export const getTicketsReabiertos = async (userId, estado) => {
   try {
@@ -977,7 +979,7 @@ export const getClientesPorDependencia = async (Dependencia) => {
 export const getTicketpor_id = async (id) => {
   try {
     console.log("id", id);
-    const RES = await TICKETS.findOne({ _id: id }).lean();     
+    const RES = await TICKETS.findOne({ _id: id }).lean();
     if (!RES) {
       return false;
     }
