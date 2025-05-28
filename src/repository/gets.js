@@ -68,7 +68,7 @@ export const getTicketsRevision = async (area, userId, Estado) => {
     const result = await TICKETS.find({
       $and: [
         { Estado },
-        { $or: [{ AreaTicket: { $in: area }, Area: { $in: area } }] },
+        { $or: [{ AreaTicket: { $in: area } }, { Area: { $in: area } }] },
         { Asignado_a: userId },
       ],
     }).lean();
