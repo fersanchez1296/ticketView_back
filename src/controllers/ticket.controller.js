@@ -1023,6 +1023,7 @@ export const exportTicketsToExcel = async (req, res) => {
     worksheet.columns = [
       { header: "ID", key: "Id", width: 25 },
       { header: "Fecha Creacion", key: "Fecha_creacion", width: 25 },
+      { header: "Fecha Resolucion", key: "Fecha_hora_resolucion", width: 25 },
       { header: "Fecha Cierre", key: "Fecha_hora_cierre", width: 25 },
       { header: "Oficio recepcion", key: "NumeroRec_Oficio", width: 25 },
       { header: "Oficio cierre", key: "Numero_Oficio", width: 25 },
@@ -1075,6 +1076,7 @@ export const exportTicketsToExcel = async (req, res) => {
       worksheet.addRow({
         Id: ticket.Id || "",
         Fecha_creacion: ticket.Fecha_hora_creacion || "",
+        Fecha_hora_resolucion: ticket.Fecha_hora_resolucion || "",
         Fecha_hora_cierre: ticket.Fecha_hora_cierre || "",
         NumeroRec_Oficio: ticket.NumeroRec_Oficio || "",
         Numero_Oficio: ticket.Numero_Oficio || "",
