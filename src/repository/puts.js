@@ -223,6 +223,10 @@ export const putReabrirTicket = async (
           Fecha_hora_ultima_modificacion: obtenerFechaActual(),
           Estado,
         },
+        $unset: {
+          Respuesta_cierre_reasignado: "",
+          Descripcion_cierre: ""
+        },
         $push: {
           Historia_ticket, 
           Reabierto: {
